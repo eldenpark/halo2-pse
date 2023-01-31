@@ -11,6 +11,7 @@ use halo2_proofs::{
     plonk::Error,
 };
 
+mod merkle;
 mod pow5;
 pub use pow5::{Pow5Chip, Pow5Config, StateWord};
 
