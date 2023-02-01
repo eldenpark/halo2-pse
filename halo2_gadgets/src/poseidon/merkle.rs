@@ -1,6 +1,6 @@
 use group::ff::{Field, PrimeField};
 use halo2_proofs::{
-    circuit::{Layouter, SimpleFloorPlanner, Value},
+    circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
     dev::MockProver,
     plonk::{Circuit, ConstraintSystem, Error},
 };
@@ -21,10 +21,10 @@ use crate::utilities::Var;
 
 struct HashCircuit<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: usize>
 {
-    message: Value<[Fp; L]>,
-    // For the purpose of this test, witness the result.
-    // TODO: Move this into an instance column.
-    output: Value<Fp>,
+    // message: Value<[Fp; L]>,
+    root: Value<Fp>,
+    position_bits: Value<[Fp; 4]>,
+    path: Value<[Fp; 4]>,
     _spec: PhantomData<S>,
 }
 
@@ -36,8 +36,11 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
 
     fn without_witnesses(&self) -> Self {
         Self {
-            message: Value::unknown(),
-            output: Value::unknown(),
+            // message: Value::unknown(),
+            // output: Value::unknown(),
+            root: Value::unknown(),
+            position_bits: Value::unknown(),
+            path: Value::unknown(),
             _spec: PhantomData,
         }
     }
@@ -97,14 +100,45 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
 
         let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
 
-        let a = layouter.assign_region(
-            || "constrain output",
+        println!("output: {:?}", output);
+
+        let zero = layouter.assign_region(
+            || "aa",
             |mut region| {
-                let expected_var =
-                    region.assign_advice(|| "load output", config.state[0], 0, || self.output)?;
-                region.constrain_equal(output.cell(), expected_var.cell())
+                region.assign_advice(
+                    || format!("load message_{}", 1),
+                    config.state[1],
+                    0,
+                    || Value::known(Fp::zero()),
+                )
             },
-        );
+        )?;
+
+        println!("zero: {:?}", zero);
+
+        let chip = Pow5Chip::construct(config.clone());
+        let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
+            chip,
+            layouter.namespace(|| "init"),
+        )?;
+
+        let m = vec![output, zero];
+        let msg: [AssignedCell<Fp, Fp>; L] = m.try_into().unwrap();
+        let output2 = hasher.hash(layouter.namespace(|| "hash"), msg)?;
+
+        println!("output2: {:?}", output2);
+
+        // let a = layouter.assign_region(
+        //     || "constrain output",
+        //     |mut region| {
+        //         let expected_var =
+        //             region.assign_advice(|| "load output", config.state[0], 0, || self.output)?;
+
+        //         println!("22");
+
+        //         region.constrain_equal(output2.cell(), expected_var.cell())
+        //     },
+        // );
 
         Ok(())
     }
@@ -116,18 +150,27 @@ fn poseidon_hash2() {
 
     let rng = OsRng;
 
-    let message = [Fp::random(rng), Fp::random(rng)];
+    let leaf = Fp::from(2);
+    let path = [Fp::from(1), Fp::from(1), Fp::from(1), Fp::from(1)];
+    let position_bits = [Fp::from(0), Fp::from(0), Fp::from(0), Fp::from(0)];
 
-    println!("message: {:?}", message);
+    let mut root = leaf;
+    for el in path {
+        // root = Hash::init(P128Pow5T3, ConstantLength::<2>).hash([root, el]);
+        let msg = [root, el];
+        root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
+    }
 
-    let output =
-        poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(message);
+    println!("out-circuit: root: {:?}", root);
 
-    let k = 6;
+    let k = 16;
 
     let circuit = HashCircuit::<OrchardNullifier, 3, 2, 2> {
-        message: Value::known(message),
-        output: Value::known(output),
+        // message: Value::known(message),
+        // output: Value::known(output),
+        root: Value::known(root),
+        position_bits: Value::known(position_bits),
+        path: Value::known(path),
         _spec: PhantomData,
     };
 
