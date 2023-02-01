@@ -1,3 +1,5 @@
+mod config;
+
 use group::ff::{Field, PrimeField};
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
@@ -72,61 +74,39 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
 
         let chip = Pow5Chip::construct(config.clone());
 
-        let message = layouter.assign_region(
-            || "load message",
-            |mut region| {
-                let message_word = |i: usize| {
-                    let value = self.message.map(|message_vals| message_vals[i]);
+        // let message = layouter.assign_region(
+        //     || "load message",
+        //     |mut region| {
+        //         let message_word = |i: usize| {
+        //             let value = self.message.map(|message_vals| message_vals[i]);
 
-                    println!("msg value: {:?}", value);
+        //             println!("msg value: {:?}", value);
 
-                    region.assign_advice(
-                        || format!("load message_{}", i),
-                        config.state[i],
-                        0,
-                        || value,
-                    )
-                };
+        //             region.assign_advice(
+        //                 || format!("load message_{}", i),
+        //                 config.state[i],
+        //                 0,
+        //                 || value,
+        //             )
+        //         };
 
-                let message: Result<Vec<_>, Error> = (0..L).map(message_word).collect();
-                Ok(message?.try_into().unwrap())
-            },
-        )?;
+        //         let message: Result<Vec<_>, Error> = (0..L).map(message_word).collect();
+        //         Ok(message?.try_into().unwrap())
+        //     },
+        // )?;
 
         let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
             chip,
             layouter.namespace(|| "init"),
         )?;
 
-        let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
-
-        println!("output: {:?}", output);
-
-        let zero = layouter.assign_region(
-            || "aa",
-            |mut region| {
-                region.assign_advice(
-                    || format!("load message_{}", 1),
-                    config.state[1],
-                    0,
-                    || Value::known(Fp::zero()),
-                )
-            },
-        )?;
-
-        println!("zero: {:?}", zero);
+        // let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
 
         let chip = Pow5Chip::construct(config.clone());
         let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
             chip,
             layouter.namespace(|| "init"),
         )?;
-
-        let m = vec![output, zero];
-        let msg: [AssignedCell<Fp, Fp>; L] = m.try_into().unwrap();
-        let output2 = hasher.hash(layouter.namespace(|| "hash"), msg)?;
-
-        println!("output2: {:?}", output2);
 
         // let a = layouter.assign_region(
         //     || "constrain output",
