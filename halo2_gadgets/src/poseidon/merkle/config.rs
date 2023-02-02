@@ -28,8 +28,8 @@ pub trait MerkleInstructions<F: FieldExt>: Chip<F> {
         &self,
         layouter: impl Layouter<F>,
         leaf_or_digest: Self::Cell,
-        sibling: Option<F>,
-        position_bit: Option<F>,
+        sibling: Value<F>,
+        position_bit: Value<F>,
         layer: usize,
     ) -> Result<Self::Cell, Error>;
 }
@@ -116,8 +116,8 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleInstructions<F>
         &self,
         mut layouter: impl Layouter<F>,
         leaf_or_digest: Self::Cell,
-        sibling: Option<F>,
-        position_bit: Option<F>,
+        sibling: Value<F>,
+        position_bit: Value<F>,
         layer: usize,
     ) -> Result<Self::Cell, Error> {
         let config = self.config.clone();

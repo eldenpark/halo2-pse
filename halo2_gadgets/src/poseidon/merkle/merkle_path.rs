@@ -30,9 +30,9 @@ where
     MerkleChip: MerkleInstructions<F> + Clone,
 {
     pub chip: MerkleChip,
-    pub leaf_pos: Option<[F; 4]>,
-    // The Merkle path is ordered from leaves to root.
-    pub path: Option<[F; 4]>,
+    pub leaf_pos: Value<[F; 4]>,
+    // // The Merkle path is ordered from leaves to root.
+    pub path: Value<[F; 4]>,
 }
 
 impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerklePath<MerkleChip<F, WIDTH, RATE>, F>
@@ -43,18 +43,19 @@ where
         &self,
         mut layouter: impl Layouter<F>,
         leaf: <MerkleChip<F, WIDTH, RATE> as MerkleInstructions<F>>::Cell,
+        // leaf: Value<F>,
     ) -> Result<<MerkleChip<F, WIDTH, RATE> as MerkleInstructions<F>>::Cell, Error> {
         let mut node = leaf;
 
-        let path = self.path.unwrap();
-        let leaf_pos = self.leaf_pos.unwrap();
+        let path = self.path.transpose_array();
+        let leaf_pos = self.leaf_pos.transpose_array();
 
         for (layer, (sibling, pos)) in path.iter().zip(leaf_pos.iter()).enumerate() {
             node = self.chip.hash_layer(
                 layouter.namespace(|| format!("hash l {}", layer)),
                 node,
-                Some(*sibling),
-                Some(*pos),
+                *sibling,
+                *pos,
                 layer,
             )?;
         }
