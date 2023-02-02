@@ -26,7 +26,7 @@ use std::marker::PhantomData;
 
 #[derive(Clone, Debug)]
 pub struct MyConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
-    // advices: [Column<Advice>; WIDTH],
+    advices: [Column<Advice>; 5],
     instance: Column<Instance>,
     merkle_config: MerkleConfig<F, WIDTH, RATE>,
     poseidon_config: Pow5Config<F, WIDTH, RATE>,
@@ -70,8 +70,10 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
     }
 
     fn configure(meta: &mut ConstraintSystem<Fp>) -> MyConfig<Fp, WIDTH, RATE> {
-        let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>();
-        let partial_sbox = meta.advice_column();
+        // total 5 advice columns
+        let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>(); // 3
+        let partial_sbox = meta.advice_column(); // 1
+        let swap = meta.advice_column(); // 1
 
         let rc_a = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
         let rc_b = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
@@ -89,16 +91,22 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
             rc_b.try_into().unwrap(),
         );
 
+        // let mut merkle_advices = state.clone(); // length 3
+        // merkle_advices.push(meta.advice_column());
+        // merkle_advices.push(meta.advice_column());
+        //
+        let mut advices = state.clone();
+        advices.push(partial_sbox.clone());
+        advices.push(swap.clone());
+
         let merkle_config = MerkleChip::configure(
             meta,
-            state.clone().try_into().unwrap(),
+            advices.clone().try_into().unwrap(),
             poseidon_config.clone(),
         );
 
-        let mut advices = state.clone();
-        advices.push(partial_sbox);
-
         let my_config = MyConfig {
+            advices: advices.try_into().unwrap(),
             instance,
             poseidon_config,
             merkle_config,
@@ -136,6 +144,23 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
         //         Ok(message?.try_into().unwrap())
         //     },
         // )?;
+        // let leaf = chip_1.load_private(
+        //     layouter.namespace(|| ""),
+        //     config.0.cond_swap_config.a(),
+        //     self.leaf,
+        // )?;
+        //
+        //
+        // config.merkle_config.cond_swap_config.a();
+
+        // let leaf = layouter.assign_region(
+        //     || "load private",
+        //     |mut region| {
+        //         region
+        //             .assign_advice(|| "load private", config.column, 0, || value)
+        //             .map(Self::Var::from)
+        //     },
+        // )
 
         let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
             chip,

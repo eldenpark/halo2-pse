@@ -1,9 +1,13 @@
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
-use crate::poseidon::{
-    primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
-    Hash,
-};
+use crate::utilities::cond_swap::CondSwapConfig;
 use crate::utilities::Var;
+use crate::{
+    poseidon::{
+        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
+        Hash,
+    },
+    utilities::cond_swap::CondSwapChip,
+};
 use group::ff::{Field, PrimeField};
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{
@@ -36,10 +40,9 @@ pub trait MerkleInstructions<F: FieldExt>: Chip<F> {
 
 #[derive(Clone, Debug)]
 pub struct MerkleConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
-    pub advice: [Column<Advice>; 3],
-    pub s_bool: Selector,
-    pub s_swap: Selector,
+    pub advices: [Column<Advice>; 5],
     pub hash_config: Pow5Config<F, WIDTH, RATE>,
+    pub cond_swap_config: CondSwapConfig,
 }
 
 #[derive(Clone, Debug)]
@@ -63,41 +66,20 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> Chip<F> for MerkleChip<
 impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RATE> {
     pub fn configure(
         meta: &mut ConstraintSystem<F>,
-        advice: [Column<Advice>; 3],
+        advices: [Column<Advice>; 5],
         hash_config: Pow5Config<F, WIDTH, RATE>,
     ) -> MerkleConfig<F, WIDTH, RATE> {
-        for column in &advice {
-            // meta.enable_equality((*column).into());
-            meta.enable_equality(*column);
-        }
-
-        let s_bool = meta.selector();
-
-        meta.create_gate("bool", |meta| {
-            let position_bit = meta.query_advice(advice[2], Rotation::cur());
-            let s_bool = meta.query_selector(s_bool);
-            vec![s_bool * position_bit.clone() * (Expression::Constant(F::one()) - position_bit)]
-        });
-
-        let s_swap = meta.selector();
-
-        meta.create_gate("swap", |meta| {
-            let a = meta.query_advice(advice[0], Rotation::cur());
-            let b = meta.query_advice(advice[1], Rotation::cur());
-            let bit = meta.query_advice(advice[2], Rotation::cur());
-            let s_swap = meta.query_selector(s_swap);
-            let l = meta.query_advice(advice[0], Rotation::next());
-            let r = meta.query_advice(advice[1], Rotation::next());
-            vec![s_swap * ((bit * F::from(2) * (b.clone() - a.clone()) - (l - a)) - (b - r))]
-        });
-
-        let hash_config = hash_config.clone();
+        let cond_swap_config = CondSwapChip::configure(meta, advices);
+        // a,
+        // b: advices[1],
+        // a_swapped: advices[2],
+        // b_swapped: advices[3],
+        // swap: advices[4],
 
         MerkleConfig {
-            advice,
-            s_bool,
-            s_swap,
+            advices,
             hash_config,
+            cond_swap_config,
         }
     }
 
@@ -152,19 +134,20 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleInstructions<F>
                 //     || format!("witness sibling (layer {})", layer),
                 //     config.advice[1],
                 //     row_offset,
-                //     // || sibling.ok_or(Error::SynthesisError),
-                //     // || sibling,
+                //     || sibling,
                 // )?;
 
                 // let _position_bit_cell = region.assign_advice(
                 //     || format!("witness positional_bit (layer {})", layer),
                 //     config.advice[2],
                 //     row_offset,
-                //     || position_bit.ok_or(Error::SynthesisError),
+                //     || position_bit,
                 // )?;
 
                 // config.s_bool.enable(&mut region, row_offset)?;
                 // config.s_swap.enable(&mut region, row_offset)?;
+
+                // if position_bit == F::zero() {}
 
                 // let (l_value, r_value): (Fp, Fp) = if position_bit == Some(Fp::zero()) {
                 //     (
