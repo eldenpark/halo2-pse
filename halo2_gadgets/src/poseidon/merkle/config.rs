@@ -21,45 +21,6 @@ use std::convert::TryInto;
 use std::iter;
 use std::marker::PhantomData;
 
-#[derive(Clone, Debug)]
-pub struct MerklePath<MerkleChip, F: FieldExt>
-where
-    MerkleChip: MerkleInstructions<F> + Clone,
-{
-    pub chip: MerkleChip,
-    pub leaf_pos: Option<[F; 4]>,
-    // The Merkle path is ordered from leaves to root.
-    pub path: Option<[F; 4]>,
-}
-
-impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerklePath<MerkleChip<F, WIDTH, RATE>, F>
-where
-    MerkleChip<F, WIDTH, RATE>: MerkleInstructions<F> + Clone,
-{
-    pub fn calculate_root(
-        &self,
-        mut layouter: impl Layouter<F>,
-        leaf: <MerkleChip<F, WIDTH, RATE> as MerkleInstructions<F>>::Cell,
-    ) -> Result<<MerkleChip<F, WIDTH, RATE> as MerkleInstructions<F>>::Cell, Error> {
-        let mut node = leaf;
-
-        let path = self.path.unwrap();
-        let leaf_pos = self.leaf_pos.unwrap();
-
-        for (layer, (sibling, pos)) in path.iter().zip(leaf_pos.iter()).enumerate() {
-            node = self.chip.hash_layer(
-                layouter.namespace(|| format!("hash l {}", layer)),
-                node,
-                Some(*sibling),
-                Some(*pos),
-                layer,
-            )?;
-        }
-
-        Ok(node)
-    }
-}
-
 pub trait MerkleInstructions<F: FieldExt>: Chip<F> {
     type Cell;
 
@@ -166,84 +127,85 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleInstructions<F>
 
         // let ret = layouter.assign_region(|| "aa", |mut region| Ok(()));
 
-        Ok(leaf_or_digest)
+        return Ok(leaf_or_digest);
 
-        // layouter.assign_region(
-        //     || format!("hash on (layer {})", layer),
-        //     |mut region| {
-        //         let mut row_offset = 0;
+        layouter.assign_region(
+            || format!("hash on (layer {})", layer),
+            |mut region| {
+                let mut row_offset = 0;
 
-        //         let left_or_digest_value = leaf_or_digest.value();
+                // let left_or_digest_value = leaf_or_digest.value();
 
-        //         let left_or_digest_cell = region.assign_advice(
-        //             || format!("witness leaf or digest (layer {})", layer),
-        //             config.advice[0],
-        //             row_offset,
-        //             || left_or_digest_value.ok_or(Error::SynthesisError),
-        //         )?;
+                // let left_or_digest_cell = region.assign_advice(
+                //     || format!("witness leaf or digest (layer {})", layer),
+                //     config.advice[0],
+                //     row_offset,
+                //     || left_or_digest_value.ok_or(Error::SynthesisError),
+                // )?;
 
-        //         if layer > 0 {
-        //             region.constrain_equal(leaf_or_digest.cell(), left_or_digest_cell)?;
-        //             // Should i do permutation here?
-        //         }
+                // if layer > 0 {
+                //     region.constrain_equal(leaf_or_digest.cell(), left_or_digest_cell)?;
+                //     // Should i do permutation here?
+                // }
 
-        //         let _sibling_cell = region.assign_advice(
-        //             || format!("witness sibling (layer {})", layer),
-        //             config.advice[1],
-        //             row_offset,
-        //             || sibling.ok_or(Error::SynthesisError),
-        //         )?;
+                // let _sibling_cell = region.assign_advice(
+                //     || format!("witness sibling (layer {})", layer),
+                //     config.advice[1],
+                //     row_offset,
+                //     // || sibling.ok_or(Error::SynthesisError),
+                //     // || sibling,
+                // )?;
 
-        //         let _position_bit_cell = region.assign_advice(
-        //             || format!("witness positional_bit (layer {})", layer),
-        //             config.advice[2],
-        //             row_offset,
-        //             || position_bit.ok_or(Error::SynthesisError),
-        //         )?;
+                // let _position_bit_cell = region.assign_advice(
+                //     || format!("witness positional_bit (layer {})", layer),
+                //     config.advice[2],
+                //     row_offset,
+                //     || position_bit.ok_or(Error::SynthesisError),
+                // )?;
 
-        //         config.s_bool.enable(&mut region, row_offset)?;
-        //         config.s_swap.enable(&mut region, row_offset)?;
+                // config.s_bool.enable(&mut region, row_offset)?;
+                // config.s_swap.enable(&mut region, row_offset)?;
 
-        //         let (l_value, r_value): (Fp, Fp) = if position_bit == Some(Fp::zero()) {
-        //             (
-        //                 left_or_digest_value.ok_or(Error::SynthesisError)?,
-        //                 sibling.ok_or(Error::SynthesisError)?,
-        //             )
-        //         } else {
-        //             (
-        //                 sibling.ok_or(Error::SynthesisError)?,
-        //                 left_or_digest_value.ok_or(Error::SynthesisError)?,
-        //             )
-        //         };
+                // let (l_value, r_value): (Fp, Fp) = if position_bit == Some(Fp::zero()) {
+                //     (
+                //         left_or_digest_value.ok_or(Error::SynthesisError)?,
+                //         sibling.ok_or(Error::SynthesisError)?,
+                //     )
+                // } else {
+                //     (
+                //         sibling.ok_or(Error::SynthesisError)?,
+                //         left_or_digest_value.ok_or(Error::SynthesisError)?,
+                //     )
+                // };
 
-        //         row_offset += 1;
+                // row_offset += 1;
 
-        //         let l_cell = region.assign_advice(
-        //             || format!("witness left (layer {})", layer),
-        //             config.advice[0],
-        //             row_offset,
-        //             || Ok(l_value),
-        //         )?;
+                // let l_cell = region.assign_advice(
+                //     || format!("witness left (layer {})", layer),
+                //     config.advice[0],
+                //     row_offset,
+                //     || Ok(l_value),
+                // )?;
 
-        //         let r_cell = region.assign_advice(
-        //             || format!("witness right (layer {})", layer),
-        //             config.advice[1],
-        //             row_offset,
-        //             || Ok(r_value),
-        //         )?;
+                // let r_cell = region.assign_advice(
+                //     || format!("witness right (layer {})", layer),
+                //     config.advice[1],
+                //     row_offset,
+                //     || Ok(r_value),
+                // )?;
 
-        //         // left_digest = Some(CellValue {
-        //         //     cell: l_cell,
-        //         //     value: Some(l_value),
-        //         // });
-        //         // right_digest = Some(CellValue {
-        //         //     cell: r_cell,
-        //         //     value: Some(r_value),
-        //         // });
+                // left_digest = Some(CellValue {
+                //     cell: l_cell,
+                //     value: Some(l_value),
+                // });
+                // right_digest = Some(CellValue {
+                //     cell: r_cell,
+                //     value: Some(r_value),
+                // });
 
-        //         Ok(())
-        //     },
-        // )?;
+                Ok(())
+            },
+        )?;
 
         // let poseidon_chip = Pow5Chip::construct(config.hash_config.clone());
 

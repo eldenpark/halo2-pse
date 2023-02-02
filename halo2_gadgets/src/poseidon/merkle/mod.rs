@@ -1,25 +1,46 @@
 mod config;
+mod merkle_path;
 
 use group::ff::{Field, PrimeField};
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
     dev::MockProver,
-    plonk::{Circuit, ConstraintSystem, Error},
+    plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Instance},
 };
 use halo2curves::pasta::{pallas, Fp};
 use rand::rngs::OsRng;
 use std::convert::TryInto;
 use std::iter;
 
+use self::config::{MerkleChip, MerkleConfig};
+
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use crate::poseidon::{
+    merkle::merkle_path::MerklePath,
     primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
     Hash,
 };
+use crate::utilities::Var;
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use std::marker::PhantomData;
 
-use crate::utilities::Var;
+#[derive(Clone, Debug)]
+pub struct MyConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
+    // advices: [Column<Advice>; WIDTH],
+    instance: Column<Instance>,
+    merkle_config: MerkleConfig<F, WIDTH, RATE>,
+    poseidon_config: Pow5Config<F, WIDTH, RATE>,
+}
+
+impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE> {
+    pub fn construct_merkle_chip(&self) -> MerkleChip<F, WIDTH, RATE> {
+        MerkleChip::construct(self.merkle_config.clone())
+    }
+
+    pub fn construct_poseidon_chip(&self) -> Pow5Chip<F, WIDTH, RATE> {
+        Pow5Chip::construct(self.poseidon_config.clone())
+    }
+}
 
 struct HashCircuit<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: usize>
 {
@@ -33,7 +54,8 @@ struct HashCircuit<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usi
 impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: usize> Circuit<Fp>
     for HashCircuit<S, WIDTH, RATE, L>
 {
-    type Config = Pow5Config<Fp, WIDTH, RATE>;
+    // type Config = Pow5Config<Fp, WIDTH, RATE>;
+    type Config = MyConfig<Fp, WIDTH, RATE>;
     type FloorPlanner = SimpleFloorPlanner;
 
     fn without_witnesses(&self) -> Self {
@@ -47,32 +69,52 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
         }
     }
 
-    fn configure(meta: &mut ConstraintSystem<Fp>) -> Pow5Config<Fp, WIDTH, RATE> {
+    fn configure(meta: &mut ConstraintSystem<Fp>) -> MyConfig<Fp, WIDTH, RATE> {
         let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>();
         let partial_sbox = meta.advice_column();
 
         let rc_a = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
         let rc_b = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
 
+        let instance = meta.instance_column();
+        meta.enable_equality(instance);
+
         meta.enable_constant(rc_b[0]);
 
-        Pow5Chip::configure::<S>(
+        let poseidon_config = Pow5Chip::configure::<S>(
             meta,
-            state.try_into().unwrap(),
+            state.clone().try_into().unwrap(),
             partial_sbox,
             rc_a.try_into().unwrap(),
             rc_b.try_into().unwrap(),
-        )
+        );
+
+        let merkle_config = MerkleChip::configure(
+            meta,
+            state.clone().try_into().unwrap(),
+            poseidon_config.clone(),
+        );
+
+        let mut advices = state.clone();
+        advices.push(partial_sbox);
+
+        let my_config = MyConfig {
+            instance,
+            poseidon_config,
+            merkle_config,
+        };
+
+        my_config
     }
 
     fn synthesize(
         &self,
-        config: Pow5Config<Fp, WIDTH, RATE>,
+        config: MyConfig<Fp, WIDTH, RATE>,
         mut layouter: impl Layouter<Fp>,
     ) -> Result<(), Error> {
         println!("synthesize()");
 
-        let chip = Pow5Chip::construct(config.clone());
+        let chip = Pow5Chip::construct(config.poseidon_config.clone());
 
         // let message = layouter.assign_region(
         //     || "load message",
@@ -102,11 +144,19 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
 
         // let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
 
-        let chip = Pow5Chip::construct(config.clone());
+        let chip = Pow5Chip::construct(config.poseidon_config.clone());
         let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
             chip,
             layouter.namespace(|| "init"),
         )?;
+
+        let merkle_chip = config.construct_merkle_chip();
+
+        // let merkle_inputs = MerklePath {
+        //     chip: merkle_chip,
+        //     leaf_pos: self.position_bits,
+        //     path: self.path,
+        // };
 
         // let a = layouter.assign_region(
         //     || "constrain output",
@@ -154,7 +204,7 @@ fn poseidon_hash2() {
         _spec: PhantomData,
     };
 
-    let prover = MockProver::run(k, &circuit, vec![]).unwrap();
+    let prover = MockProver::run(k, &circuit, vec![vec![]]).unwrap();
 
     // assert_eq!(prover.verify(), Ok(()))
 }
