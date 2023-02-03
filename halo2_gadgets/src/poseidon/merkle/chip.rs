@@ -1,6 +1,6 @@
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
-use crate::utilities::cond_swap::CondSwapConfig;
-use crate::utilities::Var;
+use crate::utilities::cond_swap::{CondSwapConfig, CondSwapInstructions};
+use crate::utilities::{UtilitiesInstructions, Var};
 use crate::{
     poseidon::{
         primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
@@ -219,5 +219,29 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleInstructions<F>
         // let digest: CellValue<Fp> = word.inner().into();
 
         // Ok(digest)
+    }
+}
+
+impl<F: FieldExt, const WIDTH: usize, const RATE: usize> UtilitiesInstructions<F>
+    for MerkleChip<F, WIDTH, RATE>
+{
+    type Var = AssignedCell<F, F>;
+}
+
+impl<F: FieldExt, const WIDTH: usize, const RATE: usize> CondSwapInstructions<F>
+    for MerkleChip<F, WIDTH, RATE>
+// where
+//     F: FixedPoints<pallas::Affine>,
+{
+    #[allow(clippy::type_complexity)]
+    fn swap(
+        &self,
+        layouter: impl Layouter<F>,
+        pair: (AssignedCell<F, F>, Value<F>),
+        swap: Value<bool>,
+    ) -> Result<(AssignedCell<F, F>, AssignedCell<F, F>), Error> {
+        let config = self.config().cond_swap_config.clone();
+        let chip = CondSwapChip::<F>::construct(config);
+        chip.swap(layouter, pair, swap)
     }
 }

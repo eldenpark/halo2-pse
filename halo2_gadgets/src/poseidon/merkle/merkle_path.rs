@@ -60,6 +60,15 @@ where
 
         for (layer, (sibling, pos)) in path.iter().zip(pos.iter()).enumerate() {
             println!("sibling: {:?}\npos: {:?}", sibling, pos);
+
+            // let pair = {
+            //     let pair = (node, *sibling);
+
+            //     Swap node and sibling if needed
+            //     self.chip
+            //         .swap(layouter.namespace(|| "node position"), pair, *pos)?
+            // };
+
             // node = self.chip.hash_layer(
             //     layouter.namespace(|| format!("hash l {}", layer)),
             //     node,
