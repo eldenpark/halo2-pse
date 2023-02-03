@@ -1,4 +1,4 @@
-mod config;
+mod chip;
 mod merkle_path;
 
 use group::ff::{Field, PrimeField};
@@ -12,7 +12,7 @@ use rand::rngs::OsRng;
 use std::convert::TryInto;
 use std::iter;
 
-use self::config::{MerkleChip, MerkleConfig};
+use self::chip::{MerkleChip, MerkleConfig};
 
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use crate::poseidon::{
@@ -46,7 +46,7 @@ struct HashCircuit<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usi
 {
     message: Value<Fp>,
     root: Value<Fp>,
-    position_bits: Value<[Fp; 4]>,
+    leaf_pos: Value<u32>,
     path: Value<[Fp; 4]>,
     _spec: PhantomData<S>,
 }
@@ -63,7 +63,7 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
             message: Value::unknown(),
             // output: Value::unknown(),
             root: Value::unknown(),
-            position_bits: Value::unknown(),
+            leaf_pos: Value::unknown(),
             path: Value::unknown(),
             _spec: PhantomData,
         }
@@ -179,7 +179,7 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
 
         let merkle_inputs = MerklePath {
             chip: merkle_chip,
-            leaf_pos: self.position_bits,
+            leaf_pos: self.leaf_pos,
             path: self.path,
         };
 
@@ -222,7 +222,8 @@ fn poseidon_hash2() {
 
     let leaf = Fp::from(2);
     let path = [Fp::from(1), Fp::from(1), Fp::from(1), Fp::from(1)];
-    let position_bits = [Fp::from(0), Fp::from(0), Fp::from(0), Fp::from(0)];
+    // let position_bits = [Fp::from(0), Fp::from(0), Fp::from(0), Fp::from(0)];
+    let pos = 0;
 
     let mut root = leaf;
     for el in path {
@@ -239,7 +240,7 @@ fn poseidon_hash2() {
         message: Value::known(leaf),
         // output: Value::known(output),
         root: Value::known(root),
-        position_bits: Value::known(position_bits),
+        leaf_pos: Value::known(pos),
         path: Value::known(path),
         _spec: PhantomData,
     };

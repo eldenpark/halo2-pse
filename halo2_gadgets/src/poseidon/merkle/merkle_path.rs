@@ -1,12 +1,15 @@
 use super::{
-    config::{MerkleChip, MerkleInstructions},
+    chip::{MerkleChip, MerkleInstructions},
     PoseidonInstructions, Pow5Chip, Pow5Config, StateWord,
 };
-use crate::poseidon::{
-    primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
-    Hash,
-};
 use crate::utilities::Var;
+use crate::{
+    poseidon::{
+        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
+        Hash,
+    },
+    utilities::i2lebsp,
+};
 use group::ff::{Field, PrimeField};
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{
@@ -30,9 +33,10 @@ where
     MerkleChip: MerkleInstructions<F> + Clone,
 {
     pub chip: MerkleChip,
-    pub leaf_pos: Value<[F; 4]>,
+    pub leaf_pos: Value<u32>,
     // // The Merkle path is ordered from leaves to root.
     pub path: Value<[F; 4]>,
+    // chips: [MerkleChip; PAR],
 }
 
 impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerklePath<MerkleChip<F, WIDTH, RATE>, F>
@@ -48,16 +52,21 @@ where
         let mut node = leaf;
 
         let path = self.path.transpose_array();
-        let leaf_pos = self.leaf_pos.transpose_array();
 
-        for (layer, (sibling, pos)) in path.iter().zip(leaf_pos.iter()).enumerate() {
-            node = self.chip.hash_layer(
-                layouter.namespace(|| format!("hash l {}", layer)),
-                node,
-                *sibling,
-                *pos,
-                layer,
-            )?;
+        let pos: [Value<bool>; 4] = {
+            let pos: Value<[bool; 4]> = self.leaf_pos.map(|pos| i2lebsp(pos as u64));
+            pos.transpose_array()
+        };
+
+        for (layer, (sibling, pos)) in path.iter().zip(pos.iter()).enumerate() {
+            println!("sibling: {:?}\npos: {:?}", sibling, pos);
+            // node = self.chip.hash_layer(
+            //     layouter.namespace(|| format!("hash l {}", layer)),
+            //     node,
+            //     *sibling,
+            //     *pos,
+            //     layer,
+            // )?;
         }
 
         Ok(node)
