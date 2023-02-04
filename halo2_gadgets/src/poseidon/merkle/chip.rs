@@ -230,16 +230,14 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> UtilitiesInstructions<F
 
 impl<F: FieldExt, const WIDTH: usize, const RATE: usize> CondSwapInstructions<F>
     for MerkleChip<F, WIDTH, RATE>
-// where
-//     F: FixedPoints<pallas::Affine>,
 {
     #[allow(clippy::type_complexity)]
     fn swap(
         &self,
         layouter: impl Layouter<F>,
-        pair: (AssignedCell<F, F>, Value<F>),
+        pair: (Self::Var, Value<F>),
         swap: Value<bool>,
-    ) -> Result<(AssignedCell<F, F>, AssignedCell<F, F>), Error> {
+    ) -> Result<(Self::Var, Self::Var), Error> {
         let config = self.config().cond_swap_config.clone();
         let chip = CondSwapChip::<F>::construct(config);
         chip.swap(layouter, pair, swap)

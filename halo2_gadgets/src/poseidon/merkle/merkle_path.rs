@@ -2,7 +2,7 @@ use super::{
     chip::{MerkleChip, MerkleInstructions},
     PoseidonInstructions, Pow5Chip, Pow5Config, StateWord,
 };
-use crate::utilities::Var;
+use crate::utilities::{cond_swap::CondSwapInstructions, UtilitiesInstructions, Var};
 use crate::{
     poseidon::{
         primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
@@ -46,9 +46,8 @@ where
     pub fn calculate_root(
         &self,
         mut layouter: impl Layouter<F>,
-        leaf: <MerkleChip<F, WIDTH, RATE> as MerkleInstructions<F>>::Cell,
-        // leaf: Value<F>,
-    ) -> Result<<MerkleChip<F, WIDTH, RATE> as MerkleInstructions<F>>::Cell, Error> {
+        leaf: <MerkleChip<F, WIDTH, RATE> as UtilitiesInstructions<F>>::Var,
+    ) -> Result<<MerkleChip<F, WIDTH, RATE> as UtilitiesInstructions<F>>::Var, Error> {
         let mut node = leaf;
 
         let path = self.path.transpose_array();
@@ -64,7 +63,7 @@ where
             // let pair = {
             //     let pair = (node, *sibling);
 
-            //     Swap node and sibling if needed
+            //     // Swap node and sibling if needed
             //     self.chip
             //         .swap(layouter.namespace(|| "node position"), pair, *pos)?
             // };
