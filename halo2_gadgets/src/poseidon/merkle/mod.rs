@@ -15,12 +15,15 @@ use std::iter;
 use self::chip::{MerkleChip, MerkleConfig};
 
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
-use crate::poseidon::{
-    merkle::merkle_path::MerklePath,
-    primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
-    Hash,
-};
 use crate::utilities::Var;
+use crate::{
+    poseidon::{
+        merkle::merkle_path::MerklePath,
+        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
+        Hash,
+    },
+    utilities::UtilitiesInstructions,
+};
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use std::marker::PhantomData;
 
@@ -144,6 +147,7 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
         //         Ok(message?.try_into().unwrap())
         //     },
         // )?;
+
         // let leaf = chip_1.load_private(
         //     layouter.namespace(|| ""),
         //     config.0.cond_swap_config.a(),
@@ -153,14 +157,13 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
         //
         // config.merkle_config.cond_swap_config.a();
 
-        // let leaf = layouter.assign_region(
-        //     || "load private",
-        //     |mut region| {
-        //         region
-        //             .assign_advice(|| "load private", config.column, 0, || value)
-        //             .map(Self::Var::from)
-        //     },
-        // )
+        let merkle_chip = config.construct_merkle_chip();
+
+        let leaf = merkle_chip.load_private(
+            layouter.namespace(|| "load_private"),
+            config.advices[0],
+            self.message,
+        )?;
 
         let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
             chip,
@@ -182,18 +185,6 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
             leaf_pos: self.leaf_pos,
             path: self.path,
         };
-
-        let leaf = layouter.assign_region(
-            || "leaf region",
-            |mut region| {
-                region.assign_advice(
-                    || "leaf",
-                    config.poseidon_config.state[0],
-                    0,
-                    || self.message,
-                )
-            },
-        )?;
 
         let calculated_root =
             merkle_inputs.calculate_root(layouter.namespace(|| "merkle root calculation"), leaf)?;

@@ -25,23 +25,24 @@ use std::convert::TryInto;
 use std::iter;
 use std::marker::PhantomData;
 
-pub trait MerkleInstructions<F: FieldExt>: Chip<F> {
-    type Cell;
-
+pub trait MerkleInstructions<F: FieldExt>:
+    CondSwapInstructions<F> + UtilitiesInstructions<F> + Chip<F>
+{
     fn hash_layer(
         &self,
         layouter: impl Layouter<F>,
-        leaf_or_digest: Self::Cell,
-        sibling: Value<F>,
-        position_bit: Value<F>,
+        leaf_or_digest: Self::Var,
+        // sibling: Value<F>,
+        sibling: Self::Var,
+        // position_bit: Value<F>,
         layer: usize,
-    ) -> Result<Self::Cell, Error>;
+    ) -> Result<Self::Var, Error>;
 }
 
 #[derive(Clone, Debug)]
 pub struct MerkleConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
     pub advices: [Column<Advice>; 5],
-    pub hash_config: Pow5Config<F, WIDTH, RATE>,
+    pub poseidon_config: Pow5Config<F, WIDTH, RATE>,
     pub cond_swap_config: CondSwapConfig,
 }
 
@@ -67,7 +68,7 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RA
     pub fn configure(
         meta: &mut ConstraintSystem<F>,
         advices: [Column<Advice>; 5],
-        hash_config: Pow5Config<F, WIDTH, RATE>,
+        poseidon_config: Pow5Config<F, WIDTH, RATE>,
     ) -> MerkleConfig<F, WIDTH, RATE> {
         let cond_swap_config = CondSwapChip::configure(meta, advices);
         // a,
@@ -78,7 +79,7 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RA
 
         MerkleConfig {
             advices,
-            hash_config,
+            poseidon_config,
             cond_swap_config,
         }
     }
@@ -92,16 +93,15 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RA
 impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleInstructions<F>
     for MerkleChip<F, WIDTH, RATE>
 {
-    type Cell = AssignedCell<F, F>;
-
     fn hash_layer(
         &self,
         mut layouter: impl Layouter<F>,
-        leaf_or_digest: Self::Cell,
-        sibling: Value<F>,
-        position_bit: Value<F>,
+        leaf_or_digest: Self::Var,
+        // sibling: Value<F>,
+        sibling: Self::Var,
+        // position_bit: Value<F>,
         layer: usize,
-    ) -> Result<Self::Cell, Error> {
+    ) -> Result<Self::Var, Error> {
         let config = self.config.clone();
 
         // let mut left_digest = None;
@@ -115,6 +115,17 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleInstructions<F>
             || format!("hash on (layer {})", layer),
             |mut region| {
                 let mut row_offset = 0;
+
+                let chip = Pow5Chip::construct(self.config.poseidon_config.clone());
+
+                let hasher = Hash::<_, _, _, ConstantLength<L>, WIDTH, RATE>::init(
+                    chip,
+                    layouter.namespace(|| "init"),
+                )?;
+
+                // self.config
+
+                // self.config;
 
                 // let left_or_digest_value = leaf_or_digest.value();
 
