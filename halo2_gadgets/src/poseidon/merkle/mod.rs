@@ -1,19 +1,7 @@
 mod chip;
 mod merkle_path;
 
-use group::ff::{Field, PrimeField};
-use halo2_proofs::{
-    circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
-    dev::MockProver,
-    plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Instance},
-};
-use halo2curves::pasta::{pallas, Fp};
-use rand::rngs::OsRng;
-use std::convert::TryInto;
-use std::iter;
-
 use self::chip::{MerkleChip, MerkleConfig};
-
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use crate::utilities::Var;
 use crate::{
@@ -24,7 +12,16 @@ use crate::{
     },
     utilities::UtilitiesInstructions,
 };
+use group::ff::{Field, PrimeField};
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
+use halo2_proofs::{
+    circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
+    dev::MockProver,
+    plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Instance},
+};
+use halo2curves::pasta::{pallas, Fp};
+use rand::rngs::OsRng;
+use std::convert::TryInto;
 use std::marker::PhantomData;
 
 #[derive(Clone, Debug)]

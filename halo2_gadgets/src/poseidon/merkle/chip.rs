@@ -32,9 +32,7 @@ pub trait MerkleInstructions<F: FieldExt>:
         &self,
         layouter: impl Layouter<F>,
         leaf_or_digest: Self::Var,
-        // sibling: Value<F>,
         sibling: Self::Var,
-        // position_bit: Value<F>,
         layer: usize,
     ) -> Result<Self::Var, Error>;
 }
