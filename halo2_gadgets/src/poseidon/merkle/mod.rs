@@ -45,20 +45,29 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE
     }
 }
 
-struct HashCircuit<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: usize>
-{
-    message: Value<Fp>,
-    root: Value<Fp>,
+struct HashCircuit<
+    S: Spec<F, WIDTH, RATE>,
+    F: FieldExt,
+    const WIDTH: usize,
+    const RATE: usize,
+    const L: usize,
+> {
+    message: Value<F>,
+    root: Value<F>,
     leaf_pos: Value<u32>,
-    path: Value<[Fp; 4]>,
+    path: Value<[F; 4]>,
     _spec: PhantomData<S>,
 }
 
-impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: usize> Circuit<Fp>
-    for HashCircuit<S, WIDTH, RATE, L>
+impl<
+        S: Spec<F, WIDTH, RATE>,
+        F: FieldExt,
+        const WIDTH: usize,
+        const RATE: usize,
+        const L: usize,
+    > Circuit<F> for HashCircuit<S, F, WIDTH, RATE, L>
 {
-    // type Config = Pow5Config<Fp, WIDTH, RATE>;
-    type Config = MyConfig<Fp, WIDTH, RATE>;
+    type Config = MyConfig<F, WIDTH, RATE>;
     type FloorPlanner = SimpleFloorPlanner;
 
     fn without_witnesses(&self) -> Self {
@@ -72,7 +81,7 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
         }
     }
 
-    fn configure(meta: &mut ConstraintSystem<Fp>) -> MyConfig<Fp, WIDTH, RATE> {
+    fn configure(meta: &mut ConstraintSystem<F>) -> MyConfig<F, WIDTH, RATE> {
         // total 5 advice columns
         let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>(); // 3
         let partial_sbox = meta.advice_column(); // 1
@@ -120,42 +129,34 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
 
     fn synthesize(
         &self,
-        config: MyConfig<Fp, WIDTH, RATE>,
-        mut layouter: impl Layouter<Fp>,
+        config: MyConfig<F, WIDTH, RATE>,
+        mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
         println!("synthesize()");
 
         let chip = Pow5Chip::construct(config.poseidon_config.clone());
 
-        // let message = layouter.assign_region(
-        //     || "load message",
-        //     |mut region| {
-        //         let message_word = |i: usize| {
-        //             let value = self.message.map(|message_vals| message_vals[i]);
+        let msgs = [self.message, Value::known(F::zero())];
+        let message = layouter.assign_region(
+            || "load message",
+            |mut region| {
+                let message_word = |i: usize| {
+                    let value = msgs[i];
 
-        //             println!("msg, i: {}, value: {:?}", i, value);
+                    println!("msg, i: {}, value: {:?}", i, value);
 
-        //             region.assign_advice(
-        //                 || format!("load message_{}", i),
-        //                 config.poseidon_config.state[i],
-        //                 0,
-        //                 || value,
-        //             )
-        //         };
+                    region.assign_advice(
+                        || format!("load message_{}", i),
+                        config.poseidon_config.state[i],
+                        0,
+                        || value,
+                    )
+                };
 
-        //         let message: Result<Vec<_>, Error> = (0..L).map(message_word).collect();
-        //         Ok(message?.try_into().unwrap())
-        //     },
-        // )?;
-
-        // let leaf = chip_1.load_private(
-        //     layouter.namespace(|| ""),
-        //     config.0.cond_swap_config.a(),
-        //     self.leaf,
-        // )?;
-        //
-        //
-        // config.merkle_config.cond_swap_config.a();
+                let message: Result<Vec<_>, Error> = (0..L).map(message_word).collect();
+                Ok(message?.try_into().unwrap())
+            },
+        )?;
 
         let merkle_chip = config.construct_merkle_chip();
 
@@ -170,9 +171,10 @@ impl<S: Spec<Fp, WIDTH, RATE>, const WIDTH: usize, const RATE: usize, const L: u
             layouter.namespace(|| "init"),
         )?;
 
-        // let output = hasher.hash(layouter.namespace(|| "hash"), self.message)?;
+        let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
 
         let chip = Pow5Chip::construct(config.poseidon_config.clone());
+
         let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
             chip,
             layouter.namespace(|| "init"),
@@ -227,7 +229,7 @@ fn poseidon_hash2() {
 
     let k = 16;
 
-    let circuit = HashCircuit::<OrchardNullifier, 3, 2, 2> {
+    let circuit = HashCircuit::<OrchardNullifier, Fp, 3, 2, 2> {
         message: Value::known(leaf),
         // output: Value::known(output),
         root: Value::known(root),

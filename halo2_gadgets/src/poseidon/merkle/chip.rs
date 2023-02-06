@@ -118,14 +118,10 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleInstructions<F>
 
                 let chip = Pow5Chip::construct(self.config.poseidon_config.clone());
 
-                let hasher = Hash::<_, _, _, ConstantLength<L>, WIDTH, RATE>::init(
-                    chip,
-                    layouter.namespace(|| "init"),
-                )?;
-
-                // self.config
-
-                // self.config;
+                // let hasher = Hash::<F, _, OrchardNullifier, ConstantLength<2>, WIDTH, RATE>::init(
+                //     chip,
+                //     layouter.namespace(|| "init"),
+                // )?;
 
                 // let left_or_digest_value = leaf_or_digest.value();
 
