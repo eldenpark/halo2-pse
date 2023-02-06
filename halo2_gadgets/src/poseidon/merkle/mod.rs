@@ -179,10 +179,11 @@ impl<
 
         let merkle_chip = config.construct_merkle_chip();
 
-        let merkle_inputs = MerklePath {
+        let merkle_inputs = MerklePath::<S, _, _, WIDTH, RATE> {
             chip: merkle_chip,
             leaf_pos: self.leaf_pos,
             path: self.path,
+            phantom: PhantomData,
         };
 
         let calculated_root =

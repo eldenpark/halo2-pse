@@ -96,32 +96,40 @@ pub const MERKLE_CRH_PERSONALIZATION: &str = "z.cash:Orchard-MerkleCRH";
 #[derive(Clone, Debug)]
 pub struct MerklePath<
     // C: CurveAffine,
+    S: Spec<F, WIDTH, RATE>,
     F: FieldExt,
     MerkleChip,
+    const WIDTH: usize,
+    const RATE: usize,
     // const PATH_LENGTH: usize,
     // const K: usize,
     // const MAX_WORDS: usize,
     // const PAR: usize,
 > where
-    MerkleChip: MerkleInstructions<F> + Clone,
+    MerkleChip: MerkleInstructions<S, F, WIDTH, RATE> + Clone,
+    // S: Spec<F, WIDTH, RATE>,
 {
     pub chip: MerkleChip,
     // domain: MerkleChip::HashDomains,
     pub leaf_pos: Value<u32>,
     // The Merkle path is ordered from leaves to root.
     pub path: Value<[F; 4]>,
+    pub phantom: PhantomData<S>,
 }
 
 impl<
+        S: Spec<F, WIDTH, RATE>,
         F: FieldExt,
         MerkleChip,
+        const WIDTH: usize,
+        const RATE: usize,
         // const PATH_LENGTH: usize,
         // const K: usize,
         // const MAX_WORDS: usize,
         // const PAR: usize,
-    > MerklePath<F, MerkleChip>
+    > MerklePath<S, F, MerkleChip, WIDTH, RATE>
 where
-    MerkleChip: MerkleInstructions<F> + Clone,
+    MerkleChip: MerkleInstructions<S, F, WIDTH, RATE> + Clone,
 {
     /// Constructs a [`MerklePath`].
     ///
@@ -143,6 +151,7 @@ where
             chip,
             leaf_pos,
             path,
+            phantom: PhantomData,
         }
     }
 }
@@ -150,15 +159,18 @@ where
 #[allow(non_snake_case)]
 impl<
         // C: CurveAffine,
+        S: Spec<F, WIDTH, RATE>,
         F: FieldExt,
         MerkleChip,
+        const WIDTH: usize,
+        const RATE: usize,
         // const PATH_LENGTH: usize,
         // const K: usize,
         // const MAX_WORDS: usize,
         // const PAR: usize,
-    > MerklePath<F, MerkleChip>
+    > MerklePath<S, F, MerkleChip, WIDTH, RATE>
 where
-    MerkleChip: MerkleInstructions<F> + Clone,
+    MerkleChip: MerkleInstructions<S, F, WIDTH, RATE> + Clone,
 {
     /// Calculates the root of the tree containing the given leaf at this Merkle path.
     ///

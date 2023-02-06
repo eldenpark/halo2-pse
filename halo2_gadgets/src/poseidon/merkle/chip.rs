@@ -25,8 +25,12 @@ use std::convert::TryInto;
 use std::iter;
 use std::marker::PhantomData;
 
-pub trait MerkleInstructions<F: FieldExt>:
-    CondSwapInstructions<F> + UtilitiesInstructions<F> + Chip<F>
+pub trait MerkleInstructions<
+    S: Spec<F, WIDTH, RATE>,
+    F: FieldExt,
+    const WIDTH: usize,
+    const RATE: usize,
+>: CondSwapInstructions<F> + UtilitiesInstructions<F> + Chip<F>
 {
     fn hash_layer(
         &self,
@@ -88,8 +92,8 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RA
 }
 // ANCHOR_END: chip-config
 
-impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleInstructions<F>
-    for MerkleChip<F, WIDTH, RATE>
+impl<S: Spec<F, WIDTH, RATE>, F: FieldExt, const WIDTH: usize, const RATE: usize>
+    MerkleInstructions<S, F, WIDTH, RATE> for MerkleChip<F, WIDTH, RATE>
 {
     fn hash_layer(
         &self,
@@ -116,11 +120,12 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleInstructions<F>
 
                 let chip = Pow5Chip::construct(self.config.poseidon_config.clone());
 
-                // let hasher = Hash::<F, _, OrchardNullifier, ConstantLength<2>, WIDTH, RATE>::init(
-                //     chip,
-                //     layouter.namespace(|| "init"),
-                // )?;
+                let hasher = Hash::<_, _, S, ConstantLength<2>, WIDTH, RATE>::init(
+                    chip,
+                    layouter.namespace(|| "init"),
+                )?;
 
+                // hasher.hash();
                 // let left_or_digest_value = leaf_or_digest.value();
 
                 // let left_or_digest_cell = region.assign_advice(
