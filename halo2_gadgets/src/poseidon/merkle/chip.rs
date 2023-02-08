@@ -9,6 +9,7 @@ use crate::{
     utilities::cond_swap::CondSwapChip,
 };
 use group::ff::{Field, PrimeField};
+use halo2_proofs::circuit::Region;
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{
     circuit::Chip,
@@ -106,99 +107,44 @@ impl<S: Spec<F, WIDTH, RATE>, F: FieldExt, const WIDTH: usize, const RATE: usize
     ) -> Result<Self::Var, Error> {
         let config = self.config.clone();
 
-        // let mut left_digest = None;
-        // let mut right_digest = None;
+        // return Ok(leaf_or_digest);
+        let chip = Pow5Chip::construct(self.config.poseidon_config.clone());
 
-        // let ret = layouter.assign_region(|| "aa", |mut region| Ok(()));
+        let hasher = Hash::<_, _, S, ConstantLength<2>, WIDTH, RATE>::init(
+            chip,
+            layouter.namespace(|| "init"),
+        )?;
 
-        return Ok(leaf_or_digest);
-
-        layouter.assign_region(
+        let message = layouter.assign_region(
             || format!("hash on (layer {})", layer),
             |mut region| {
-                let mut row_offset = 0;
-
-                let chip = Pow5Chip::construct(self.config.poseidon_config.clone());
-
-                let hasher = Hash::<_, _, S, ConstantLength<2>, WIDTH, RATE>::init(
-                    chip,
-                    layouter.namespace(|| "init"),
+                let left = leaf_or_digest.copy_advice(
+                    || format!("hash layer left"),
+                    &mut region,
+                    config.advices[0],
+                    0,
                 )?;
 
-                // hasher.hash();
-                // let left_or_digest_value = leaf_or_digest.value();
+                let right = sibling.copy_advice(
+                    || format!("hash layer left"),
+                    &mut region,
+                    config.advices[2],
+                    0,
+                )?;
 
-                // let left_or_digest_cell = region.assign_advice(
-                //     || format!("witness leaf or digest (layer {})", layer),
-                //     config.advice[0],
-                //     row_offset,
-                //     || left_or_digest_value.ok_or(Error::SynthesisError),
-                // )?;
-
-                // if layer > 0 {
-                //     region.constrain_equal(leaf_or_digest.cell(), left_or_digest_cell)?;
-                //     // Should i do permutation here?
-                // }
-
-                // let _sibling_cell = region.assign_advice(
-                //     || format!("witness sibling (layer {})", layer),
-                //     config.advice[1],
-                //     row_offset,
-                //     || sibling,
-                // )?;
-
-                // let _position_bit_cell = region.assign_advice(
-                //     || format!("witness positional_bit (layer {})", layer),
-                //     config.advice[2],
-                //     row_offset,
-                //     || position_bit,
-                // )?;
-
-                // config.s_bool.enable(&mut region, row_offset)?;
-                // config.s_swap.enable(&mut region, row_offset)?;
-
-                // if position_bit == F::zero() {}
-
-                // let (l_value, r_value): (Fp, Fp) = if position_bit == Some(Fp::zero()) {
-                //     (
-                //         left_or_digest_value.ok_or(Error::SynthesisError)?,
-                //         sibling.ok_or(Error::SynthesisError)?,
-                //     )
-                // } else {
-                //     (
-                //         sibling.ok_or(Error::SynthesisError)?,
-                //         left_or_digest_value.ok_or(Error::SynthesisError)?,
-                //     )
-                // };
-
-                // row_offset += 1;
-
-                // let l_cell = region.assign_advice(
-                //     || format!("witness left (layer {})", layer),
-                //     config.advice[0],
-                //     row_offset,
-                //     || Ok(l_value),
-                // )?;
-
-                // let r_cell = region.assign_advice(
-                //     || format!("witness right (layer {})", layer),
-                //     config.advice[1],
-                //     row_offset,
-                //     || Ok(r_value),
-                // )?;
-
-                // left_digest = Some(CellValue {
-                //     cell: l_cell,
-                //     value: Some(l_value),
-                // });
-                // right_digest = Some(CellValue {
-                //     cell: r_cell,
-                //     value: Some(r_value),
-                // });
-
-                Ok(())
+                Ok([left, right])
             },
         )?;
+
+        let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
+
+        println!("output: {:?}", output);
+
+        Ok(output)
+        //
+        // return Ok(leaf_or_digest);
+
+        // output
 
         // let poseidon_chip = Pow5Chip::construct(config.hash_config.clone());
 

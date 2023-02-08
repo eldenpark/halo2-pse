@@ -3,7 +3,7 @@ mod merkle_path;
 
 use self::chip::{MerkleChip, MerkleConfig};
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
-use crate::utilities::Var;
+use crate::utilities::{i2lebsp, Var};
 use crate::{
     poseidon::{
         merkle::merkle_path::MerklePath,
@@ -83,6 +83,7 @@ impl<
         let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>(); // 3
         let partial_sbox = meta.advice_column(); // 1
         let swap = meta.advice_column(); // 1
+                                         //
 
         let rc_a = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
         let rc_b = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
@@ -107,6 +108,10 @@ impl<
         let mut advices = state.clone();
         advices.push(partial_sbox.clone());
         advices.push(swap.clone());
+
+        for advice in advices.iter() {
+            meta.enable_equality(*advice);
+        }
 
         let merkle_config = MerkleChip::configure(
             meta,
@@ -133,27 +138,31 @@ impl<
 
         let chip = Pow5Chip::construct(config.poseidon_config.clone());
 
-        let msgs = [self.message, Value::known(F::zero())];
-        let message = layouter.assign_region(
-            || "load message",
-            |mut region| {
-                let message_word = |i: usize| {
-                    let value = msgs[i];
+        let message: [AssignedCell<F, F>; L] = {
+            let msgs = [self.message, Value::known(F::zero())];
+            layouter.assign_region(
+                || "load message",
+                |mut region| {
+                    let message_word = |i: usize| {
+                        let value = msgs[i];
 
-                    println!("msg, i: {}, value: {:?}", i, value);
+                        println!("msg, idx: {}, value: {:?}", i, value);
 
-                    region.assign_advice(
-                        || format!("load message_{}", i),
-                        config.poseidon_config.state[i],
-                        0,
-                        || value,
-                    )
-                };
+                        region.assign_advice(
+                            || format!("load message_{}", i),
+                            config.poseidon_config.state[i],
+                            0,
+                            || value,
+                        )
+                    };
 
-                let message: Result<Vec<_>, Error> = (0..L).map(message_word).collect();
-                Ok(message?.try_into().unwrap())
-            },
-        )?;
+                    let message: Result<Vec<_>, Error> = (0..L).map(message_word).collect();
+                    Ok(message?.try_into().unwrap())
+                },
+            )?
+        };
+
+        println!("in-circuit: message: {:?}", message);
 
         let merkle_chip = config.construct_merkle_chip();
 
@@ -163,19 +172,21 @@ impl<
             self.message,
         )?;
 
-        let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
-            chip,
-            layouter.namespace(|| "init"),
-        )?;
+        println!("in-circuit: leaf: {:?}", leaf);
 
-        let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
+        // let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
+        //     chip,
+        //     layouter.namespace(|| "init"),
+        // )?;
 
-        let chip = Pow5Chip::construct(config.poseidon_config.clone());
+        // let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
 
-        let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
-            chip,
-            layouter.namespace(|| "init"),
-        )?;
+        // let chip = Pow5Chip::construct(config.poseidon_config.clone());
+
+        // let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
+        //     chip,
+        //     layouter.namespace(|| "init"),
+        // )?;
 
         let merkle_chip = config.construct_merkle_chip();
 
@@ -188,6 +199,8 @@ impl<
 
         let calculated_root =
             merkle_inputs.calculate_root(layouter.namespace(|| "merkle root calculation"), leaf)?;
+
+        println!("in_circuit: root: {:?}", calculated_root);
 
         // let a = layouter.assign_region(
         //     || "constrain output",
@@ -207,19 +220,28 @@ impl<
 
 #[test]
 fn poseidon_hash2() {
-    println!("1111111");
+    println!("poseidon_hash2()");
 
     let rng = OsRng;
 
     let leaf = Fp::from(2);
     let path = [Fp::from(1), Fp::from(1), Fp::from(1), Fp::from(1)];
-    // let position_bits = [Fp::from(0), Fp::from(0), Fp::from(0), Fp::from(0)];
     let pos = 0;
+    let pos_bits: [bool; 4] = i2lebsp(pos as u64);
+
+    println!("out-circuit: pos_bits: {:?}", pos_bits);
+    println!("out-circuit: leaf: {:?}", leaf);
 
     let mut root = leaf;
-    for el in path {
+    for (idx, el) in path.iter().enumerate() {
         // root = Hash::init(P128Pow5T3, ConstantLength::<2>).hash([root, el]);
-        let msg = [root, el];
+        let msg = if pos_bits[idx] {
+            [root, *el]
+        } else {
+            [*el, root]
+        };
+
+        println!("idx: {}, msg: {:?}", idx, msg);
         root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 

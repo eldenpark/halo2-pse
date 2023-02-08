@@ -201,7 +201,7 @@ where
         // let Q = self.domain.Q();
 
         let mut node = leaf;
-        for (l, (sibling, pos)) in path.iter().zip(pos.iter()).enumerate() {
+        for (i, (sibling, pos)) in path.iter().zip(pos.iter()).enumerate() {
             // `l` = MERKLE_DEPTH - layer - 1, which is the index obtained from
             // enumerating this Merkle path (going from leaf to root).
             // For example, when `layer = 31` (the first sibling on the Merkle path),
@@ -219,18 +219,18 @@ where
                     .swap(layouter.namespace(|| "node position"), pair, *pos)?
             };
 
-            println!("l: {}, pos: {:?}, pair: {:?}\n", l, pos, pair);
+            println!("idx: {}, pos: {:?}, \npair: {:?}\n", i, pos, pair);
 
             // Compute the node in layer l from its children:
             //     M^l_i = MerkleCRH(l, M^{l+1}_{2i}, M^{l+1}_{2i+1})
             node = self.chip.hash_layer(
-                layouter.namespace(|| format!("MerkleCRH({}, left, right)", l)),
+                layouter.namespace(|| format!("MerkleCRH({}, left, right)", i)),
                 // node,
                 // Q,
                 // l,
                 pair.0,
                 pair.1,
-                l,
+                i,
             )?;
         }
 
