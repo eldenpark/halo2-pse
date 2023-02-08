@@ -100,14 +100,11 @@ impl<S: Spec<F, WIDTH, RATE>, F: FieldExt, const WIDTH: usize, const RATE: usize
         &self,
         mut layouter: impl Layouter<F>,
         leaf_or_digest: Self::Var,
-        // sibling: Value<F>,
         sibling: Self::Var,
-        // position_bit: Value<F>,
         layer: usize,
     ) -> Result<Self::Var, Error> {
         let config = self.config.clone();
 
-        // return Ok(leaf_or_digest);
         let chip = Pow5Chip::construct(self.config.poseidon_config.clone());
 
         let hasher = Hash::<_, _, S, ConstantLength<2>, WIDTH, RATE>::init(
@@ -141,40 +138,6 @@ impl<S: Spec<F, WIDTH, RATE>, F: FieldExt, const WIDTH: usize, const RATE: usize
         println!("output: {:?}", output);
 
         Ok(output)
-        //
-        // return Ok(leaf_or_digest);
-
-        // output
-
-        // let poseidon_chip = Pow5Chip::construct(config.hash_config.clone());
-
-        // let mut poseidon_hasher: PoseidonHash<
-        //     Fp,
-        //     PoseidonChip<Fp>,
-        //     P128Pow5T3,
-        //     ConstantLength<2_usize>,
-        //     3_usize,
-        //     2_usize,
-        // > = PoseidonHash::init(
-        //     poseidon_chip,
-        //     layouter.namespace(|| "init hasher"),
-        //     ConstantLength::<2>,
-        // )?;
-
-        // let message = [left_digest.unwrap(), right_digest.unwrap()];
-        // let loaded_message = poseidon_hasher.witness_message_pieces(
-        //     config.hash_config.clone(),
-        //     layouter.namespace(|| format!("witnessing hash of a layer: {}", layer)),
-        //     message,
-        // )?;
-
-        // let word = poseidon_hasher.hash(
-        //     layouter.namespace(|| format!("hashing layer: {}", layer)),
-        //     loaded_message,
-        // )?;
-        // let digest: CellValue<Fp> = word.inner().into();
-
-        // Ok(digest)
     }
 }
 

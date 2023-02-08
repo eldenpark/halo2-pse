@@ -70,7 +70,6 @@ impl<
     fn without_witnesses(&self) -> Self {
         Self {
             message: Value::unknown(),
-            // output: Value::unknown(),
             root: Value::unknown(),
             leaf_pos: Value::unknown(),
             path: Value::unknown(),
@@ -101,10 +100,6 @@ impl<
             rc_b.try_into().unwrap(),
         );
 
-        // let mut merkle_advices = state.clone(); // length 3
-        // merkle_advices.push(meta.advice_column());
-        // merkle_advices.push(meta.advice_column());
-        //
         let mut advices = state.clone();
         advices.push(partial_sbox.clone());
         advices.push(swap.clone());
@@ -136,34 +131,6 @@ impl<
     ) -> Result<(), Error> {
         println!("synthesize()");
 
-        let chip = Pow5Chip::construct(config.poseidon_config.clone());
-
-        // let message: [AssignedCell<F, F>; L] = {
-        //     let msgs = [self.message, Value::known(F::zero())];
-        //     layouter.assign_region(
-        //         || "load message",
-        //         |mut region| {
-        //             let message_word = |i: usize| {
-        //                 let value = msgs[i];
-
-        //                 println!("msg, idx: {}, value: {:?}", i, value);
-
-        //                 region.assign_advice(
-        //                     || format!("load message_{}", i),
-        //                     config.poseidon_config.state[i],
-        //                     0,
-        //                     || value,
-        //                 )
-        //             };
-
-        //             let message: Result<Vec<_>, Error> = (0..L).map(message_word).collect();
-        //             Ok(message?.try_into().unwrap())
-        //         },
-        //     )?
-        // };
-
-        // println!("in-circuit: message: {:?}", message);
-
         let merkle_chip = config.construct_merkle_chip();
 
         let leaf = merkle_chip.load_private(
@@ -173,20 +140,6 @@ impl<
         )?;
 
         println!("in-circuit: leaf: {:?}", leaf);
-
-        // let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
-        //     chip,
-        //     layouter.namespace(|| "init"),
-        // )?;
-
-        // let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
-
-        // let chip = Pow5Chip::construct(config.poseidon_config.clone());
-
-        // let hasher = Hash::<_, _, S, ConstantLength<L>, WIDTH, RATE>::init(
-        //     chip,
-        //     layouter.namespace(|| "init"),
-        // )?;
 
         let merkle_chip = config.construct_merkle_chip();
 
@@ -202,17 +155,7 @@ impl<
 
         println!("in_circuit: root: {:?}", calculated_root);
 
-        // let a = layouter.assign_region(
-        //     || "constrain output",
-        //     |mut region| {
-        //         let expected_var =
-        //             region.assign_advice(|| "load output", config.state[0], 0, || self.output)?;
-
-        //         println!("22");
-
-        //         region.constrain_equal(output2.cell(), expected_var.cell())
-        //     },
-        // );
+        layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
 
         Ok(())
     }
@@ -234,7 +177,6 @@ fn poseidon_hash2() {
 
     let mut root = leaf;
     for (idx, el) in path.iter().enumerate() {
-        // root = Hash::init(P128Pow5T3, ConstantLength::<2>).hash([root, el]);
         let msg = if pos_bits[idx] {
             [*el, root]
         } else {
@@ -251,14 +193,13 @@ fn poseidon_hash2() {
 
     let circuit = HashCircuit::<OrchardNullifier, Fp, 3, 2, 2> {
         message: Value::known(leaf),
-        // output: Value::known(output),
         root: Value::known(root),
         leaf_pos: Value::known(pos),
         path: Value::known(path),
         _spec: PhantomData,
     };
 
-    let prover = MockProver::run(k, &circuit, vec![vec![]]).unwrap();
+    let prover = MockProver::run(k, &circuit, vec![vec![root]]).unwrap();
 
-    // assert_eq!(prover.verify(), Ok(()))
+    assert_eq!(prover.verify(), Ok(()))
 }

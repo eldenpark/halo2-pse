@@ -228,9 +228,6 @@ where
             //     M^l_i = MerkleCRH(l, M^{l+1}_{2i}, M^{l+1}_{2i+1})
             node = self.chip.hash_layer(
                 layouter.namespace(|| format!("MerkleCRH({}, left, right)", i)),
-                // node,
-                // Q,
-                // l,
                 pair.0,
                 pair.1,
                 i,
