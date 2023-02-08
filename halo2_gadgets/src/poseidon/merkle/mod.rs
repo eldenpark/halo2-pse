@@ -138,31 +138,31 @@ impl<
 
         let chip = Pow5Chip::construct(config.poseidon_config.clone());
 
-        let message: [AssignedCell<F, F>; L] = {
-            let msgs = [self.message, Value::known(F::zero())];
-            layouter.assign_region(
-                || "load message",
-                |mut region| {
-                    let message_word = |i: usize| {
-                        let value = msgs[i];
+        // let message: [AssignedCell<F, F>; L] = {
+        //     let msgs = [self.message, Value::known(F::zero())];
+        //     layouter.assign_region(
+        //         || "load message",
+        //         |mut region| {
+        //             let message_word = |i: usize| {
+        //                 let value = msgs[i];
 
-                        println!("msg, idx: {}, value: {:?}", i, value);
+        //                 println!("msg, idx: {}, value: {:?}", i, value);
 
-                        region.assign_advice(
-                            || format!("load message_{}", i),
-                            config.poseidon_config.state[i],
-                            0,
-                            || value,
-                        )
-                    };
+        //                 region.assign_advice(
+        //                     || format!("load message_{}", i),
+        //                     config.poseidon_config.state[i],
+        //                     0,
+        //                     || value,
+        //                 )
+        //             };
 
-                    let message: Result<Vec<_>, Error> = (0..L).map(message_word).collect();
-                    Ok(message?.try_into().unwrap())
-                },
-            )?
-        };
+        //             let message: Result<Vec<_>, Error> = (0..L).map(message_word).collect();
+        //             Ok(message?.try_into().unwrap())
+        //         },
+        //     )?
+        // };
 
-        println!("in-circuit: message: {:?}", message);
+        // println!("in-circuit: message: {:?}", message);
 
         let merkle_chip = config.construct_merkle_chip();
 
@@ -236,9 +236,9 @@ fn poseidon_hash2() {
     for (idx, el) in path.iter().enumerate() {
         // root = Hash::init(P128Pow5T3, ConstantLength::<2>).hash([root, el]);
         let msg = if pos_bits[idx] {
-            [root, *el]
-        } else {
             [*el, root]
+        } else {
+            [root, *el]
         };
 
         println!("idx: {}, msg: {:?}", idx, msg);

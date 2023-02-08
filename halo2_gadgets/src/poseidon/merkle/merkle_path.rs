@@ -219,7 +219,10 @@ where
                     .swap(layouter.namespace(|| "node position"), pair, *pos)?
             };
 
-            println!("idx: {}, pos: {:?}, \npair: {:?}\n", i, pos, pair);
+            println!(
+                "idx: {}, pos: {:?}, \n--first: {:?}\n--second: {:?}\n",
+                i, pos, pair.0, pair.1,
+            );
 
             // Compute the node in layer l from its children:
             //     M^l_i = MerkleCRH(l, M^{l+1}_{2i}, M^{l+1}_{2i+1})
