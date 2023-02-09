@@ -2,6 +2,7 @@ mod chip;
 mod merkle_path;
 
 use self::chip::{MerkleChip, MerkleConfig};
+use super::ecdsa::{EcdsaConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use crate::utilities::{i2lebsp, Var};
 use crate::{
@@ -12,7 +13,11 @@ use crate::{
     },
     utilities::UtilitiesInstructions,
 };
+use ecc::GeneralEccChip;
 use group::ff::{Field, PrimeField};
+use group::prime::PrimeCurveAffine;
+use group::Curve;
+use group::Group;
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
@@ -20,6 +25,8 @@ use halo2_proofs::{
     plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Instance},
 };
 use halo2curves::pasta::{pallas, Fp};
+use halo2curves::CurveAffine;
+use maingate::{big_to_fe, fe_to_big, MainGate, RangeChip};
 use rand::rngs::OsRng;
 use std::convert::TryInto;
 use std::marker::PhantomData;
@@ -43,6 +50,7 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE
 }
 
 struct HashCircuit<
+    N: CurveAffine,
     S: Spec<F, WIDTH, RATE>,
     F: FieldExt,
     const WIDTH: usize,
@@ -54,15 +62,17 @@ struct HashCircuit<
     leaf_pos: Value<u32>,
     path: Value<[F; 4]>,
     _spec: PhantomData<S>,
+    _spec2: PhantomData<N>,
 }
 
 impl<
+        N: CurveAffine,
         S: Spec<F, WIDTH, RATE>,
         F: FieldExt,
         const WIDTH: usize,
         const RATE: usize,
         const L: usize,
-    > Circuit<F> for HashCircuit<S, F, WIDTH, RATE, L>
+    > Circuit<F> for HashCircuit<N, S, F, WIDTH, RATE, L>
 {
     type Config = MyConfig<F, WIDTH, RATE>;
     type FloorPlanner = SimpleFloorPlanner;
@@ -74,6 +84,7 @@ impl<
             leaf_pos: Value::unknown(),
             path: Value::unknown(),
             _spec: PhantomData,
+            _spec2: PhantomData,
         }
     }
 
@@ -113,6 +124,25 @@ impl<
             advices.clone().try_into().unwrap(),
             poseidon_config.clone(),
         );
+
+        {
+            let (rns_base, rns_scalar) =
+                GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::rns();
+            let main_gate_config = MainGate::<F>::configure(meta);
+            let mut overflow_bit_lens: Vec<usize> = vec![];
+            overflow_bit_lens.extend(rns_base.overflow_lengths());
+            overflow_bit_lens.extend(rns_scalar.overflow_lengths());
+            let composition_bit_lens = vec![BIT_LEN_LIMB / NUMBER_OF_LIMBS];
+
+            let range_config = RangeChip::<F>::configure(
+                meta,
+                &main_gate_config,
+                composition_bit_lens,
+                overflow_bit_lens,
+            );
+
+            EcdsaConfig::new(range_config, main_gate_config)
+        };
 
         let my_config = MyConfig {
             advices: advices.try_into().unwrap(),
@@ -191,12 +221,68 @@ fn poseidon_hash2() {
 
     let k = 16;
 
-    let circuit = HashCircuit::<OrchardNullifier, Fp, 3, 2, 2> {
+    fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
+        let x_big = fe_to_big(x);
+        big_to_fe(x_big)
+    }
+
+    {
+        let g = pallas::Affine::generator();
+
+        // Generate a key pair
+        let sk = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+        let public_key = (g * sk).to_affine();
+
+        // Generate a valid signature
+        // Suppose `m_hash` is the message hash
+        let msg_hash = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+
+        // Draw arandomness
+        let k = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+        let k_inv = k.invert().unwrap();
+
+        // Calculate `r`
+        let r_point = (g * k).to_affine().coordinates().unwrap();
+        let x = r_point.x();
+        let r = mod_n::<pallas::Affine>(*x);
+
+        // Calculate `s`
+        let s = k_inv * (msg_hash + (r * sk));
+
+        // Sanity check. Ensure we construct a valid signature. So lets verify it
+        {
+            let s_inv = s.invert().unwrap();
+            let u_1 = msg_hash * s_inv;
+            let u_2 = r * s_inv;
+            let r_point = ((g * u_1) + (public_key * u_2))
+                .to_affine()
+                .coordinates()
+                .unwrap();
+            let x_candidate = r_point.x();
+            let r_candidate = mod_n::<pallas::Affine>(*x_candidate);
+            assert_eq!(r, r_candidate);
+        }
+
+        let aux_generator = <pallas::Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
+        // let circuit = TestCircuitEcdsaVerify::<pallas::Affine, FieldExt> {
+        //     public_key: Value::known(public_key),
+        //     signature: Value::known((r, s)),
+        //     msg_hash: Value::known(msg_hash),
+        //     aux_generator,
+        //     window_size: 2,
+        //     ..Default::default()
+        // };
+        // let instance = vec![vec![]];
+        // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
+    };
+
+    let circuit = HashCircuit::<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2> {
         message: Value::known(leaf),
         root: Value::known(root),
         leaf_pos: Value::known(pos),
         path: Value::known(path),
         _spec: PhantomData,
+        _spec2: PhantomData,
     };
 
     let prover = MockProver::run(k, &circuit, vec![vec![root]]).unwrap();

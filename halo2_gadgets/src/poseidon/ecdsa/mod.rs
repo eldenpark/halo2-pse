@@ -10,6 +10,9 @@ use integer::rns::Integer;
 use integer::{AssignedInteger, IntegerInstructions};
 use maingate::{MainGateConfig, RangeConfig};
 
+pub const BIT_LEN_LIMB: usize = 68;
+pub const NUMBER_OF_LIMBS: usize = 4;
+
 #[derive(Clone, Debug)]
 pub struct EcdsaConfig {
     main_gate_config: MainGateConfig,
