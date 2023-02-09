@@ -1,3 +1,5 @@
+use halo2_proofs::circuit::Layouter;
+use halo2_proofs::plonk::ConstraintSystem;
 use integer::{IntegerChip, IntegerConfig};
 // use crate::halo2;
 // use crate::integer;
@@ -8,7 +10,7 @@ use halo2_proofs::arithmetic::{CurveAffine, FieldExt};
 use halo2_proofs::{circuit::Value, plonk::Error};
 use integer::rns::Integer;
 use integer::{AssignedInteger, IntegerInstructions};
-use maingate::{MainGateConfig, RangeConfig};
+use maingate::{MainGate, MainGateConfig, RangeChip, RangeConfig, RangeInstructions};
 
 pub const BIT_LEN_LIMB: usize = 68;
 pub const NUMBER_OF_LIMBS: usize = 4;
@@ -140,6 +142,58 @@ impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct TestCircuitEcdsaVerifyConfig {
+    main_gate_config: MainGateConfig,
+    range_config: RangeConfig,
+}
+
+impl TestCircuitEcdsaVerifyConfig {
+    pub fn new<C: CurveAffine, N: FieldExt>(meta: &mut ConstraintSystem<N>) -> Self {
+        let advices = [
+            meta.advice_column(),
+            meta.advice_column(),
+            meta.advice_column(),
+            meta.advice_column(),
+            meta.advice_column(),
+        ];
+
+        for advice in advices {
+            meta.enable_equality(advice);
+        }
+
+        let (rns_base, rns_scalar) = GeneralEccChip::<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::rns();
+        let main_gate_config = MainGate::<N>::configure(meta, advices);
+        let mut overflow_bit_lens: Vec<usize> = vec![];
+        overflow_bit_lens.extend(rns_base.overflow_lengths());
+        overflow_bit_lens.extend(rns_scalar.overflow_lengths());
+        let composition_bit_lens = vec![BIT_LEN_LIMB / NUMBER_OF_LIMBS];
+
+        let range_config = RangeChip::<N>::configure(
+            meta,
+            &main_gate_config,
+            composition_bit_lens,
+            overflow_bit_lens,
+        );
+
+        TestCircuitEcdsaVerifyConfig {
+            main_gate_config,
+            range_config,
+        }
+    }
+
+    pub fn ecc_chip_config(&self) -> EccConfig {
+        EccConfig::new(self.range_config.clone(), self.main_gate_config.clone())
+    }
+
+    pub fn config_range<N: FieldExt>(&self, layouter: &mut impl Layouter<N>) -> Result<(), Error> {
+        let range_chip = RangeChip::<N>::new(self.range_config.clone());
+        range_chip.load_table(layouter)?;
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
@@ -163,8 +217,11 @@ mod tests {
     use rand_core::OsRng;
     use std::marker::PhantomData;
 
-    const BIT_LEN_LIMB: usize = 68;
-    const NUMBER_OF_LIMBS: usize = 4;
+    use super::BIT_LEN_LIMB;
+    use super::NUMBER_OF_LIMBS;
+
+    // const BIT_LEN_LIMB: usize = 68;
+    // const NUMBER_OF_LIMBS: usize = 4;
 
     #[derive(Clone, Debug)]
     struct TestCircuitEcdsaVerifyConfig {
@@ -200,6 +257,7 @@ mod tests {
                 composition_bit_lens,
                 overflow_bit_lens,
             );
+
             TestCircuitEcdsaVerifyConfig {
                 main_gate_config,
                 range_config,
