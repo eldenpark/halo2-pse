@@ -407,7 +407,19 @@ mod tests {
             composition_bit_lens: Vec<usize>,
             overflow_bit_lens: Vec<usize>,
         ) -> Self {
-            let main_gate_config = MainGate::<F>::configure(meta);
+            let advices = [
+                meta.advice_column(),
+                meta.advice_column(),
+                meta.advice_column(),
+                meta.advice_column(),
+                meta.advice_column(),
+            ];
+
+            for advice in advices {
+                meta.enable_equality(advice);
+            }
+
+            let main_gate_config = MainGate::<F>::configure(meta, advices);
 
             let range_config = RangeChip::<F>::configure(
                 meta,

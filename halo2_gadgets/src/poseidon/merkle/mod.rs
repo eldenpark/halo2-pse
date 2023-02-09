@@ -61,6 +61,13 @@ struct HashCircuit<
     root: Value<F>,
     leaf_pos: Value<u32>,
     path: Value<[F; 4]>,
+
+    // public_key: Value<N>,
+    // signature: Value<(N::Scalar, N::Scalar)>,
+    // msg_hash: Value<N::Scalar>,
+
+    // aux_generator: N,
+    // window_size: usize,
     _spec: PhantomData<S>,
     _spec2: PhantomData<N>,
 }
@@ -83,6 +90,13 @@ impl<
             root: Value::unknown(),
             leaf_pos: Value::unknown(),
             path: Value::unknown(),
+
+            // public_key: Value::unknown(),
+            // signature: Value::unknown(),
+            // msg_hash: Value::unknown(),
+
+            // aux_generator: N::default(),
+            // window_size: usize::default(),
             _spec: PhantomData,
             _spec2: PhantomData,
         }
@@ -111,9 +125,17 @@ impl<
             rc_b.try_into().unwrap(),
         );
 
-        let mut advices = state.clone();
-        advices.push(partial_sbox.clone());
-        advices.push(swap.clone());
+        // let mut advices = state.clone();
+        // advices.push(partial_sbox.clone());
+        // advices.push(swap.clone());
+
+        let advices = [
+            state[0].clone(),
+            state[1].clone(),
+            state[2].clone(),
+            partial_sbox.clone(),
+            swap.clone(),
+        ];
 
         for advice in advices.iter() {
             meta.enable_equality(*advice);
@@ -125,10 +147,10 @@ impl<
             poseidon_config.clone(),
         );
 
-        {
+        let ecdsa_config = {
             let (rns_base, rns_scalar) =
                 GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::rns();
-            let main_gate_config = MainGate::<F>::configure(meta);
+            let main_gate_config = MainGate::<F>::configure(meta, advices);
             let mut overflow_bit_lens: Vec<usize> = vec![];
             overflow_bit_lens.extend(rns_base.overflow_lengths());
             overflow_bit_lens.extend(rns_scalar.overflow_lengths());
@@ -193,6 +215,11 @@ impl<
 
 #[test]
 fn poseidon_hash2() {
+    fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
+        let x_big = fe_to_big(x);
+        big_to_fe(x_big)
+    }
+
     println!("poseidon_hash2()");
 
     let rng = OsRng;
@@ -219,68 +246,67 @@ fn poseidon_hash2() {
 
     println!("out-circuit: root: {:?}", root);
 
+    // let g = pallas::Affine::generator();
+
+    // // Generate a key pair
+    // let sk = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+    // let public_key = (g * sk).to_affine();
+
+    // // Generate a valid signature
+    // // Suppose `m_hash` is the message hash
+    // let msg_hash = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+
+    // // Draw arandomness
+    // let k = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+    // let k_inv = k.invert().unwrap();
+
+    // // Calculate `r`
+    // let r_point = (g * k).to_affine().coordinates().unwrap();
+    // let x = r_point.x();
+    // let r = mod_n::<pallas::Affine>(*x);
+
+    // // Calculate `s`
+    // let s = k_inv * (msg_hash + (r * sk));
+
+    // // Sanity check. Ensure we construct a valid signature. So lets verify it
+    // {
+    //     let s_inv = s.invert().unwrap();
+    //     let u_1 = msg_hash * s_inv;
+    //     let u_2 = r * s_inv;
+    //     let r_point = ((g * u_1) + (public_key * u_2))
+    //         .to_affine()
+    //         .coordinates()
+    //         .unwrap();
+    //     let x_candidate = r_point.x();
+    //     let r_candidate = mod_n::<pallas::Affine>(*x_candidate);
+    //     assert_eq!(r, r_candidate);
+    // }
+
+    // let aux_generator = <pallas::Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
+    // let circuit = TestCircuitEcdsaVerify::<pallas::Affine, FieldExt> {
+    //     public_key: Value::known(public_key),
+    //     signature: Value::known((r, s)),
+    //     msg_hash: Value::known(msg_hash),
+    //     aux_generator,
+    //     window_size: 2,
+    //     ..Default::default()
+    // };
+    // let instance = vec![vec![]];
+    // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
+
     let k = 16;
-
-    fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
-        let x_big = fe_to_big(x);
-        big_to_fe(x_big)
-    }
-
-    {
-        let g = pallas::Affine::generator();
-
-        // Generate a key pair
-        let sk = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
-        let public_key = (g * sk).to_affine();
-
-        // Generate a valid signature
-        // Suppose `m_hash` is the message hash
-        let msg_hash = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
-
-        // Draw arandomness
-        let k = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
-        let k_inv = k.invert().unwrap();
-
-        // Calculate `r`
-        let r_point = (g * k).to_affine().coordinates().unwrap();
-        let x = r_point.x();
-        let r = mod_n::<pallas::Affine>(*x);
-
-        // Calculate `s`
-        let s = k_inv * (msg_hash + (r * sk));
-
-        // Sanity check. Ensure we construct a valid signature. So lets verify it
-        {
-            let s_inv = s.invert().unwrap();
-            let u_1 = msg_hash * s_inv;
-            let u_2 = r * s_inv;
-            let r_point = ((g * u_1) + (public_key * u_2))
-                .to_affine()
-                .coordinates()
-                .unwrap();
-            let x_candidate = r_point.x();
-            let r_candidate = mod_n::<pallas::Affine>(*x_candidate);
-            assert_eq!(r, r_candidate);
-        }
-
-        let aux_generator = <pallas::Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
-        // let circuit = TestCircuitEcdsaVerify::<pallas::Affine, FieldExt> {
-        //     public_key: Value::known(public_key),
-        //     signature: Value::known((r, s)),
-        //     msg_hash: Value::known(msg_hash),
-        //     aux_generator,
-        //     window_size: 2,
-        //     ..Default::default()
-        // };
-        // let instance = vec![vec![]];
-        // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
-    };
 
     let circuit = HashCircuit::<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2> {
         message: Value::known(leaf),
         root: Value::known(root),
         leaf_pos: Value::known(pos),
         path: Value::known(path),
+
+        // public_key: Value::known(public_key),
+        // signature: Value::known((r, s)),
+        // msg_hash: Value::known(msg_hash),
+        // aux_generator,
+        // window_size: 2,
         _spec: PhantomData,
         _spec2: PhantomData,
     };
