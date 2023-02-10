@@ -17,8 +17,8 @@ pub const NUMBER_OF_LIMBS: usize = 4;
 
 #[derive(Clone, Debug)]
 pub struct EcdsaConfig {
-    main_gate_config: MainGateConfig,
-    range_config: RangeConfig,
+    pub main_gate_config: MainGateConfig,
+    pub range_config: RangeConfig,
 }
 
 impl EcdsaConfig {
