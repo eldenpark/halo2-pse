@@ -82,7 +82,7 @@ pub struct Dimension {
 }
 
 impl Dimension {
-    fn k(&self) -> u32 {
+    pub fn k(&self) -> u32 {
         u64::BITS
             - ([self.instance, self.advice, self.fixed]
                 .into_iter()

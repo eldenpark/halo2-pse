@@ -1,5 +1,6 @@
 mod chip;
 mod merkle_path;
+mod test1;
 
 use self::chip::{MerkleChip, MerkleConfig};
 use super::ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
@@ -19,21 +20,31 @@ use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
 use group::Curve;
 use group::Group;
+use halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk};
+use halo2_proofs::poly::commitment::ParamsProver;
+use halo2_proofs::poly::ipa::commitment::{IPACommitmentScheme, ParamsIPA};
+use halo2_proofs::poly::ipa::multiopen::ProverIPA;
+use halo2_proofs::poly::kzg::multiopen::ProverGWC;
+use halo2_proofs::transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer};
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
     dev::MockProver,
     plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Instance},
 };
-use halo2curves::pasta::{pallas, Fp};
+use halo2curves::pairing::Engine;
+use halo2curves::pasta::{pallas, vesta, EqAffine, Fp};
 use halo2curves::CurveAffine;
 use integer::{IntegerInstructions, Range};
 use maingate::{
-    big_to_fe, fe_to_big, mock_prover_verify, MainGate, RangeChip, RangeInstructions, RegionCtx,
+    big_to_fe, fe_to_big, mock_prover_verify, DimensionMeasurement, MainGate, RangeChip,
+    RangeInstructions, RegionCtx,
 };
 use rand::rngs::OsRng;
 use std::convert::TryInto;
 use std::marker::PhantomData;
+use std::time::Instant;
 
 #[derive(Clone, Debug)]
 pub struct MyConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
@@ -151,24 +162,6 @@ impl<
         );
 
         let ecdsa_config = {
-            // let (rns_base, rns_scalar) =
-            //     GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::rns();
-            // let main_gate_config = MainGate::<F>::configure(meta, advices);
-            // let mut overflow_bit_lens: Vec<usize> = vec![];
-            // overflow_bit_lens.extend(rns_base.overflow_lengths());
-            // overflow_bit_lens.extend(rns_scalar.overflow_lengths());
-            // let composition_bit_lens = vec![BIT_LEN_LIMB / NUMBER_OF_LIMBS];
-
-            // let range_config = RangeChip::<F>::configure(
-            //     meta,
-            //     &main_gate_config,
-            //     composition_bit_lens,
-            //     overflow_bit_lens,
-            // );
-
-            // EcdsaConfig::new(range_config, main_gate_config)
-            // TestCircuitEcdsaVerifyConfig::new::<N, F>(meta)
-
             let (rns_base, rns_scalar) =
                 GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::rns();
             let main_gate_config = MainGate::<F>::configure(meta, advices);
@@ -230,7 +223,7 @@ impl<
 
         println!("in_circuit: root: {:?}", calculated_root);
 
-        // layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
+        layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
 
         {
             let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
@@ -284,9 +277,12 @@ impl<
                 },
             )?;
 
+            println!("synthesize(): start range chip thing");
             let range_chip = RangeChip::<F>::new(config.ecdsa_config.range_config);
             range_chip.load_table(&mut layouter)?;
         }
+
+        println!("synthesize(): end");
 
         Ok(())
     }
@@ -299,7 +295,8 @@ fn poseidon_hash2() {
         big_to_fe(x_big)
     }
 
-    println!("poseidon_hash2()");
+    let start = Instant::now();
+    println!("poseidon_hash2(): t: {:?}", start.elapsed());
 
     let leaf = Fp::from(2);
     let path = [Fp::from(1), Fp::from(1), Fp::from(1), Fp::from(1)];
@@ -321,7 +318,7 @@ fn poseidon_hash2() {
         root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 
-    println!("out-circuit: root: {:?}", root);
+    println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
 
     let g = pallas::Affine::generator();
 
@@ -359,6 +356,8 @@ fn poseidon_hash2() {
         assert_eq!(r, r_candidate);
     }
 
+    println!("aux gen, t: {:?}", start.elapsed());
+
     let aux_generator = <pallas::Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
     let circuit = HashCircuit::<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2> {
@@ -376,17 +375,61 @@ fn poseidon_hash2() {
         _spec2: PhantomData,
     };
 
-    // let instance = vec![vec![root], vec![]];
-    let instance = vec![vec![], vec![]];
-
-    assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
+    let instance = vec![vec![root], vec![]];
+    // // let instance = vec![vec![], vec![]];
 
     // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
+    //
+    println!("dimension checking, t: {:?}", start.elapsed());
 
-    // use halo2_proofs::halo2curves::pasta::{Fp as PastaFp, Fq as PastaFq};
-    // use halo2_proofs::halo2curves::secp256k1::Secp256k1Affine as Secp256k1;
-    // // run::<Secp256k1, BnScalar>();
-    // run::<Secp256k1, PastaFp>();
+    let dimension = DimensionMeasurement::measure(&circuit).unwrap();
+    let k = dimension.k();
 
-    // assert_eq!(prover.verify(), Ok(()))
+    println!("params generating, t: {:?}", start.elapsed());
+    let params: ParamsIPA<vesta::Affine> = ParamsIPA::new(k);
+
+    println!("11 vk generating, t: {:?}", start.elapsed());
+    let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
+    println!("22 pk generating, t: {:?}", start.elapsed());
+    let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
+
+    let mut rng = OsRng;
+    let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
+
+    println!("creating proof, t: {:?}", start.elapsed());
+    create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
+        &params,
+        &pk,
+        &[circuit],
+        &[&[&[root]]],
+        &mut rng,
+        &mut transcript,
+    )
+    .unwrap();
+
+    println!("proof generated, t: {:?}", start.elapsed());
+    let proof = transcript.finalize();
+
+    println!("proof: {:?}, t: {:?}", proof, start.elapsed());
+
+    // let instances = &[&[root]];
+    // let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
+    // create_proof::<
+    //     KZGCommitmentScheme<Bn256>,
+    //     ProverGWC<'_, Bn256>,
+    //     Challenge255<G1Affine>,
+    //     _,
+    //     Blake2bWrite<Vec<u8>, G1Affine, Challenge255<_>>,
+    //     _,
+    // >(
+    //     &params,
+    //     &pk,
+    //     &[circuit],
+    //     &[instances],
+    //     OsRng,
+    //     &mut transcript,
+    // )
+    // .expect("prover should not fail");
+
+    // println!("proof: {:?}", proof);
 }

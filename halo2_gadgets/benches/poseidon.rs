@@ -208,6 +208,7 @@ fn bench_poseidon<S, const WIDTH: usize, const RATE: usize, const L: usize>(
 
     c.bench_function(&verifier_name, |b| {
         b.iter(|| {
+            println!("111");
             let strategy = SingleStrategy::new(&params);
             let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(&proof[..]);
             assert!(verify_proof(
@@ -224,8 +225,8 @@ fn bench_poseidon<S, const WIDTH: usize, const RATE: usize, const L: usize>(
 
 fn criterion_benchmark(c: &mut Criterion) {
     bench_poseidon::<MySpec<3, 2>, 3, 2, 2>("WIDTH = 3, RATE = 2", c);
-    bench_poseidon::<MySpec<9, 8>, 9, 8, 8>("WIDTH = 9, RATE = 8", c);
-    bench_poseidon::<MySpec<12, 11>, 12, 11, 11>("WIDTH = 12, RATE = 11", c);
+    // bench_poseidon::<MySpec<9, 8>, 9, 8, 8>("WIDTH = 9, RATE = 8", c);
+    // bench_poseidon::<MySpec<12, 11>, 12, 11, 11>("WIDTH = 12, RATE = 11", c);
 }
 
 criterion_group!(benches, criterion_benchmark);

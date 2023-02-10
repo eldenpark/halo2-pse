@@ -165,6 +165,8 @@ fn main() {
     .expect("prover should not fail");
     let proof = transcript.finalize();
 
+    println!("proof: {:?}", proof);
+
     let strategy = SingleStrategy::new(&params);
     let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(&proof[..]);
     assert!(verify_proof::<
