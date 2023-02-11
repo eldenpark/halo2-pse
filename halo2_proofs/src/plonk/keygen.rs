@@ -199,6 +199,7 @@ impl<F: Field> Assignment<F> for Assembly<F> {
     }
 }
 
+//
 /// Generate a `VerifyingKey` from an instance of `Circuit`.
 pub fn keygen_vk<'params, C, P, ConcreteCircuit>(
     params: &P,
