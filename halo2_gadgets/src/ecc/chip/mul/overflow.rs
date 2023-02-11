@@ -10,7 +10,7 @@ use halo2_proofs::{
     poly::Rotation,
 };
 
-use halo2curves::{pasta::pallas, FieldExt};
+use halo2_proofs::halo2curves::{pasta::pallas, FieldExt};
 
 use std::iter;
 

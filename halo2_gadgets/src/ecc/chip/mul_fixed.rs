@@ -10,6 +10,7 @@ use group::{
     ff::{PrimeField, PrimeFieldBits},
     Curve,
 };
+use halo2_proofs::halo2curves::{pasta::pallas, CurveAffine, FieldExt};
 use halo2_proofs::{
     circuit::{AssignedCell, Region, Value},
     plonk::{
@@ -18,7 +19,6 @@ use halo2_proofs::{
     },
     poly::Rotation,
 };
-use halo2curves::{pasta::pallas, CurveAffine, FieldExt};
 use lazy_static::lazy_static;
 
 pub mod base_field_elem;

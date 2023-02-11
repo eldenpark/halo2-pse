@@ -3,12 +3,12 @@ use std::convert::TryInto;
 use super::super::{EccPoint, EccScalarFixedShort, FixedPoints, L_SCALAR_SHORT, NUM_WINDOWS_SHORT};
 use crate::{ecc::chip::MagnitudeSign, utilities::bool_check};
 
+use halo2_proofs::halo2curves::pasta::pallas;
 use halo2_proofs::{
     circuit::{Layouter, Region},
     plonk::{ConstraintSystem, Constraints, Error, Expression, Selector},
     poly::Rotation,
 };
-use halo2curves::pasta::pallas;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Config<Fixed: FixedPoints<pallas::Affine>> {
@@ -249,12 +249,12 @@ impl<Fixed: FixedPoints<pallas::Affine>> Config<Fixed> {
 #[cfg(test)]
 pub mod tests {
     use group::{ff::PrimeField, Curve};
+    use halo2_proofs::halo2curves::{pasta::pallas, FieldExt};
     use halo2_proofs::{
         arithmetic::CurveAffine,
         circuit::{AssignedCell, Chip, Layouter, Value},
         plonk::{Any, Error},
     };
-    use halo2curves::{pasta::pallas, FieldExt};
 
     use crate::{
         ecc::{

@@ -439,17 +439,17 @@ mod tests {
             let dimension = DimensionMeasurement::measure(&circuit).unwrap();
             let k = dimension.k();
             // let params: ParamsIPA<C> = ParamsIPA::new(k);
-            // use halo2curves::bn256::{Bn256, Fr, G1Affine};
+            // use halo2_proofs::halo2curves::bn256::{Bn256, Fr, G1Affine};
             let params = ParamsKZG::<Bn256>::new(k);
 
             let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
             let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
 
-            let mut rng = OsRng;
-            let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
+            // let mut rng = OsRng;
+            // let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
 
-            let proof = transcript.finalize();
-            println!("proof: {:?}", proof);
+            // let proof = transcript.finalize();
+            // println!("proof: {:?}", proof);
 
             // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
         }

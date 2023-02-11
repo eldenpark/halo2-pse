@@ -8,12 +8,12 @@ use crate::{
 };
 
 use group::ff::PrimeField;
+use halo2_proofs::halo2curves::{pasta::pallas, FieldExt};
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter},
     plonk::{Advice, Column, ConstraintSystem, Constraints, Error, Expression, Selector},
     poly::Rotation,
 };
-use halo2curves::{pasta::pallas, FieldExt};
 
 use std::convert::TryInto;
 
@@ -381,11 +381,11 @@ pub mod tests {
         ff::{Field, PrimeField},
         Curve,
     };
+    use halo2_proofs::halo2curves::pasta::pallas;
     use halo2_proofs::{
         circuit::{Chip, Layouter, Value},
         plonk::Error,
     };
-    use halo2curves::pasta::pallas;
     use rand::rngs::OsRng;
 
     use crate::{

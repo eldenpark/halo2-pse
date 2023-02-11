@@ -1,10 +1,10 @@
 //! Gadgets for implementing a Merkle tree with Sinsemilla.
 
+use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::{
     circuit::{Chip, Layouter, Value},
     plonk::Error,
 };
-use halo2curves::CurveAffine;
 
 use super::{HashDomains, SinsemillaInstructions};
 
@@ -190,12 +190,12 @@ pub mod tests {
     };
 
     use group::ff::{Field, PrimeField, PrimeFieldBits};
+    use halo2_proofs::halo2curves::pasta::pallas;
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
         dev::MockProver,
         plonk::{Circuit, ConstraintSystem, Error},
     };
-    use halo2curves::pasta::pallas;
 
     use rand::{rngs::OsRng, RngCore};
     use std::{convert::TryInto, iter};

@@ -9,11 +9,11 @@ use arrayvec::ArrayVec;
 
 use ff::PrimeField;
 use group::prime::PrimeCurveAffine;
+use halo2_proofs::halo2curves::{pasta::pallas, CurveAffine};
 use halo2_proofs::{
     circuit::{AssignedCell, Chip, Layouter, Value},
     plonk::{Advice, Assigned, Column, ConstraintSystem, Error, Fixed},
 };
-use halo2curves::{pasta::pallas, CurveAffine};
 
 use std::convert::TryInto;
 

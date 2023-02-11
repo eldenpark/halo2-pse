@@ -30,7 +30,7 @@ use halo2_proofs::{
 };
 
 use super::range_check;
-use halo2curves::FieldExt;
+use halo2_proofs::halo2curves::FieldExt;
 use std::marker::PhantomData;
 
 /// The running sum $[z_0, ..., z_W]$. If created in strict mode, $z_W = 0$.
@@ -211,12 +211,12 @@ impl<F: FieldExt + PrimeFieldBits, const WINDOW_NUM_BITS: usize>
 mod tests {
     use super::*;
     use group::ff::{Field, PrimeField};
+    use halo2_proofs::halo2curves::{pasta::pallas, FieldExt};
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner},
         dev::{FailureLocation, MockProver, VerifyFailure},
         plonk::{Any, Circuit, ConstraintSystem, Error},
     };
-    use halo2curves::{pasta::pallas, FieldExt};
     use rand::rngs::OsRng;
 
     use crate::ecc::chip::{

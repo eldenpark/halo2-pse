@@ -11,7 +11,7 @@ use halo2_proofs::{
 };
 
 use group::ff::{PrimeField, PrimeFieldBits};
-use halo2curves::{pasta::pallas, CurveAffine, FieldExt};
+use halo2_proofs::halo2curves::{pasta::pallas, CurveAffine, FieldExt};
 
 use std::ops::Deref;
 
@@ -127,7 +127,7 @@ where
             use crate::sinsemilla::primitives::{K, S_PERSONALIZATION};
 
             use group::{prime::PrimeCurveAffine, Curve};
-            use halo2curves::CurveExt;
+            use halo2_proofs::halo2curves::CurveExt;
 
             let field_elems: Value<Vec<_>> = message
                 .iter()

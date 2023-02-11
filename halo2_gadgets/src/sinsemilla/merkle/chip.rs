@@ -1,11 +1,11 @@
 //! Chip implementing a Merkle hash using Sinsemilla as the hash function.
 
+use halo2_proofs::halo2curves::{pasta::pallas, FieldExt};
 use halo2_proofs::{
     circuit::{AssignedCell, Chip, Layouter, Value},
     plonk::{Advice, Column, ConstraintSystem, Constraints, Error, Selector},
     poly::Rotation,
 };
-use halo2curves::{pasta::pallas, FieldExt};
 
 use super::MerkleInstructions;
 

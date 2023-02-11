@@ -390,12 +390,12 @@ mod tests {
     use crate::sinsemilla::primitives::K;
 
     use ff::{Field, PrimeFieldBits};
+    use halo2_proofs::halo2curves::{pasta::pallas, FieldExt};
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
         dev::{FailureLocation, MockProver, VerifyFailure},
         plonk::{Circuit, ConstraintSystem, Error},
     };
-    use halo2curves::{pasta::pallas, FieldExt};
 
     use std::{convert::TryInto, marker::PhantomData};
 

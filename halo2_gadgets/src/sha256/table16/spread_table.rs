@@ -1,11 +1,11 @@
 use super::{util::*, AssignedBits};
+use halo2_proofs::halo2curves::pasta::pallas;
 use halo2_proofs::{
     arithmetic::FieldExt,
     circuit::{Chip, Layouter, Region, Value},
     plonk::{Advice, Column, ConstraintSystem, Error, TableColumn},
     poly::Rotation,
 };
-use halo2curves::pasta::pallas;
 use std::convert::TryInto;
 use std::marker::PhantomData;
 
@@ -287,13 +287,13 @@ mod tests {
     use super::{get_tag, SpreadTableChip, SpreadTableConfig};
     use rand::Rng;
 
+    use halo2_proofs::halo2curves::pasta::Fp;
     use halo2_proofs::{
         arithmetic::FieldExt,
         circuit::{Layouter, SimpleFloorPlanner, Value},
         dev::MockProver,
         plonk::{Advice, Circuit, Column, ConstraintSystem, Error},
     };
-    use halo2curves::pasta::Fp;
 
     #[test]
     fn lookup_table() {

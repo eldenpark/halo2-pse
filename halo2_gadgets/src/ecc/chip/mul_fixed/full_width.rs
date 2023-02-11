@@ -3,12 +3,12 @@ use super::super::{EccPoint, EccScalarFixed, FixedPoints, FIXED_BASE_WINDOW_SIZE
 use crate::utilities::{decompose_word, range_check};
 use arrayvec::ArrayVec;
 use ff::PrimeField;
+use halo2_proofs::halo2curves::pasta::pallas;
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, Region, Value},
     plonk::{ConstraintSystem, Constraints, Error, Selector},
     poly::Rotation,
 };
-use halo2curves::pasta::pallas;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Config<Fixed: FixedPoints<pallas::Affine>> {
@@ -180,11 +180,11 @@ impl<Fixed: FixedPoints<pallas::Affine>> Config<Fixed> {
 #[cfg(test)]
 pub mod tests {
     use group::{ff::Field, Curve};
+    use halo2_proofs::halo2curves::pasta::pallas;
     use halo2_proofs::{
         circuit::{Layouter, Value},
         plonk::Error,
     };
-    use halo2curves::pasta::pallas;
     use rand::rngs::OsRng;
 
     use crate::ecc::{

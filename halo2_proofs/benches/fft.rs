@@ -3,8 +3,8 @@ extern crate criterion;
 
 use crate::arithmetic::best_fft;
 use group::ff::Field;
+use halo2_proofs::halo2curves::pasta::Fp;
 use halo2_proofs::*;
-use halo2curves::pasta::Fp;
 
 use criterion::{BenchmarkId, Criterion};
 use rand_core::OsRng;

@@ -1,5 +1,5 @@
 use halo2_proofs::arithmetic::Field;
-use halo2curves::pasta::{pallas::Base as Fp, vesta::Base as Fq};
+use halo2_proofs::halo2curves::pasta::{pallas::Base as Fp, vesta::Base as Fq};
 
 use super::{Mds, Spec};
 
@@ -69,7 +69,7 @@ mod tests {
     use ff::PrimeField;
     use std::marker::PhantomData;
 
-    use halo2curves::FieldExt;
+    use halo2_proofs::halo2curves::FieldExt;
 
     use super::{
         super::{fp, fq},
