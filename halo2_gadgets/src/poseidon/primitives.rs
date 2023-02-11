@@ -374,7 +374,7 @@ impl<F: FieldExt, S: Spec<F, T, RATE>, const T: usize, const RATE: usize, const 
 
 #[cfg(test)]
 mod tests {
-    use halo2curves::{pasta::pallas, FieldExt};
+    use halo2_proofs::halo2curves::{pasta::pallas, FieldExt};
 
     use super::{permute, ConstantLength, Hash, P128Pow5T3 as OrchardNullifier, Spec};
 

@@ -11,6 +11,7 @@ use crate::{
     utilities::i2lebsp,
 };
 use group::ff::{Field, PrimeField};
+use halo2_proofs::halo2curves::pasta::{pallas, Fp};
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{
     circuit::Chip,
@@ -21,7 +22,6 @@ use halo2_proofs::{
     dev::MockProver,
     plonk::{Circuit, ConstraintSystem, Error},
 };
-use halo2curves::pasta::{pallas, Fp};
 use rand::rngs::OsRng;
 use std::convert::TryInto;
 use std::iter;

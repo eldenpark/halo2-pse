@@ -6,11 +6,11 @@ use crate::{
     utilities::{FieldValue, RangeConstrained, Var},
 };
 use group::ff::{Field, PrimeField};
+use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::{
     circuit::{Layouter, Value},
     plonk::Error,
 };
-use halo2curves::CurveAffine;
 use std::fmt::Debug;
 
 pub mod chip;
@@ -478,7 +478,7 @@ pub(crate) mod tests {
     };
 
     use group::{ff::Field, Curve};
-    use halo2curves::pasta::pallas;
+    use halo2_proofs::halo2curves::pasta::pallas;
     use lazy_static::lazy_static;
 
     use std::convert::TryInto;

@@ -1,11 +1,11 @@
 //! Utility gadgets.
 
 use ff::{Field, PrimeFieldBits};
+use halo2_proofs::halo2curves::FieldExt;
 use halo2_proofs::{
     circuit::{AssignedCell, Cell, Layouter, Value},
     plonk::{Advice, Column, Error, Expression},
 };
-use halo2curves::FieldExt;
 use std::marker::PhantomData;
 use std::ops::Range;
 
@@ -241,13 +241,13 @@ pub fn i2lebsp<const NUM_BITS: usize>(int: u64) -> [bool; NUM_BITS] {
 mod tests {
     use super::*;
     use group::ff::{Field, PrimeField};
+    use halo2_proofs::halo2curves::{pasta::pallas, FieldExt};
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner},
         dev::{FailureLocation, MockProver, VerifyFailure},
         plonk::{Any, Circuit, ConstraintSystem, Constraints, Error, Selector},
         poly::Rotation,
     };
-    use halo2curves::{pasta::pallas, FieldExt};
     use proptest::prelude::*;
     use rand::rngs::OsRng;
     use std::convert::TryInto;

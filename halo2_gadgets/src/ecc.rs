@@ -580,12 +580,12 @@ pub(crate) mod tests {
     use ff::PrimeField;
     use group::{prime::PrimeCurveAffine, Curve, Group};
 
+    use halo2_proofs::halo2curves::pasta::pallas;
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
         dev::MockProver,
         plonk::{Circuit, ConstraintSystem, Error},
     };
-    use halo2curves::pasta::pallas;
     use lazy_static::lazy_static;
 
     use super::{

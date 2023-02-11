@@ -21,6 +21,9 @@ use group::prime::PrimeCurveAffine;
 use group::Curve;
 use group::Group;
 use halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_proofs::halo2curves::pairing::Engine;
+use halo2_proofs::halo2curves::pasta::{pallas, vesta, EqAffine, Fp};
+use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk};
 use halo2_proofs::poly::commitment::ParamsProver;
 use halo2_proofs::poly::ipa::commitment::{IPACommitmentScheme, ParamsIPA};
@@ -33,9 +36,6 @@ use halo2_proofs::{
     dev::MockProver,
     plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Instance},
 };
-use halo2curves::pairing::Engine;
-use halo2curves::pasta::{pallas, vesta, EqAffine, Fp};
-use halo2curves::CurveAffine;
 use integer::{IntegerInstructions, Range};
 use maingate::{
     big_to_fe, fe_to_big, mock_prover_verify, DimensionMeasurement, MainGate, RangeChip,

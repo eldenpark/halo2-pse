@@ -595,12 +595,12 @@ impl<F: FieldExt, const WIDTH: usize> Pow5State<F, WIDTH> {
 #[cfg(test)]
 mod tests {
     use group::ff::{Field, PrimeField};
+    use halo2_proofs::halo2curves::pasta::{pallas, Fp};
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
         dev::MockProver,
         plonk::{Circuit, ConstraintSystem, Error},
     };
-    use halo2curves::pasta::{pallas, Fp};
     use rand::rngs::OsRng;
 
     use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};

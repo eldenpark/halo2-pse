@@ -210,6 +210,12 @@ mod tests {
     use halo2_proofs::arithmetic::CurveAffine;
     use halo2_proofs::arithmetic::FieldExt;
     use halo2_proofs::circuit::{Layouter, SimpleFloorPlanner, Value};
+    use halo2_proofs::halo2curves::bn256::Bn256;
+    use halo2_proofs::halo2curves::bn256::G1Affine;
+    use halo2_proofs::halo2curves::pasta;
+    use halo2_proofs::halo2curves::pasta::vesta;
+    use halo2_proofs::halo2curves::pasta::EqAffine;
+    use halo2_proofs::halo2curves::secp256k1::Fp;
     use halo2_proofs::plonk::create_proof;
     use halo2_proofs::plonk::keygen_pk;
     use halo2_proofs::plonk::keygen_vk;
@@ -218,13 +224,10 @@ mod tests {
     use halo2_proofs::poly::ipa::commitment::IPACommitmentScheme;
     use halo2_proofs::poly::ipa::commitment::ParamsIPA;
     use halo2_proofs::poly::ipa::multiopen::ProverIPA;
+    use halo2_proofs::poly::kzg::commitment::ParamsKZG;
     use halo2_proofs::transcript::Blake2bWrite;
     use halo2_proofs::transcript::Challenge255;
     use halo2_proofs::transcript::TranscriptWriterBuffer;
-    use halo2curves::pasta;
-    use halo2curves::pasta::vesta;
-    use halo2curves::pasta::EqAffine;
-    use halo2curves::secp256k1::Fp;
     use integer::IntegerInstructions;
     use maingate::mock_prover_verify;
     use maingate::DimensionMeasurement;
@@ -384,87 +387,26 @@ mod tests {
             big_to_fe(x_big)
         }
 
-        // fn run<C: CurveAffine, N: FieldExt>() {
-        //     let g = C::generator();
-
-        //     // Generate a key pair
-        //     let sk = <C as CurveAffine>::ScalarExt::random(OsRng);
-        //     let public_key = (g * sk).to_affine();
-
-        //     // Generate a valid signature
-        //     // Suppose `m_hash` is the message hash
-        //     let msg_hash = <C as CurveAffine>::ScalarExt::random(OsRng);
-
-        //     // Draw arandomness
-        //     let k = <C as CurveAffine>::ScalarExt::random(OsRng);
-        //     let k_inv = k.invert().unwrap();
-
-        //     // Calculate `r`
-        //     let r_point = (g * k).to_affine().coordinates().unwrap();
-        //     let x = r_point.x();
-        //     let r = mod_n::<C>(*x);
-
-        //     // Calculate `s`
-        //     let s = k_inv * (msg_hash + (r * sk));
-
-        //     // Sanity check. Ensure we construct a valid signature. So lets verify it
-        //     {
-        //         let s_inv = s.invert().unwrap();
-        //         let u_1 = msg_hash * s_inv;
-        //         let u_2 = r * s_inv;
-        //         let r_point = ((g * u_1) + (public_key * u_2))
-        //             .to_affine()
-        //             .coordinates()
-        //             .unwrap();
-        //         let x_candidate = r_point.x();
-        //         let r_candidate = mod_n::<C>(*x_candidate);
-        //         assert_eq!(r, r_candidate);
-        //     }
-
-        //     let aux_generator = C::CurveExt::random(OsRng).to_affine();
-        //     let circuit = TestCircuitEcdsaVerify::<C, N> {
-        //         public_key: Value::known(public_key),
-        //         signature: Value::known((r, s)),
-        //         msg_hash: Value::known(msg_hash),
-        //         aux_generator,
-        //         window_size: 2,
-        //         ..Default::default()
-        //     };
-        //     let instance = vec![vec![]];
-
-        //     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
-        //     let k = dimension.k();
-        //     let params: ParamsIPA<vesta::Affine> = ParamsIPA::new(k);
-
-        //     let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
-        //     let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
-
-        //     let mut rng = OsRng;
-        //     let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
-
-        //     // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
-        // }
-        //
-        fn run2() {
-            // type C = Secp256k1;
-            let g = Secp256k1::generator();
+        fn run<C: CurveAffine, N: FieldExt>() {
+            // let now =
+            let g = C::generator();
 
             // Generate a key pair
-            let sk = <Secp256k1 as CurveAffine>::ScalarExt::random(OsRng);
+            let sk = <C as CurveAffine>::ScalarExt::random(OsRng);
             let public_key = (g * sk).to_affine();
 
             // Generate a valid signature
             // Suppose `m_hash` is the message hash
-            let msg_hash = <Secp256k1 as CurveAffine>::ScalarExt::random(OsRng);
+            let msg_hash = <C as CurveAffine>::ScalarExt::random(OsRng);
 
             // Draw arandomness
-            let k = <Secp256k1 as CurveAffine>::ScalarExt::random(OsRng);
+            let k = <C as CurveAffine>::ScalarExt::random(OsRng);
             let k_inv = k.invert().unwrap();
 
             // Calculate `r`
             let r_point = (g * k).to_affine().coordinates().unwrap();
             let x = r_point.x();
-            let r = mod_n::<Secp256k1>(*x);
+            let r = mod_n::<C>(*x);
 
             // Calculate `s`
             let s = k_inv * (msg_hash + (r * sk));
@@ -479,12 +421,12 @@ mod tests {
                     .coordinates()
                     .unwrap();
                 let x_candidate = r_point.x();
-                let r_candidate = mod_n::<Secp256k1>(*x_candidate);
+                let r_candidate = mod_n::<C>(*x_candidate);
                 assert_eq!(r, r_candidate);
             }
 
-            let aux_generator = <Secp256k1 as CurveAffine>::CurveExt::random(OsRng).to_affine();
-            let circuit = TestCircuitEcdsaVerify::<Secp256k1, pasta::Fp> {
+            let aux_generator = C::CurveExt::random(OsRng).to_affine();
+            let circuit = TestCircuitEcdsaVerify::<C, N> {
                 public_key: Value::known(public_key),
                 signature: Value::known((r, s)),
                 msg_hash: Value::known(msg_hash),
@@ -496,7 +438,9 @@ mod tests {
 
             let dimension = DimensionMeasurement::measure(&circuit).unwrap();
             let k = dimension.k();
-            let params: ParamsIPA<vesta::Affine> = ParamsIPA::new(k);
+            // let params: ParamsIPA<C> = ParamsIPA::new(k);
+            // use halo2curves::bn256::{Bn256, Fr, G1Affine};
+            let params = ParamsKZG::<Bn256>::new(k);
 
             let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
             let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
@@ -504,26 +448,16 @@ mod tests {
             let mut rng = OsRng;
             let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
 
-            create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
-                &params,
-                &pk,
-                &[circuit],
-                &[&[&[]]],
-                &mut rng,
-                &mut transcript,
-            )
-            .unwrap();
-
             let proof = transcript.finalize();
             println!("proof: {:?}", proof);
 
             // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
         }
 
-        // use halo2_proofs::halo2curves::bn256::Fr as BnScalar;
+        use halo2_proofs::halo2curves::bn256::Fr as BnScalar;
         use halo2_proofs::halo2curves::pasta::{Fp as PastaFp, Fq as PastaFq};
         use halo2_proofs::halo2curves::secp256k1::Secp256k1Affine as Secp256k1;
-        // run::<Secp256k1, BnScalar>();
-        run2();
+        run::<Secp256k1, BnScalar>();
+        // run2();
     }
 }
