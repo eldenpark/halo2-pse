@@ -223,7 +223,7 @@ impl<
 
         println!("in_circuit: root: {:?}", calculated_root);
 
-        // layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
+        layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
 
         {
             let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
@@ -376,7 +376,7 @@ fn poseidon_hash2() {
     };
 
     // let instance = vec![vec![root], vec![]];
-    let instance = vec![vec![], vec![]];
+    // let instance = vec![vec![], vec![]];
 
     // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
     //
@@ -386,35 +386,35 @@ fn poseidon_hash2() {
     let k = dimension.k();
 
     println!("proving");
-    let prover = MockProver::run(k, &circuit, instance).unwrap();
-    assert_eq!(prover.verify(), Ok(()))
+    // let prover = MockProver::run(k, &circuit, instance).unwrap();
+    // assert_eq!(prover.verify(), Ok(()))
 
-    // println!("params generating, t: {:?}", start.elapsed());
-    // let params: ParamsIPA<vesta::Affine> = ParamsIPA::new(k);
+    println!("params generating, t: {:?}", start.elapsed());
+    let params: ParamsIPA<vesta::Affine> = ParamsIPA::new(k);
 
-    // println!("11 vk generating, t: {:?}", start.elapsed());
-    // let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
-    // println!("22 pk generating, t: {:?}", start.elapsed());
-    // let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
+    println!("11 vk generating, t: {:?}", start.elapsed());
+    let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
+    println!("22 pk generating, t: {:?}", start.elapsed());
+    let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
 
-    // let mut rng = OsRng;
-    // let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
+    let mut rng = OsRng;
+    let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
 
-    // println!("creating proof, t: {:?}", start.elapsed());
-    // create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
-    //     &params,
-    //     &pk,
-    //     &[circuit],
-    //     &[&[&[root]]],
-    //     &mut rng,
-    //     &mut transcript,
-    // )
-    // .unwrap();
+    println!("creating proof, t: {:?}", start.elapsed());
+    create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
+        &params,
+        &pk,
+        &[circuit],
+        &[&[&[root], &[]]],
+        &mut rng,
+        &mut transcript,
+    )
+    .unwrap();
 
-    // println!("proof generated, t: {:?}", start.elapsed());
-    // let proof = transcript.finalize();
+    println!("proof generated, t: {:?}", start.elapsed());
+    let proof = transcript.finalize();
 
-    // println!("proof: {:?}, t: {:?}", proof, start.elapsed());
+    println!("proof: {:?}, t: {:?}", proof, start.elapsed());
 
     // let instances = &[&[root]];
     // let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
