@@ -2,11 +2,10 @@ mod chip;
 mod merkle_path;
 mod test1;
 
-use crate::merkle::merkle_path::MerklePath;
-
 use self::chip::{MerkleChip, MerkleConfig};
 use super::ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
 use super::ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
+use crate::merkle::merkle_path::MerklePath;
 use ecc::GeneralEccChip;
 use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
