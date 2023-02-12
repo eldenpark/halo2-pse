@@ -5,7 +5,10 @@
 #![deny(missing_docs)]
 
 use crate::rns::{Common, Integer, Limb};
-use halo2_proofs::{arithmetic::FieldExt, circuit::Value};
+use halo2_proofs::{
+    circuit::Value,
+    ff::{Field, PrimeField},
+};
 use maingate::{big_to_fe, compose, fe_to_big, AssignedValue};
 use num_bigint::BigUint as big_uint;
 use rns::Rns;
@@ -33,7 +36,7 @@ pub const NUMBER_OF_LOOKUP_LIMBS: usize = 4;
 
 /// AssignedLimb is a limb of an non native integer
 #[derive(Debug, Clone)]
-pub struct AssignedLimb<F: FieldExt> {
+pub struct AssignedLimb<F: Field> {
     // Witness value
     value: AssignedValue<F>,
     // Maximum value to track overflow and reduction flow
@@ -41,32 +44,32 @@ pub struct AssignedLimb<F: FieldExt> {
 }
 
 /// `AssignedLimb` can be also represented as `AssignedValue`
-impl<F: FieldExt> From<AssignedLimb<F>> for AssignedValue<F> {
+impl<F: Field> From<AssignedLimb<F>> for AssignedValue<F> {
     fn from(limb: AssignedLimb<F>) -> Self {
         limb.value
     }
 }
 
 /// `AssignedLimb` can be also represented as `AssignedValue`
-impl<F: FieldExt> From<&AssignedLimb<F>> for AssignedValue<F> {
+impl<F: Field> From<&AssignedLimb<F>> for AssignedValue<F> {
     fn from(limb: &AssignedLimb<F>) -> Self {
         limb.value.clone()
     }
 }
 
-impl<F: FieldExt> AsRef<AssignedValue<F>> for AssignedLimb<F> {
+impl<F: Field> AsRef<AssignedValue<F>> for AssignedLimb<F> {
     fn as_ref(&self) -> &AssignedValue<F> {
         &self.value
     }
 }
 
-impl<F: FieldExt> AssignedLimb<F> {
+impl<F: Field> AssignedLimb<F> {
     fn value(&self) -> Value<F> {
         self.value.value().cloned()
     }
 }
 
-impl<F: FieldExt> AssignedLimb<F> {
+impl<F: PrimeField> AssignedLimb<F> {
     /// Given an assigned value and expected maximum value constructs new
     /// `AssignedLimb`
     fn from(value: AssignedValue<F>, max_val: big_uint) -> Self {
@@ -111,13 +114,13 @@ impl<F: FieldExt> AssignedLimb<F> {
 /// Witness integer that is about to be assigned.
 #[derive(Debug, Clone)]
 pub struct UnassignedInteger<
-    W: FieldExt,
-    N: FieldExt,
+    W: Field,
+    N: Field,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 >(Value<Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>);
 
-impl<W: FieldExt, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     From<Value<Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>>
     for UnassignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
@@ -129,8 +132,8 @@ impl<W: FieldExt, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB:
 ///
 #[derive(Debug, Clone)]
 pub struct AssignedInteger<
-    W: FieldExt,
-    N: FieldExt,
+    W: Field,
+    N: Field,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 > {
@@ -142,7 +145,7 @@ pub struct AssignedInteger<
     rns: Rc<Rns<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>,
 }
 
-impl<W: FieldExt, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Creates a new [`AssignedInteger`].

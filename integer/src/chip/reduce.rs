@@ -1,10 +1,13 @@
 use super::{IntegerChip, IntegerInstructions, Range};
 use crate::rns::MaybeReduced;
-use crate::{AssignedInteger, FieldExt};
-use halo2_proofs::plonk::Error;
+use crate::AssignedInteger;
+use halo2_proofs::{
+    ff::{Field, PrimeField},
+    plonk::Error,
+};
 use maingate::{AssignedValue, MainGateInstructions, RangeInstructions, RegionCtx, Term};
 
-impl<W: FieldExt, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Reduces an [`AssignedInteger`] if any of its limbs values is greater
@@ -79,7 +82,7 @@ impl<W: FieldExt, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB:
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
     ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
         let main_gate = self.main_gate();
-        let (zero, one) = (N::zero(), N::one());
+        let (zero, one) = (N::ZERO, N::ONE);
 
         let witness: MaybeReduced<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB> =
             a.integer().as_ref().map(|a_int| a_int.reduce()).into();

@@ -1,7 +1,7 @@
 use super::{IntegerChip, Range};
 use crate::rns::{Common, Integer};
 use crate::{AssignedInteger, AssignedLimb, UnassignedInteger};
-use halo2_proofs::ff::Field;
+use halo2_proofs::ff::{Field, PrimeField};
 // use halo2_proofs::arithmetic::FieldExt;
 use halo2_proofs::plonk::Error;
 use maingate::{fe_to_big, MainGateInstructions, RangeInstructions, RegionCtx, Term};
@@ -9,7 +9,7 @@ use num_bigint::BigUint as big_uint;
 use num_traits::One;
 use std::rc::Rc;
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn assign_integer_generic(
@@ -86,7 +86,7 @@ impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize
             .zip(self.rns.left_shifters.iter())
             .map(|(limb, sh)| Term::Assigned(limb.as_ref(), *sh))
             .collect();
-        let native = main_gate.compose(ctx, &limbs_to_compose, N::zero())?;
+        let native = main_gate.compose(ctx, &limbs_to_compose, N::ZERO)?;
 
         Ok(self.new_assigned_integer(&limbs.try_into().unwrap(), native))
     }
