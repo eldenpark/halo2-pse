@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::iter;
 
-use group::ff::Field;
+use halo2curves::group::ff::Field;
 
 use super::FailureLocation;
 use crate::{

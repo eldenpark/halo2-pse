@@ -1,5 +1,6 @@
-use ff::Field;
-use group::Curve;
+// use ff::Field;
+use halo2curves::group::ff::Field;
+use halo2curves::group::Curve;
 use halo2curves::CurveExt;
 use rand_core::RngCore;
 use std::collections::BTreeSet;
@@ -19,7 +20,7 @@ use super::{
     ChallengeY, Error, Expression, ProvingKey,
 };
 use crate::{
-    arithmetic::{eval_polynomial, CurveAffine, FieldExt},
+    arithmetic::{eval_polynomial, CurveAffine},
     circuit::Value,
     plonk::Assigned,
     poly::{
@@ -32,7 +33,7 @@ use crate::{
     poly::batch_invert_assigned,
     transcript::{EncodedChallenge, TranscriptWrite},
 };
-use group::prime::PrimeCurveAffine;
+use halo2curves::group::prime::PrimeCurveAffine;
 
 /// This creates a proof for the provided `circuit` when given the public
 /// parameters `params` and the proving key [`ProvingKey`] that was
@@ -56,8 +57,11 @@ pub fn create_proof<
 ) -> Result<(), Error> {
     for instance in instances.iter() {
         if instance.len() != pk.vk.cs.num_instance_columns {
-            println!("instance.len: {}, vk instance cols: {}", 
-                instance.len(), pk.vk.cs.num_instance_columns);
+            println!(
+                "instance.len: {}, vk instance cols: {}",
+                instance.len(),
+                pk.vk.cs.num_instance_columns
+            );
             return Err(Error::InvalidInstances);
         }
     }

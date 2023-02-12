@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use std::fmt;
 use std::marker::PhantomData;
 
-use ff::Field;
+// use ff::Field;
+
+use halo2curves::group::ff::Field;
 
 use crate::{
     circuit::{

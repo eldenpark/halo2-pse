@@ -14,8 +14,9 @@ use crate::{
     },
     transcript::EncodedChallenge,
 };
-use ff::Field;
-use group::Curve;
+// use ff::Field;
+use halo2curves::group::ff::Field;
+use halo2curves::group::Curve;
 use halo2curves::CurveAffine;
 use rand_core::{OsRng, RngCore};
 

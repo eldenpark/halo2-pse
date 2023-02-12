@@ -4,7 +4,9 @@ use std::cmp;
 use std::collections::HashSet;
 use std::fmt;
 
-use ff::Field;
+// use ff::Field;
+
+use halo2curves::group::ff::Field;
 
 use super::{Cell, RegionIndex, Value};
 use crate::plonk::{Advice, Any, Assigned, Column, Error, Fixed, Instance, Selector, TableColumn};

@@ -4,18 +4,16 @@ use crate::plonk::permutation::Argument;
 use crate::plonk::{lookup, permutation, AdviceQuery, Any, FixedQuery, InstanceQuery, ProvingKey};
 use crate::poly::Basis;
 use crate::{
-    arithmetic::{eval_polynomial, parallelize, CurveAffine, FieldExt},
+    arithmetic::{eval_polynomial, parallelize, CurveAffine},
     poly::{
         commitment::Params, Coeff, EvaluationDomain, ExtendedLagrangeCoeff, LagrangeCoeff,
         Polynomial, ProverQuery, Rotation,
     },
     transcript::{EncodedChallenge, TranscriptWrite},
 };
-use group::prime::PrimeCurve;
-use group::{
-    ff::{BatchInvert, Field},
-    Curve,
-};
+use halo2curves::group::ff::Field;
+use halo2curves::group::prime::PrimeCurve;
+use halo2curves::group::{ff::BatchInvert, Curve};
 use std::any::TypeId;
 use std::convert::TryInto;
 use std::num::ParseIntError;
@@ -746,7 +744,7 @@ impl<C: CurveAffine> GraphEvaluator<C> {
 }
 
 /// Simple evaluation of an expression
-pub fn evaluate<F: FieldExt, B: Basis>(
+pub fn evaluate<F: Field, B: Basis>(
     expression: &Expression<F>,
     size: usize,
     rot_scale: i32,

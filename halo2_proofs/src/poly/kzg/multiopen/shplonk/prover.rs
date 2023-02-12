@@ -3,7 +3,7 @@ use super::{
 };
 use crate::arithmetic::{
     eval_polynomial, evaluate_vanishing_polynomial, kate_division, lagrange_interpolate,
-    parallelize, powers, CurveAffine, FieldExt,
+    parallelize, powers, CurveAffine,
 };
 use crate::helpers::SerdeCurveAffine;
 use crate::poly::commitment::{Blind, ParamsProver, Prover};
@@ -13,8 +13,8 @@ use crate::poly::Rotation;
 use crate::poly::{commitment::Params, Coeff, Polynomial};
 use crate::transcript::{EncodedChallenge, TranscriptWrite};
 
-use ff::Field;
-use group::Curve;
+use halo2curves::group::ff::Field;
+use halo2curves::group::Curve;
 use halo2curves::pairing::Engine;
 use rand_core::RngCore;
 use rayon::prelude::*;
@@ -23,7 +23,7 @@ use std::io::{self, Write};
 use std::marker::PhantomData;
 use std::ops::MulAssign;
 
-fn div_by_vanishing<F: FieldExt>(poly: Polynomial<F, Coeff>, roots: &[F]) -> Vec<F> {
+fn div_by_vanishing<F: Field>(poly: Polynomial<F, Coeff>, roots: &[F]) -> Vec<F> {
     let poly = roots
         .iter()
         .fold(poly.values, |poly, point| kate_division(&poly, *point));

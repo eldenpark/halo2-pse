@@ -1,6 +1,6 @@
 use core::cmp::max;
 use core::ops::{Add, Mul};
-use ff::Field;
+// use ff::Field;
 use std::collections::HashMap;
 use std::{
     convert::TryFrom,
@@ -13,6 +13,7 @@ use crate::{
     circuit::{Layouter, Region, Value},
     poly::Rotation,
 };
+use halo2curves::group::ff::Field;
 use sealed::SealedPhase;
 
 mod compress_selectors;

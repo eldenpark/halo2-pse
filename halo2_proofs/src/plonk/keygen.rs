@@ -2,8 +2,8 @@
 
 use std::ops::Range;
 
-use ff::Field;
-use group::Curve;
+// use ff::Field;
+use halo2curves::group::{ff::Field, Curve};
 
 use super::{
     circuit::{

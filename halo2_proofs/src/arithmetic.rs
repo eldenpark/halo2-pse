@@ -2,13 +2,13 @@
 //! field and polynomial arithmetic.
 
 use super::multicore;
-pub use ff::Field;
-use group::{
+use halo2curves::group::{
     ff::{BatchInvert, PrimeField},
     Curve, Group as _,
 };
 
-pub use halo2curves::{CurveAffine, CurveExt, FieldExt, Group};
+use halo2curves::group::{ff::Field, Group};
+pub use halo2curves::{CurveAffine, CurveExt};
 
 fn multiexp_serial<C: CurveAffine>(coeffs: &[C::Scalar], bases: &[C], acc: &mut C::Curve) {
     let coeffs: Vec<_> = coeffs.iter().map(|a| a.to_repr()).collect();
@@ -402,7 +402,7 @@ fn log2_floor(num: usize) -> u32 {
 /// Returns coefficients of an n - 1 degree polynomial given a set of n points
 /// and their evaluations. This function will panic if two values in `points`
 /// are the same.
-pub fn lagrange_interpolate<F: FieldExt>(points: &[F], evals: &[F]) -> Vec<F> {
+pub fn lagrange_interpolate<F: Field>(points: &[F], evals: &[F]) -> Vec<F> {
     assert_eq!(points.len(), evals.len());
     if points.len() == 1 {
         // Constant polynomial
@@ -457,8 +457,8 @@ pub fn lagrange_interpolate<F: FieldExt>(points: &[F], evals: &[F]) -> Vec<F> {
     }
 }
 
-pub(crate) fn evaluate_vanishing_polynomial<F: FieldExt>(roots: &[F], z: F) -> F {
-    fn evaluate<F: FieldExt>(roots: &[F], z: F) -> F {
+pub(crate) fn evaluate_vanishing_polynomial<F: Field>(roots: &[F], z: F) -> F {
+    fn evaluate<F: Field>(roots: &[F], z: F) -> F {
         roots.iter().fold(F::one(), |acc, point| (z - point) * acc)
     }
     let n = roots.len();
@@ -477,7 +477,7 @@ pub(crate) fn evaluate_vanishing_polynomial<F: FieldExt>(roots: &[F], z: F) -> F
     }
 }
 
-pub(crate) fn powers<F: FieldExt>(base: F) -> impl Iterator<Item = F> {
+pub(crate) fn powers<F: Field>(base: F) -> impl Iterator<Item = F> {
     std::iter::successors(Some(F::one()), move |power| Some(base * power))
 }
 

@@ -1,5 +1,5 @@
-use ff::Field;
-use group::Curve;
+// use ff::Field;
+use halo2curves::group::Curve;
 use rand_core::RngCore;
 use std::iter;
 
@@ -7,7 +7,7 @@ use super::{
     vanishing, ChallengeBeta, ChallengeGamma, ChallengeTheta, ChallengeX, ChallengeY, Error,
     VerifyingKey,
 };
-use crate::arithmetic::{compute_inner_product, CurveAffine, FieldExt};
+use crate::arithmetic::{compute_inner_product, CurveAffine};
 use crate::poly::commitment::{CommitmentScheme, Verifier};
 use crate::poly::VerificationStrategy;
 use crate::poly::{

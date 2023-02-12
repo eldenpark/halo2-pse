@@ -1,6 +1,6 @@
 use std::{io, marker::PhantomData};
 
-use group::ff::Field;
+use halo2curves::group::ff::Field;
 use halo2curves::CurveAffine;
 use rand_core::{OsRng, RngCore};
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};

@@ -1,6 +1,8 @@
 use std::fmt;
 
-use ff::Field;
+// use ff::Field;
+
+use halo2curves::group::ff::Field;
 
 use crate::{
     circuit::{

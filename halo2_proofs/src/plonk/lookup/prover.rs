@@ -5,7 +5,7 @@ use super::super::{
 use super::Argument;
 use crate::plonk::evaluation::evaluate;
 use crate::{
-    arithmetic::{eval_polynomial, parallelize, CurveAffine, FieldExt},
+    arithmetic::{eval_polynomial, parallelize, CurveAffine},
     poly::{
         commitment::{Blind, Params},
         Coeff, EvaluationDomain, ExtendedLagrangeCoeff, LagrangeCoeff, Polynomial, ProverQuery,
@@ -13,7 +13,7 @@ use crate::{
     },
     transcript::{EncodedChallenge, TranscriptWrite},
 };
-use group::{
+use halo2curves::group::{
     ff::{BatchInvert, Field},
     Curve,
 };
@@ -51,7 +51,7 @@ pub(in crate::plonk) struct Evaluated<C: CurveAffine> {
     constructed: Committed<C>,
 }
 
-impl<F: FieldExt> Argument<F> {
+impl<F: Field> Argument<F> {
     /// Given a Lookup with input expressions [A_0, A_1, ..., A_{m-1}] and table expressions
     /// [S_0, S_1, ..., S_{m-1}], this method
     /// - constructs A_compressed = \theta^{m-1} A_0 + theta^{m-2} A_1 + ... + \theta A_{m-2} + A_{m-1}

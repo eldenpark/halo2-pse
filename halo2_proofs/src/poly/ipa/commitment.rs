@@ -4,15 +4,15 @@
 //! [halo]: https://eprint.iacr.org/2019/1021
 
 use crate::arithmetic::{
-    best_fft, best_multiexp, g_to_lagrange, parallelize, CurveAffine, CurveExt, FieldExt, Group,
+    best_fft, best_multiexp, g_to_lagrange, parallelize, CurveAffine, CurveExt,
 };
 use crate::helpers::CurveRead;
 use crate::poly::commitment::{Blind, CommitmentScheme, Params, ParamsProver, ParamsVerifier, MSM};
 use crate::poly::ipa::msm::MSMIPA;
 use crate::poly::{Coeff, LagrangeCoeff, Polynomial};
 
-use ff::{Field, PrimeField};
-use group::{prime::PrimeCurveAffine, Curve, Group as _};
+// use ff::{Field, PrimeField};
+use halo2curves::group::{prime::PrimeCurveAffine, Curve, Group as _};
 use std::marker::PhantomData;
 use std::ops::{Add, AddAssign, Mul, MulAssign};
 
@@ -234,9 +234,7 @@ impl<'params, C: CurveAffine> ParamsProver<'params, C> for ParamsIPA<C> {
 #[cfg(test)]
 mod test {
 
-    use crate::arithmetic::{
-        best_fft, best_multiexp, parallelize, CurveAffine, CurveExt, FieldExt, Group,
-    };
+    use crate::arithmetic::{best_fft, best_multiexp, parallelize, CurveAffine, CurveExt};
     use crate::helpers::CurveRead;
     use crate::poly::commitment::ParamsProver;
     use crate::poly::commitment::{Blind, CommitmentScheme, Params, MSM};
@@ -244,8 +242,9 @@ mod test {
     use crate::poly::ipa::msm::MSMIPA;
     use crate::poly::{Coeff, LagrangeCoeff, Polynomial};
 
-    use ff::{Field, PrimeField};
-    use group::{prime::PrimeCurveAffine, Curve, Group as _};
+    use halo2curves::group::ff::Field;
+    // use ff::{Field, PrimeField};
+    use halo2curves::group::{prime::PrimeCurveAffine, Curve, Group as _};
     use std::marker::PhantomData;
     use std::ops::{Add, AddAssign, Mul, MulAssign};
 
@@ -305,11 +304,11 @@ mod test {
     fn test_opening_proof() {
         const K: u32 = 6;
 
-        use ff::Field;
+        // use ff::Field;
         use rand_core::OsRng;
 
         use super::super::commitment::{Blind, Params};
-        use crate::arithmetic::{eval_polynomial, FieldExt};
+        use crate::arithmetic::eval_polynomial;
         use crate::halo2curves::pasta::{EpAffine, Fq};
         use crate::poly::EvaluationDomain;
         use crate::transcript::{

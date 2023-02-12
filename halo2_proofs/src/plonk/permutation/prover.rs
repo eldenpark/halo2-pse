@@ -1,4 +1,4 @@
-use group::{
+use halo2curves::group::{
     ff::{BatchInvert, Field},
     Curve,
 };
@@ -8,7 +8,7 @@ use std::iter::{self, ExactSizeIterator};
 use super::super::{circuit::Any, ChallengeBeta, ChallengeGamma, ChallengeX};
 use super::{Argument, ProvingKey};
 use crate::{
-    arithmetic::{eval_polynomial, parallelize, CurveAffine, FieldExt},
+    arithmetic::{eval_polynomial, parallelize, CurveAffine},
     plonk::{self, Error},
     poly::{
         self,

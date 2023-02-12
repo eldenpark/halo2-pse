@@ -7,8 +7,11 @@ use std::{
     ops::{Add, Mul},
 };
 
-use ff::{Field, PrimeField};
-use group::prime::PrimeGroup;
+// use ff::{Field, PrimeField};
+use halo2curves::group::{
+    ff::{Field, PrimeField},
+    prime::PrimeGroup,
+};
 
 use crate::{
     circuit::Value,

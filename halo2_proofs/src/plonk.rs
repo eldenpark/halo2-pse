@@ -6,10 +6,10 @@
 //! [plonk]: https://eprint.iacr.org/2019/953
 
 use blake2b_simd::Params as Blake2bParams;
-use ff::PrimeField;
-use group::ff::Field;
+// use ff::PrimeField;
+use halo2curves::group::ff::Field;
 
-use crate::arithmetic::{CurveAffine, FieldExt};
+use crate::arithmetic::CurveAffine;
 use crate::helpers::{
     polynomial_slice_byte_length, read_polynomial_vec, write_polynomial_slice, SerdeCurveAffine,
     SerdePrimeField,

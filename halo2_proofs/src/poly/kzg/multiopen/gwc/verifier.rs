@@ -3,7 +3,7 @@ use std::io::Read;
 use std::marker::PhantomData;
 
 use super::{construct_intermediate_sets, ChallengeU, ChallengeV};
-use crate::arithmetic::{eval_polynomial, lagrange_interpolate, powers, CurveAffine, FieldExt};
+use crate::arithmetic::{eval_polynomial, lagrange_interpolate, powers, CurveAffine};
 use crate::helpers::SerdeCurveAffine;
 use crate::poly::commitment::Verifier;
 use crate::poly::commitment::MSM;
@@ -19,8 +19,8 @@ use crate::poly::{
 };
 use crate::transcript::{EncodedChallenge, TranscriptRead};
 
-use ff::Field;
-use group::Group;
+// use ff::Field;
+use halo2curves::group::Group;
 use halo2curves::pairing::{Engine, MillerLoopResult, MultiMillerLoop};
 use rand_core::OsRng;
 

@@ -5,7 +5,7 @@ use crate::{
     arithmetic::{best_multiexp, parallelize, CurveAffine},
     poly::commitment::MSM,
 };
-use group::{Curve, Group};
+use halo2curves::group::{Curve, Group};
 use halo2curves::pairing::{Engine, MillerLoopResult, MultiMillerLoop};
 
 /// A multiscalar multiplication in the polynomial commitment scheme
@@ -26,7 +26,7 @@ impl<E: Engine> MSMKZG<E> {
 
     /// Prepares all scalars in the MSM to linear combination
     pub fn combine_with_base(&mut self, base: E::Scalar) {
-        use ff::Field;
+        // use ff::Field;
         let mut acc = E::Scalar::one();
         if !self.scalars.is_empty() {
             for scalar in self.scalars.iter_mut().rev() {
@@ -63,7 +63,7 @@ impl<E: Engine + Debug> MSM<E::G1Affine> for MSMKZG<E> {
     }
 
     fn eval(&self) -> E::G1 {
-        use group::prime::PrimeCurveAffine;
+        use halo2curves::group::prime::PrimeCurveAffine;
         let mut bases = vec![E::G1Affine::identity(); self.scalars.len()];
         E::G1::batch_normalize(&self.bases, &mut bases);
         best_multiexp(&self.scalars, &bases)
@@ -92,7 +92,7 @@ impl<E: Engine + Debug> PreMSM<E> {
     }
 
     pub(crate) fn normalize(self) -> MSMKZG<E> {
-        use group::prime::PrimeCurveAffine;
+        use halo2curves::group::prime::PrimeCurveAffine;
 
         let (scalars, bases) = self
             .projectives_msms

@@ -3,7 +3,9 @@ use std::{
     fmt::{self, Write},
 };
 
-use ff::PrimeField;
+// use ff::PrimeField;
+
+use halo2curves::group::ff::PrimeField;
 
 use crate::{
     dev::util,

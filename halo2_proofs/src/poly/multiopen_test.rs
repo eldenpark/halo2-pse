@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::arithmetic::{eval_polynomial, FieldExt};
+    use crate::arithmetic::eval_polynomial;
     use crate::plonk::Error;
     use crate::poly::commitment::ParamsProver;
     use crate::poly::commitment::{Blind, ParamsVerifier, MSM};
@@ -17,8 +17,8 @@ mod test {
         Keccak256Write, TranscriptRead, TranscriptReadBuffer, TranscriptWrite,
         TranscriptWriterBuffer,
     };
-    use ff::Field;
-    use group::{Curve, Group};
+    // use ff::Field;
+    use halo2curves::group::{Curve, Group};
     use halo2curves::CurveAffine;
     use rand_core::{OsRng, RngCore};
     use std::io::{Read, Write};

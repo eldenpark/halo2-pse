@@ -2,13 +2,14 @@
 //! domain that is of a suitable size for the application.
 
 use crate::{
-    arithmetic::{best_fft, parallelize, FieldExt, Group},
+    arithmetic::{best_fft, parallelize},
     plonk::Assigned,
 };
 
 use super::{Coeff, ExtendedLagrangeCoeff, LagrangeCoeff, Polynomial, Rotation};
 
-use group::ff::{BatchInvert, Field, PrimeField};
+use halo2curves::group::ff::{BatchInvert, Field, PrimeField};
+use halo2curves::group::Group;
 
 use std::marker::PhantomData;
 

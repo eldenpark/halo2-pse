@@ -1,10 +1,10 @@
-use ff::Field;
+// use ff::Field;
 use std::iter;
 
 use super::super::{circuit::Any, ChallengeBeta, ChallengeGamma, ChallengeX};
 use super::{Argument, VerifyingKey};
 use crate::{
-    arithmetic::{CurveAffine, FieldExt},
+    arithmetic::CurveAffine,
     plonk::{self, Error},
     poly::{commitment::MSM, Rotation, VerifierQuery},
     transcript::{EncodedChallenge, TranscriptRead},

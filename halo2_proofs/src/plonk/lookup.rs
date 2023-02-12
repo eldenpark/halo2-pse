@@ -1,5 +1,7 @@
+use halo2curves::group::ff::Field;
+
 use super::circuit::Expression;
-use ff::Field;
+// use ff::Field;
 use std::fmt::{self, Debug};
 
 pub(crate) mod prover;

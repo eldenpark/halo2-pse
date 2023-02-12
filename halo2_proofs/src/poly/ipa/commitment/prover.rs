@@ -1,16 +1,16 @@
-use ff::Field;
+// use ff::Field;
 use rand_core::RngCore;
 
 use super::{Params, ParamsIPA};
 use crate::arithmetic::{
-    best_multiexp, compute_inner_product, eval_polynomial, parallelize, CurveAffine, FieldExt,
+    best_multiexp, compute_inner_product, eval_polynomial, parallelize, CurveAffine,
 };
 
 use crate::poly::commitment::ParamsProver;
 use crate::poly::{commitment::Blind, Coeff, Polynomial};
 use crate::transcript::{EncodedChallenge, TranscriptWrite};
 
-use group::Curve;
+use halo2curves::group::Curve;
 use std::io::{self, Write};
 
 /// Create a polynomial commitment opening proof for the polynomial defined

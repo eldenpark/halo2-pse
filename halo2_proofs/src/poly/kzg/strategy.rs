@@ -15,8 +15,8 @@ use crate::{
     },
     transcript::{EncodedChallenge, TranscriptRead},
 };
-use ff::Field;
-use group::Group;
+// use ff::Field;
+use halo2curves::group::Group;
 use halo2curves::{
     pairing::{Engine, MillerLoopResult, MultiMillerLoop},
     CurveAffine,

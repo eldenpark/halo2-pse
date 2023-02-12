@@ -5,12 +5,12 @@ use super::super::{
 };
 use super::Argument;
 use crate::{
-    arithmetic::{CurveAffine, FieldExt},
+    arithmetic::CurveAffine,
     plonk::{Error, VerifyingKey},
     poly::{commitment::MSM, Rotation, VerifierQuery},
     transcript::{EncodedChallenge, TranscriptRead},
 };
-use ff::Field;
+use halo2curves::group::ff::Field;
 
 pub struct PermutationCommitments<C: CurveAffine> {
     permuted_input_commitment: C,
@@ -31,7 +31,7 @@ pub struct Evaluated<C: CurveAffine> {
     permuted_table_eval: C::Scalar,
 }
 
-impl<F: FieldExt> Argument<F> {
+impl<F: Field> Argument<F> {
     pub(in crate::plonk) fn read_permuted_commitments<
         C: CurveAffine,
         E: EncodedChallenge<C>,

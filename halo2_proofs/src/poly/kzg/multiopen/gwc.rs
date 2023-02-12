@@ -1,11 +1,12 @@
 mod prover;
 mod verifier;
 
+use halo2curves::group::ff::Field;
 pub use prover::ProverGWC;
 pub use verifier::VerifierGWC;
 
 use crate::{
-    arithmetic::{eval_polynomial, CurveAffine, FieldExt},
+    arithmetic::{eval_polynomial, CurveAffine},
     poly::{
         commitment::{Params, ParamsVerifier},
         query::Query,
@@ -27,13 +28,13 @@ type ChallengeU<F> = ChallengeScalar<F, U>;
 struct V {}
 type ChallengeV<F> = ChallengeScalar<F, V>;
 
-struct CommitmentData<F: FieldExt, Q: Query<F>> {
+struct CommitmentData<F: Field, Q: Query<F>> {
     queries: Vec<Q>,
     point: F,
     _marker: PhantomData<F>,
 }
 
-fn construct_intermediate_sets<F: FieldExt, I, Q: Query<F>>(queries: I) -> Vec<CommitmentData<F, Q>>
+fn construct_intermediate_sets<F: Field, I, Q: Query<F>>(queries: I) -> Vec<CommitmentData<F, Q>>
 where
     I: IntoIterator<Item = Q> + Clone,
 {

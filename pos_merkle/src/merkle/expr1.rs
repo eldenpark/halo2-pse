@@ -49,7 +49,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 #[test]
-fn expr2() {
+fn expr1() {
     fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
         let x_big = fe_to_big(x);
         big_to_fe(x_big)

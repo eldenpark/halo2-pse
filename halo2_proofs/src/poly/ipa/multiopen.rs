@@ -6,15 +6,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use super::*;
-use crate::{
-    arithmetic::{CurveAffine, FieldExt},
-    poly::query::Query,
-    transcript::ChallengeScalar,
-};
+use crate::{arithmetic::CurveAffine, poly::query::Query, transcript::ChallengeScalar};
 
 mod prover;
 mod verifier;
 
+use halo2curves::group::ff::Field;
 pub use prover::ProverIPA;
 pub use verifier::VerifierIPA;
 
@@ -63,7 +60,7 @@ type IntermediateSets<F, Q> = (
     Vec<Vec<F>>,
 );
 
-fn construct_intermediate_sets<F: FieldExt, I, Q: Query<F>>(queries: I) -> IntermediateSets<F, Q>
+fn construct_intermediate_sets<F: Field, I, Q: Query<F>>(queries: I) -> IntermediateSets<F, Q>
 where
     I: IntoIterator<Item = Q> + Clone,
 {

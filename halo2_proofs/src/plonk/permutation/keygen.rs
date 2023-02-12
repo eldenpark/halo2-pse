@@ -1,9 +1,8 @@
-use ff::Field;
-use group::Curve;
+use halo2curves::group::Curve;
 
 use super::{Argument, ProvingKey, VerifyingKey};
 use crate::{
-    arithmetic::{parallelize, CurveAffine, FieldExt},
+    arithmetic::{parallelize, CurveAffine},
     plonk::{Any, Column, Error},
     poly::{
         commitment::{Blind, CommitmentScheme, Params},

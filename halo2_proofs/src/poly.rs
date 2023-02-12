@@ -7,9 +7,9 @@ use crate::helpers::SerdePrimeField;
 use crate::plonk::Assigned;
 use crate::SerdeFormat;
 
-use ff::PrimeField;
-use group::ff::{BatchInvert, Field};
-use halo2curves::FieldExt;
+// use ff::PrimeField;
+use halo2curves::group::ff::BatchInvert;
+use halo2curves::group::ff::Field;
 use std::fmt::Debug;
 use std::io;
 use std::marker::PhantomData;
@@ -177,7 +177,7 @@ impl<F: SerdePrimeField, B> Polynomial<F, B> {
     }
 }
 
-pub(crate) fn batch_invert_assigned<F: FieldExt>(
+pub(crate) fn batch_invert_assigned<F: Field>(
     assigned: Vec<Polynomial<Assigned<F>, LagrangeCoeff>>,
 ) -> Vec<Polynomial<F, LagrangeCoeff>> {
     let mut assigned_denominators: Vec<_> = assigned
@@ -195,7 +195,7 @@ pub(crate) fn batch_invert_assigned<F: FieldExt>(
             f.iter_mut()
                 // If the denominator is trivial, we can skip it, reducing the
                 // size of the batch inversion.
-                .filter_map(|d| d.as_mut())
+                .filter_map(|d| Some(d.as_mut()))
         })
         .batch_invert();
 

@@ -16,9 +16,9 @@ halo2_gadgets = { path = "../halo2_gadgets" }
 ecc = { path = "../ecc" }
 integer = { path = "../integer" }
 maingate = { path = "../maingate" }
-group = "0.12"
+group = "0.13"
+ff = "0.13"
 rand = "0.8"
-ff = "0.12"
 
 [lib]
 bench = false

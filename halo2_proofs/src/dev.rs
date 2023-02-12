@@ -8,11 +8,11 @@ use std::ops::{Add, Mul, Neg, Range};
 use std::time::{Duration, Instant};
 
 use blake2b_simd::blake2b;
-use ff::Field;
+use halo2curves::group::ff::Field;
+use halo2curves::group::Group;
 
 use crate::plonk::permutation::keygen::Assembly;
 use crate::{
-    arithmetic::{FieldExt, Group},
     circuit,
     plonk::{
         permutation,
@@ -564,7 +564,7 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
     }
 }
 
-impl<F: FieldExt> MockProver<F> {
+impl<F: Field + Group> MockProver<F> {
     /// Runs a synthetic keygen-and-prove operation on the given circuit, collecting data
     /// about the constraints and their assignments.
     pub fn run<ConcreteCircuit: Circuit<F>>(

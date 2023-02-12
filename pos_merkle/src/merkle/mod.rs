@@ -1,4 +1,5 @@
 mod chip;
+mod expr1;
 mod expr2;
 mod merkle_path;
 mod test1;

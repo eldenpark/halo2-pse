@@ -1,12 +1,12 @@
 use std::iter;
 
-use ff::Field;
-use group::Curve;
+// use ff::Field;
+use halo2curves::group::Curve;
 use rand_core::RngCore;
 
 use super::Argument;
 use crate::{
-    arithmetic::{eval_polynomial, CurveAffine, FieldExt},
+    arithmetic::{eval_polynomial, CurveAffine},
     plonk::{ChallengeX, ChallengeY, Error},
     poly::{
         self,
