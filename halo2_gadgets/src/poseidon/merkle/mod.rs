@@ -22,14 +22,15 @@ use group::Curve;
 use group::Group;
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
-use halo2_proofs::halo2curves::pasta::{pallas, vesta, EqAffine, Fp};
+use halo2_proofs::halo2curves::pasta::{pallas, vesta, EpAffine, EqAffine, Fp};
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk};
-use halo2_proofs::poly::commitment::ParamsProver;
+use halo2_proofs::poly::commitment::{Params, ParamsProver};
 use halo2_proofs::poly::ipa::commitment::{IPACommitmentScheme, ParamsIPA};
 use halo2_proofs::poly::ipa::multiopen::ProverIPA;
 use halo2_proofs::poly::kzg::multiopen::ProverGWC;
 use halo2_proofs::transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer};
+use halo2_proofs::SerdeFormat;
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
@@ -43,7 +44,10 @@ use maingate::{
 };
 use rand::rngs::OsRng;
 use std::convert::TryInto;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 use std::marker::PhantomData;
+use std::path::PathBuf;
 use std::time::Instant;
 
 #[derive(Clone, Debug)]
@@ -295,6 +299,13 @@ fn poseidon_hash2() {
         big_to_fe(x_big)
     }
 
+    let mut project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let params_path = project_root.join("params.dat");
+    let params_fd = File::create(params_path).unwrap();
+
+    let pk_path = project_root.join("pk.dat");
+    let pk_fd = File::create(pk_path).unwrap();
+
     let start = Instant::now();
     println!("poseidon_hash2(): t: {:?}", start.elapsed());
 
@@ -378,10 +389,6 @@ fn poseidon_hash2() {
     // let instance = vec![vec![root], vec![]];
     // let instance = vec![vec![], vec![]];
 
-    // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
-    //
-    // println!("dimension checking, t: {:?}", start.elapsed());
-
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
@@ -390,12 +397,21 @@ fn poseidon_hash2() {
     // assert_eq!(prover.verify(), Ok(()))
 
     println!("params generating, t: {:?}", start.elapsed());
-    let params: ParamsIPA<vesta::Affine> = ParamsIPA::new(k);
+    let params: ParamsIPA<_> = ParamsIPA::new(k);
+
+    let mut writer = BufWriter::new(params_fd);
+    params.write(&mut writer).unwrap();
+    writer.flush().unwrap();
 
     println!("11 vk generating, t: {:?}", start.elapsed());
     let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
+
     println!("22 pk generating, t: {:?}", start.elapsed());
     let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
+    // let mut writer = BufWriter::new(pk_fd);
+    // pk.to_bytes(SerdeFormat::RawBytes);
+    // pk.write(&mut writer, SerdeFormat::RawBytes).unwrap();
+    // writer.flush().unwrap();
 
     let mut rng = OsRng;
     let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
@@ -415,25 +431,4 @@ fn poseidon_hash2() {
     let proof = transcript.finalize();
 
     println!("proof: {:?}, t: {:?}", proof, start.elapsed());
-
-    // let instances = &[&[root]];
-    // let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
-    // create_proof::<
-    //     KZGCommitmentScheme<Bn256>,
-    //     ProverGWC<'_, Bn256>,
-    //     Challenge255<G1Affine>,
-    //     _,
-    //     Blake2bWrite<Vec<u8>, G1Affine, Challenge255<_>>,
-    //     _,
-    // >(
-    //     &params,
-    //     &pk,
-    //     &[circuit],
-    //     &[instances],
-    //     OsRng,
-    //     &mut transcript,
-    // )
-    // .expect("prover should not fail");
-
-    // println!("proof: {:?}", proof);
 }
