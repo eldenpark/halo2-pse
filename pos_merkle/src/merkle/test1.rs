@@ -20,7 +20,7 @@ use halo2_proofs::{
     },
 };
 
-use crate::poseidon::{
+use halo2_gadgets::poseidon::{
     primitives::{self as poseidon, ConstantLength, Spec},
     Hash, Pow5Chip, Pow5Config,
 };

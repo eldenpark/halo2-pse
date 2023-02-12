@@ -2,15 +2,15 @@ use super::{
     chip::{MerkleChip, MerkleInstructions},
     PoseidonInstructions, Pow5Chip, Pow5Config, StateWord,
 };
-use crate::utilities::{cond_swap::CondSwapInstructions, UtilitiesInstructions, Var};
-use crate::{
+use group::ff::{Field, PrimeField};
+use halo2_gadgets::utilities::{cond_swap::CondSwapInstructions, UtilitiesInstructions, Var};
+use halo2_gadgets::{
     poseidon::{
         primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
         Hash,
     },
     utilities::i2lebsp,
 };
-use group::ff::{Field, PrimeField};
 use halo2_proofs::halo2curves::pasta::{pallas, Fp};
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{

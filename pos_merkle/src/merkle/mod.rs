@@ -2,24 +2,26 @@ mod chip;
 mod merkle_path;
 mod test1;
 
+use crate::merkle::merkle_path::MerklePath;
+
 use self::chip::{MerkleChip, MerkleConfig};
+use super::ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
 use super::ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
-use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
-use crate::poseidon::ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
-use crate::utilities::{i2lebsp, Var};
-use crate::{
-    poseidon::{
-        merkle::merkle_path::MerklePath,
-        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
-        Hash,
-    },
-    utilities::UtilitiesInstructions,
-};
 use ecc::GeneralEccChip;
 use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
 use group::Curve;
 use group::Group;
+use halo2_gadgets::poseidon::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
+use halo2_gadgets::utilities::{i2lebsp, Var};
+use halo2_gadgets::{
+    poseidon::{
+        // merkle::merkle_path::MerklePath,
+        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
+        Hash,
+    },
+    utilities::UtilitiesInstructions,
+};
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
 use halo2_proofs::halo2curves::pasta::{pallas, vesta, EpAffine, EqAffine, Fp};
@@ -408,7 +410,8 @@ fn poseidon_hash2() {
 
     println!("22 pk generating, t: {:?}", start.elapsed());
     let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
-    // let mut writer = BufWriter::new(pk_fd);
+
+    let mut writer = BufWriter::new(pk_fd);
     // pk.to_bytes(SerdeFormat::RawBytes);
     // pk.write(&mut writer, SerdeFormat::RawBytes).unwrap();
     // writer.flush().unwrap();

@@ -1,14 +1,14 @@
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
-use crate::utilities::cond_swap::{CondSwapConfig, CondSwapInstructions};
-use crate::utilities::{UtilitiesInstructions, Var};
-use crate::{
+use group::ff::{Field, PrimeField};
+use halo2_gadgets::utilities::cond_swap::{CondSwapConfig, CondSwapInstructions};
+use halo2_gadgets::utilities::{UtilitiesInstructions, Var};
+use halo2_gadgets::{
     poseidon::{
         primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
         Hash,
     },
     utilities::cond_swap::CondSwapChip,
 };
-use group::ff::{Field, PrimeField};
 use halo2_proofs::circuit::Region;
 use halo2_proofs::halo2curves::pasta::{pallas, Fp};
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
