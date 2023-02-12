@@ -10,6 +10,7 @@
 
 pub mod arithmetic;
 pub mod circuit;
+pub use halo2curves;
 pub use pasta_curves as pasta;
 mod multicore;
 pub mod plonk;
@@ -18,3 +19,6 @@ pub mod transcript;
 
 pub mod dev;
 mod helpers;
+
+pub use ff;
+pub use group;

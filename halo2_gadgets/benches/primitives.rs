@@ -7,7 +7,7 @@ use halo2_gadgets::{
 
 use pasta_curves::pallas;
 #[cfg(unix)]
-use pprof::criterion::{Output, PProfProfiler};
+// use pprof::criterion::{Output, PProfProfiler};
 use rand::{rngs::OsRng, Rng};
 
 fn bench_primitives(c: &mut Criterion) {
@@ -57,12 +57,14 @@ fn bench_primitives(c: &mut Criterion) {
     }
 }
 
-#[cfg(unix)]
-criterion_group! {
-    name = benches;
-    config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
-    targets = bench_primitives
-}
-#[cfg(not(unix))]
-criterion_group!(benches, bench_primitives);
-criterion_main!(benches);
+// #[cfg(unix)]
+// criterion_group! {
+//     name = benches;
+//     config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
+//     targets = bench_primitives
+// }
+// #[cfg(not(unix))]
+// criterion_group!(benches, bench_primitives);
+// criterion_main!(benches);
+
+fn main() {}
