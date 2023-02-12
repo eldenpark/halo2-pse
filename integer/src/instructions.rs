@@ -1,8 +1,8 @@
 use super::{AssignedInteger, UnassignedInteger};
 use crate::maingate::{AssignedCondition, RegionCtx};
 use crate::rns::Integer;
-use halo2_proofs::ff::Field;
-// use halo2_proofs::arithmetic::FieldExt;
+use halo2_proofs::ff::{Field, PrimeField};
+// use halo2_proofs::arithmetic::Field;
 use halo2_proofs::plonk::Error;
 
 /// Signals the range mode that should be applied while assigning a new
@@ -21,8 +21,8 @@ pub enum Range {
 
 /// Common functionality for non native integer constraints
 pub trait IntegerInstructions<
-    W: Field,
-    N: Field,
+    W: PrimeField,
+    N: PrimeField,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 >
@@ -290,7 +290,7 @@ pub trait IntegerInstructions<
 
     /// Tries to apply reduction to an [`AssignedInteger`] that is not in this
     /// wrong field
-    fn reduce_external<T: Field>(
+    fn reduce_external<T: PrimeField>(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<T, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,

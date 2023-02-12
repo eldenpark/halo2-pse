@@ -1,8 +1,8 @@
 use super::{AssignedPoint, BaseFieldEccChip};
 use crate::maingate::{AssignedCondition, AssignedValue, MainGateInstructions};
 use crate::{Selector, Table, Windowed};
-use group::ff::PrimeField;
 use halo2_proofs::arithmetic::CurveAffine;
+use halo2_proofs::group::ff::PrimeField;
 use halo2_proofs::plonk::Error;
 use integer::maingate::RegionCtx;
 
@@ -16,7 +16,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         bits: &mut Vec<AssignedCondition<C::Scalar>>,
         window_size: usize,
     ) -> Result<(), Error> {
-        use group::ff::Field;
+        use halo2_proofs::group::ff::Field;
         assert_eq!(bits.len(), C::Scalar::NUM_BITS as usize);
 
         // TODO: This is a tmp workaround. Instead of padding with zeros we can use a

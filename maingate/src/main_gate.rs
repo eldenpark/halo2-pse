@@ -10,7 +10,7 @@
 
 use crate::instructions::{CombinationOptionCommon, MainGateInstructions, Term};
 use crate::{AssignedCondition, AssignedValue};
-// use halo2_proofs::arithmetic::FieldExt;
+// use halo2_proofs::arithmetic::Field;
 use halo2_proofs::circuit::{Chip, Layouter, Value};
 use halo2_proofs::ff::{Field, PrimeField};
 use halo2_proofs::plonk::{Advice, Column, ConstraintSystem, Error, Fixed, Instance};
@@ -536,7 +536,7 @@ mod tests {
     use crate::AssignedCondition;
     use halo2_proofs::arithmetic::Field;
     use halo2_proofs::group::ff::PrimeField;
-    // use halo2_proofs::arithmetic::FieldExt;
+    // use halo2_proofs::arithmetic::Field;
     use halo2_proofs::circuit::{Layouter, SimpleFloorPlanner, Value};
     use halo2_proofs::dev::MockProver;
     use halo2_proofs::halo2curves::pasta::Fp;

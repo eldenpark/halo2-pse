@@ -2,14 +2,14 @@ use super::{IntegerChip, Range};
 use crate::rns::{Common, Integer};
 use crate::{AssignedInteger, AssignedLimb, UnassignedInteger};
 use halo2_proofs::ff::{Field, PrimeField};
-// use halo2_proofs::arithmetic::FieldExt;
+// use halo2_proofs::arithmetic::Field;
 use halo2_proofs::plonk::Error;
 use maingate::{fe_to_big, MainGateInstructions, RangeInstructions, RegionCtx, Term};
 use num_bigint::BigUint as big_uint;
 use num_traits::One;
 use std::rc::Rc;
 
-impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn assign_integer_generic(

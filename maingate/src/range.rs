@@ -1,7 +1,7 @@
 use super::main_gate::{MainGate, MainGateConfig};
 use crate::instructions::{MainGateInstructions, Term};
 use crate::AssignedValue;
-// use halo2_proofs::arithmetic::FieldExt;
+// use halo2_proofs::arithmetic::Field;
 use halo2_proofs::circuit::Chip;
 use halo2_proofs::circuit::Layouter;
 use halo2_proofs::circuit::Value;
@@ -392,7 +392,7 @@ mod tests {
     // use crate::curves::pasta::Fp;
     use crate::main_gate::MainGate;
     use crate::{MainGateInstructions, Term};
-    // use halo2_proofs::arithmetic::FieldExt;
+    // use halo2_proofs::arithmetic::Field;
     use halo2_proofs::circuit::{Layouter, SimpleFloorPlanner};
     use halo2_proofs::dev::MockProver;
     use halo2_proofs::halo2curves::pasta::Fp;

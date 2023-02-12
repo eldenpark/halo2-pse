@@ -43,8 +43,12 @@ impl IntegerConfig {
 
 /// Chip for integer instructions
 #[derive(Clone, Debug)]
-pub struct IntegerChip<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-{
+pub struct IntegerChip<
+    W: PrimeField,
+    N: PrimeField,
+    const NUMBER_OF_LIMBS: usize,
+    const BIT_LEN_LIMB: usize,
+> {
     /// RangeChip
     range_chip: RangeChip<N>,
     /// MainGate
@@ -53,7 +57,7 @@ pub struct IntegerChip<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const B
     rns: Rc<Rns<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>,
 }
 
-impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     fn sublimb_bit_len() -> usize {
@@ -73,11 +77,11 @@ impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: 
     }
 }
 
-impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     IntegerInstructions<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
     for IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
-    fn reduce_external<T: Field>(
+    fn reduce_external<T: PrimeField>(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         // TODO: external integer might have different parameter settings
@@ -516,7 +520,7 @@ impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: 
     }
 }
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Create new ['IntegerChip'] with the configuration and a shared [`Rns`]
@@ -564,19 +568,19 @@ mod tests {
 
     const NUMBER_OF_LIMBS: usize = 4;
 
-    fn rns<W: Field, N: Field, const BIT_LEN_LIMB: usize>(
+    fn rns<W: PrimeField, N: PrimeField, const BIT_LEN_LIMB: usize>(
     ) -> Rns<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB> {
         Rns::<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::construct()
     }
 
-    fn setup<W: Field, N: Field, const BIT_LEN_LIMB: usize>(
+    fn setup<W: PrimeField, N: PrimeField, const BIT_LEN_LIMB: usize>(
     ) -> (Rns<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, u32) {
         let rns = rns();
         let k: u32 = (rns.bit_len_lookup + 1) as u32;
         (rns, k)
     }
 
-    impl<W: Field, N: Field, const BIT_LEN_LIMB: usize>
+    impl<W: PrimeField, N: PrimeField, const BIT_LEN_LIMB: usize>
         From<Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>
         for UnassignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
     {
@@ -589,7 +593,7 @@ mod tests {
         rns: Rc<Rns<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>,
     }
 
-    impl<W: Field, N: PrimeField, const BIT_LEN_LIMB: usize> TestRNS<W, N, BIT_LEN_LIMB> {
+    impl<W: PrimeField, N: PrimeField, const BIT_LEN_LIMB: usize> TestRNS<W, N, BIT_LEN_LIMB> {
         pub(crate) fn rand_in_field(&self) -> Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB> {
             Integer::from_fe(W::random(OsRng), Rc::clone(&self.rns))
         }
@@ -671,7 +675,7 @@ mod tests {
     }
 
     impl TestCircuitConfig {
-        fn new<W: Field, N: PrimeField, const BIT_LEN_LIMB: usize>(
+        fn new<W: PrimeField, N: PrimeField, const BIT_LEN_LIMB: usize>(
             meta: &mut ConstraintSystem<N>,
         ) -> Self {
             let advices = [
@@ -731,7 +735,7 @@ mod tests {
                 rns: Rc<Rns<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>,
             }
 
-            impl<W: Field, N: Field,  const BIT_LEN_LIMB: usize> $circuit_name<W, N, BIT_LEN_LIMB> {
+            impl<W: PrimeField, N: PrimeField,  const BIT_LEN_LIMB: usize> $circuit_name<W, N, BIT_LEN_LIMB> {
                 fn integer_chip(&self, config:TestCircuitConfig) -> IntegerChip<W, N, NUMBER_OF_LIMBS,BIT_LEN_LIMB>{
                     IntegerChip::<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(config.integer_chip_config(), Rc::clone(&self.rns))
                 }
@@ -742,7 +746,7 @@ mod tests {
 
             }
 
-            impl<W: Field, N: PrimeField,  const BIT_LEN_LIMB: usize> Circuit<N> for $circuit_name<W, N, BIT_LEN_LIMB> {
+            impl<W: PrimeField, N: PrimeField,  const BIT_LEN_LIMB: usize> Circuit<N> for $circuit_name<W, N, BIT_LEN_LIMB> {
                 type Config = TestCircuitConfig;
                 type FloorPlanner = SimpleFloorPlanner;
 
@@ -1396,7 +1400,7 @@ mod tests {
 
                     let a = t.rand_in_remainder_range().into();
                     let b = t.rand_in_remainder_range().into();
-                    let cond = N::one();
+                    let cond = N::ONE;
                     let cond = Value::known(cond);
 
                     let a = integer_chip.assign_integer(ctx, a, Range::Remainder)?;
@@ -1428,7 +1432,7 @@ mod tests {
 
                     let a = t.rand_in_remainder_range().into();
                     let b = t.rand_in_remainder_range();
-                    let cond = N::one();
+                    let cond = N::ONE;
                     let cond = Value::known(cond);
 
                     let a = integer_chip.assign_integer(ctx, a, Range::Remainder)?;
@@ -1530,7 +1534,7 @@ mod tests {
                 let (rns, _):(Rns<$wrong_field, $native_field, NUMBER_OF_LIMBS, $bit_len_limb>, u32) = setup();
 
                 let circuit = $circuit::<$wrong_field, $native_field, $bit_len_limb> { rns: Rc::new(rns) };
-            let instance = vec![vec![]];
+            // let instance = vec![vec![]];
             // assert_eq!(mock_prover_verify(&circuit, instance), Ok(()));
             )*
         };

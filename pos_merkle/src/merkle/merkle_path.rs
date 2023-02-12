@@ -12,7 +12,7 @@ use halo2_gadgets::{
     utilities::i2lebsp,
 };
 use halo2_proofs::halo2curves::pasta::{pallas, Fp};
-use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
+use halo2_proofs::poly::Rotation;
 use halo2_proofs::{
     circuit::Chip,
     plonk::{Advice, Column, Expression, Selector},
@@ -28,7 +28,7 @@ use std::iter;
 use std::marker::PhantomData;
 
 // #[derive(Clone, Debug)]
-// pub struct MerklePath<MerkleChip, F: FieldExt>
+// pub struct MerklePath<MerkleChip, F: Field>
 // where
 //     MerkleChip: MerkleInstructions<F> + Clone,
 // {
@@ -39,7 +39,7 @@ use std::marker::PhantomData;
 //     // chips: [MerkleChip; PAR],
 // }
 
-// impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerklePath<MerkleChip<F, WIDTH, RATE>, F>
+// impl<F: Field, const WIDTH: usize, const RATE: usize> MerklePath<MerkleChip<F, WIDTH, RATE>, F>
 // where
 //     MerkleChip<F, WIDTH, RATE>: MerkleInstructions<F> + Clone,
 // {
@@ -97,7 +97,7 @@ pub const MERKLE_CRH_PERSONALIZATION: &str = "z.cash:Orchard-MerkleCRH";
 pub struct MerklePath<
     // C: CurveAffine,
     S: Spec<F, WIDTH, RATE>,
-    F: FieldExt,
+    F: Field,
     MerkleChip,
     const WIDTH: usize,
     const RATE: usize,
@@ -119,7 +119,7 @@ pub struct MerklePath<
 
 impl<
         S: Spec<F, WIDTH, RATE>,
-        F: FieldExt,
+        F: Field,
         MerkleChip,
         const WIDTH: usize,
         const RATE: usize,
@@ -160,7 +160,7 @@ where
 impl<
         // C: CurveAffine,
         S: Spec<F, WIDTH, RATE>,
-        F: FieldExt,
+        F: Field,
         MerkleChip,
         const WIDTH: usize,
         const RATE: usize,

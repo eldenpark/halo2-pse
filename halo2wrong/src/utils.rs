@@ -1,7 +1,7 @@
 // use halo2::plonk::Challenge;
 use halo2_proofs::{
     arithmetic::Field,
-    // arithmetic::FieldExt,
+    // arithmetic::Field,
     circuit::Value,
     dev::{MockProver, VerifyFailure},
     pasta::{group::ff::PrimeField, Fp},
@@ -65,15 +65,17 @@ pub fn compose(input: Vec<big_uint>, bit_len: usize) -> big_uint {
         .fold(big_uint::zero(), |acc, val| (acc << bit_len) + val)
 }
 
-// pub fn mock_prover_verify<F: PrimeField, C: Circuit<F>>(
-//     circuit: &C,
-//     instance: Vec<Vec<F>>,
-// ) -> Result<(), Vec<VerifyFailure>> {
-//     let dimension = DimensionMeasurement::measure(circuit).unwrap();
-//     let prover = MockProver::run(dimension.k(), circuit, instance)
-//         .unwrap_or_else(|err| panic!("{:#?}", err));
-//     prover.verify_at_rows_par(dimension.advice_range(), dimension.advice_range())
-// }
+pub fn mock_prover_verify<F: PrimeField, C: Circuit<F>>(
+    circuit: &C,
+    instance: Vec<Vec<F>>,
+) -> Result<(), Vec<VerifyFailure>> {
+    // let dimension = DimensionMeasurement::measure(circuit).unwrap();
+    // let prover = MockProver::run(dimension.k(), circuit, instance)
+    //     .unwrap_or_else(|err| panic!("{:#?}", err));
+    // prover.verify_at_rows_par(dimension.advice_range(), dimension.advice_range())
+    unimplemented!();
+    // return Ok(());
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Dimension {

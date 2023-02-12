@@ -11,7 +11,7 @@ use halo2_gadgets::{
 };
 use halo2_proofs::circuit::Region;
 use halo2_proofs::halo2curves::pasta::{pallas, Fp};
-use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
+use halo2_proofs::poly::Rotation;
 use halo2_proofs::{
     circuit::Chip,
     plonk::{Advice, Column, Expression, Selector},
@@ -28,7 +28,7 @@ use std::marker::PhantomData;
 
 pub trait MerkleInstructions<
     S: Spec<F, WIDTH, RATE>,
-    F: FieldExt,
+    F: Field,
     const WIDTH: usize,
     const RATE: usize,
 >: CondSwapInstructions<F> + UtilitiesInstructions<F> + Chip<F>
@@ -43,18 +43,18 @@ pub trait MerkleInstructions<
 }
 
 #[derive(Clone, Debug)]
-pub struct MerkleConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
+pub struct MerkleConfig<F: Field, const WIDTH: usize, const RATE: usize> {
     pub advices: [Column<Advice>; 5],
     pub poseidon_config: Pow5Config<F, WIDTH, RATE>,
     pub cond_swap_config: CondSwapConfig,
 }
 
 #[derive(Clone, Debug)]
-pub struct MerkleChip<F: FieldExt, const WIDTH: usize, const RATE: usize> {
+pub struct MerkleChip<F: Field, const WIDTH: usize, const RATE: usize> {
     pub config: MerkleConfig<F, WIDTH, RATE>,
 }
 
-impl<F: FieldExt, const WIDTH: usize, const RATE: usize> Chip<F> for MerkleChip<F, WIDTH, RATE> {
+impl<F: Field, const WIDTH: usize, const RATE: usize> Chip<F> for MerkleChip<F, WIDTH, RATE> {
     type Config = MerkleConfig<F, WIDTH, RATE>;
     type Loaded = ();
 
@@ -67,7 +67,7 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> Chip<F> for MerkleChip<
     }
 }
 
-impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RATE> {
+impl<F: Field, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RATE> {
     pub fn configure(
         meta: &mut ConstraintSystem<F>,
         advices: [Column<Advice>; 5],
@@ -93,7 +93,7 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RA
 }
 // ANCHOR_END: chip-config
 
-impl<S: Spec<F, WIDTH, RATE>, F: FieldExt, const WIDTH: usize, const RATE: usize>
+impl<S: Spec<F, WIDTH, RATE>, F: Field, const WIDTH: usize, const RATE: usize>
     MerkleInstructions<S, F, WIDTH, RATE> for MerkleChip<F, WIDTH, RATE>
 {
     fn hash_layer(
@@ -141,13 +141,13 @@ impl<S: Spec<F, WIDTH, RATE>, F: FieldExt, const WIDTH: usize, const RATE: usize
     }
 }
 
-impl<F: FieldExt, const WIDTH: usize, const RATE: usize> UtilitiesInstructions<F>
+impl<F: Field, const WIDTH: usize, const RATE: usize> UtilitiesInstructions<F>
     for MerkleChip<F, WIDTH, RATE>
 {
     type Var = AssignedCell<F, F>;
 }
 
-impl<F: FieldExt, const WIDTH: usize, const RATE: usize> CondSwapInstructions<F>
+impl<F: Field, const WIDTH: usize, const RATE: usize> CondSwapInstructions<F>
     for MerkleChip<F, WIDTH, RATE>
 {
     #[allow(clippy::type_complexity)]

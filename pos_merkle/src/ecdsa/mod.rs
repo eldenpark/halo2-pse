@@ -6,7 +6,7 @@ use integer::{IntegerChip, IntegerConfig};
 // use crate::maingate;
 use ecc::maingate::RegionCtx;
 use ecc::{AssignedPoint, EccConfig, GeneralEccChip};
-use halo2_proofs::arithmetic::{CurveAffine, FieldExt};
+use halo2_proofs::arithmetic::CurveAffine;
 use halo2_proofs::{circuit::Value, plonk::Error};
 use integer::rns::Integer;
 use integer::{AssignedInteger, IntegerInstructions};
@@ -39,19 +39,14 @@ impl EcdsaConfig {
 }
 
 #[derive(Clone, Debug)]
-pub struct EcdsaSig<
-    W: FieldExt,
-    N: FieldExt,
-    const NUMBER_OF_LIMBS: usize,
-    const BIT_LEN_LIMB: usize,
-> {
+pub struct EcdsaSig<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize> {
     pub r: Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
     pub s: Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
 }
 
 pub struct AssignedEcdsaSig<
-    W: FieldExt,
-    N: FieldExt,
+    W: Field,
+    N: Field,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 > {
@@ -60,8 +55,8 @@ pub struct AssignedEcdsaSig<
 }
 
 pub struct AssignedPublicKey<
-    W: FieldExt,
-    N: FieldExt,
+    W: Field,
+    N: Field,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 > {
@@ -70,12 +65,12 @@ pub struct AssignedPublicKey<
 
 pub struct EcdsaChip<
     E: CurveAffine,
-    N: FieldExt,
+    N: Field,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 >(GeneralEccChip<E, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>);
 
-impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<E: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     EcdsaChip<E, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub fn new(ecc_chip: GeneralEccChip<E, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>) -> Self {
@@ -93,7 +88,7 @@ impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
     }
 }
 
-impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<E: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     EcdsaChip<E, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub fn verify(
@@ -149,7 +144,7 @@ pub struct TestCircuitEcdsaVerifyConfig {
 }
 
 impl TestCircuitEcdsaVerifyConfig {
-    pub fn new<C: CurveAffine, N: FieldExt>(meta: &mut ConstraintSystem<N>) -> Self {
+    pub fn new<C: CurveAffine, N: Field>(meta: &mut ConstraintSystem<N>) -> Self {
         let advices = [
             meta.advice_column(),
             meta.advice_column(),
@@ -186,7 +181,7 @@ impl TestCircuitEcdsaVerifyConfig {
         EccConfig::new(self.range_config.clone(), self.main_gate_config.clone())
     }
 
-    pub fn config_range<N: FieldExt>(&self, layouter: &mut impl Layouter<N>) -> Result<(), Error> {
+    pub fn config_range<N: Field>(&self, layouter: &mut impl Layouter<N>) -> Result<(), Error> {
         let range_chip = RangeChip::<N>::new(self.range_config.clone());
         range_chip.load_table(layouter)?;
 
@@ -208,7 +203,6 @@ mod tests {
     use group::ff::Field;
     use group::{Curve, Group};
     use halo2_proofs::arithmetic::CurveAffine;
-    use halo2_proofs::arithmetic::FieldExt;
     use halo2_proofs::circuit::{Layouter, SimpleFloorPlanner, Value};
     use halo2_proofs::halo2curves::bn256::Bn256;
     use halo2_proofs::halo2curves::bn256::G1Affine;
@@ -250,7 +244,7 @@ mod tests {
     }
 
     impl TestCircuitEcdsaVerifyConfig {
-        pub fn new<C: CurveAffine, N: FieldExt>(meta: &mut ConstraintSystem<N>) -> Self {
+        pub fn new<C: CurveAffine, N: Field>(meta: &mut ConstraintSystem<N>) -> Self {
             let advices = [
                 meta.advice_column(),
                 meta.advice_column(),
@@ -288,10 +282,7 @@ mod tests {
             EccConfig::new(self.range_config.clone(), self.main_gate_config.clone())
         }
 
-        pub fn config_range<N: FieldExt>(
-            &self,
-            layouter: &mut impl Layouter<N>,
-        ) -> Result<(), Error> {
+        pub fn config_range<N: Field>(&self, layouter: &mut impl Layouter<N>) -> Result<(), Error> {
             let range_chip = RangeChip::<N>::new(self.range_config.clone());
             range_chip.load_table(layouter)?;
 
@@ -300,7 +291,7 @@ mod tests {
     }
 
     #[derive(Default, Clone)]
-    struct TestCircuitEcdsaVerify<E: CurveAffine, N: FieldExt> {
+    struct TestCircuitEcdsaVerify<E: CurveAffine, N: Field> {
         public_key: Value<E>,
         signature: Value<(E::Scalar, E::Scalar)>,
         msg_hash: Value<E::Scalar>,
@@ -310,7 +301,7 @@ mod tests {
         _marker: PhantomData<N>,
     }
 
-    impl<E: CurveAffine, N: FieldExt> Circuit<N> for TestCircuitEcdsaVerify<E, N> {
+    impl<E: CurveAffine, N: Field> Circuit<N> for TestCircuitEcdsaVerify<E, N> {
         type Config = TestCircuitEcdsaVerifyConfig;
         type FloorPlanner = SimpleFloorPlanner;
 
@@ -389,7 +380,7 @@ mod tests {
             big_to_fe(x_big)
         }
 
-        fn run<C: CurveAffine, N: FieldExt>() {
+        fn run<C: CurveAffine, N: Field>() {
             let start = Instant::now();
 
             println!("run(): start: {:?}", start.elapsed());

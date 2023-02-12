@@ -1,6 +1,6 @@
 use halo2_proofs::{
     arithmetic::Field,
-    // arithmetic::FieldExt,
+    // arithmetic::Field,
     circuit::{AssignedCell, Cell, Region, Value},
     plonk::{Advice, Column, Error, Fixed, Selector},
 };

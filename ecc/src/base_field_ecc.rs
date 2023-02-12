@@ -351,9 +351,10 @@ mod tests {
     use crate::integer::rns::Rns;
     use crate::integer::NUMBER_OF_LOOKUP_LIMBS;
     use crate::maingate;
-    use group::{Curve as _, Group};
-    use halo2_proofs::arithmetic::{CurveAffine, FieldExt};
+    use halo2_proofs::arithmetic::{CurveAffine, Field};
     use halo2_proofs::circuit::{Layouter, SimpleFloorPlanner, Value};
+    use halo2_proofs::ff::PrimeField;
+    use halo2_proofs::group::{Curve as _, Group};
     use halo2_proofs::plonk::{Circuit, ConstraintSystem, Error};
     use integer::maingate::RegionCtx;
     use maingate::mock_prover_verify;
@@ -431,7 +432,10 @@ mod tests {
             }
         }
 
-        fn config_range<N: FieldExt>(&self, layouter: &mut impl Layouter<N>) -> Result<(), Error> {
+        fn config_range<N: PrimeField>(
+            &self,
+            layouter: &mut impl Layouter<N>,
+        ) -> Result<(), Error> {
             let range_chip = RangeChip::<N>::new(self.range_config.clone());
             range_chip.load_table(layouter)?;
 
@@ -662,7 +666,7 @@ mod tests {
             layouter.assign_region(
                 || "region 0",
                 |region| {
-                    use group::ff::Field;
+                    use halo2_proofs::group::ff::Field;
                     let offset = 0;
                     let ctx = &mut RegionCtx::new(region, offset);
 
@@ -751,7 +755,7 @@ mod tests {
             layouter.assign_region(
                 || "region 0",
                 |region| {
-                    use group::ff::Field;
+                    use halo2_proofs::group::ff::Field;
                     let offset = 0;
                     let ctx = &mut RegionCtx::new(region, offset);
 

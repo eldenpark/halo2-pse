@@ -114,13 +114,13 @@ impl<F: PrimeField> AssignedLimb<F> {
 /// Witness integer that is about to be assigned.
 #[derive(Debug, Clone)]
 pub struct UnassignedInteger<
-    W: Field,
-    N: Field,
+    W: PrimeField,
+    N: PrimeField,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 >(Value<Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>);
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     From<Value<Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>>
     for UnassignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
@@ -145,7 +145,7 @@ pub struct AssignedInteger<
     rns: Rc<Rns<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>,
 }
 
-impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Creates a new [`AssignedInteger`].

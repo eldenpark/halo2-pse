@@ -4,7 +4,7 @@
 
 use halo2_proofs::{
     // circuit::{Chip, Layouter, Value},
-    // halo2curves::FieldExt,
+    // halo2curves::Field,
     // plonk::Error,
     arithmetic::Field,
     circuit::{Chip, Layouter, Value},
@@ -13,7 +13,7 @@ use halo2_proofs::{
 };
 // use crate::{
 //     halo2::{
-//         arithmetic::{Field, FieldExt},
+//         arithmetic::{Field, Field},
 //         circuit::{Chip, Layouter, Value},
 //         plonk::Error,
 //     },

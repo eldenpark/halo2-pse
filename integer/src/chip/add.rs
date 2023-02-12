@@ -7,7 +7,7 @@ use maingate::{fe_to_big, MainGateInstructions, RegionCtx, Term};
 use num_bigint::BigUint as big_uint;
 use std::rc::Rc;
 
-impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn add_generic(

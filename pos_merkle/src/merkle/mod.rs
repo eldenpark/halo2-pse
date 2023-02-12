@@ -30,9 +30,9 @@ use halo2_proofs::poly::commitment::{Params, ParamsProver};
 use halo2_proofs::poly::ipa::commitment::{IPACommitmentScheme, ParamsIPA};
 use halo2_proofs::poly::ipa::multiopen::ProverIPA;
 use halo2_proofs::poly::kzg::multiopen::ProverGWC;
+use halo2_proofs::poly::Rotation;
 use halo2_proofs::transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer};
 use halo2_proofs::SerdeFormat;
-use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
     dev::MockProver,
@@ -52,7 +52,7 @@ use std::path::PathBuf;
 use std::time::Instant;
 
 #[derive(Clone, Debug)]
-pub struct MyConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
+pub struct MyConfig<F: Field, const WIDTH: usize, const RATE: usize> {
     advices: [Column<Advice>; 5],
     instance: Column<Instance>,
     merkle_config: MerkleConfig<F, WIDTH, RATE>,
@@ -62,7 +62,7 @@ pub struct MyConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
     _f: PhantomData<F>,
 }
 
-impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE> {
+impl<F: Field, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE> {
     pub fn construct_merkle_chip(&self) -> MerkleChip<F, WIDTH, RATE> {
         MerkleChip::construct(self.merkle_config.clone())
     }
@@ -75,7 +75,7 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE
 struct HashCircuit<
     N: CurveAffine,
     S: Spec<F, WIDTH, RATE>,
-    F: FieldExt,
+    F: Field,
     const WIDTH: usize,
     const RATE: usize,
     const L: usize,
@@ -98,7 +98,7 @@ struct HashCircuit<
 impl<
         N: CurveAffine,
         S: Spec<F, WIDTH, RATE>,
-        F: FieldExt,
+        F: Field,
         const WIDTH: usize,
         const RATE: usize,
         const L: usize,

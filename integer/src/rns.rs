@@ -26,7 +26,7 @@ pub trait Common<F: PrimeField> {
     }
 }
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     From<Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>> for big_uint
 {
     fn from(el: Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>) -> Self {
@@ -42,7 +42,7 @@ fn bool_to_big(truth: bool) -> big_uint {
     }
 }
 
-impl<F: Field> From<Limb<F>> for big_uint {
+impl<F: PrimeField> From<Limb<F>> for big_uint {
     fn from(limb: Limb<F>) -> Self {
         limb.value()
     }
@@ -52,8 +52,8 @@ impl<F: Field> From<Limb<F>> for big_uint {
 // multiplication gate.
 #[derive(Clone)]
 pub(crate) struct ReductionWitness<
-    W: Field,
-    N: Field,
+    W: PrimeField,
+    N: PrimeField,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 > {
@@ -65,13 +65,13 @@ pub(crate) struct ReductionWitness<
 
 // Wrapper for reduction witnesses
 pub(crate) struct MaybeReduced<
-    W: Field,
-    N: Field,
+    W: PrimeField,
+    N: PrimeField,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 >(Value<ReductionWitness<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>);
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     From<Value<ReductionWitness<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>>
     for MaybeReduced<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
@@ -80,7 +80,7 @@ impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize
     }
 }
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     MaybeReduced<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Returns the quotient value as [`Integer`].
@@ -130,7 +130,12 @@ impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize
 /// Short: as an element of the native field.
 /// Long : as an [`Integer`].
 #[derive(Clone, Debug)]
-pub enum Quotient<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize> {
+pub enum Quotient<
+    W: PrimeField,
+    N: PrimeField,
+    const NUMBER_OF_LIMBS: usize,
+    const BIT_LEN_LIMB: usize,
+> {
     /// Single limb quotient
     Short(N),
     /// Integer quotient
@@ -141,8 +146,8 @@ pub enum Quotient<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LE
 // comparision gate.
 #[derive(Clone)]
 pub(crate) struct ComparisionWitness<
-    W: Field,
-    N: Field,
+    W: PrimeField,
+    N: PrimeField,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 > {
@@ -217,7 +222,7 @@ pub struct Rns<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
     _marker_wrong: PhantomData<W>,
 }
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     Rns<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Calculates [`Rns`] `base_aux`.
@@ -661,13 +666,18 @@ impl<F: Field> Limb<F> {
 /// The integer is represented as a vector of [`Limb`]s with values in the
 /// native field plus a reference to the [`Rns`] used.
 #[derive(Clone)]
-pub struct Integer<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize> {
+pub struct Integer<
+    W: PrimeField,
+    N: PrimeField,
+    const NUMBER_OF_LIMBS: usize,
+    const BIT_LEN_LIMB: usize,
+> {
     limbs: Vec<Limb<N>>,
     rns: Rc<Rns<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>,
 }
 
-impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize> fmt::Debug
-    for Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+    fmt::Debug for Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let value = self.value();
@@ -682,8 +692,8 @@ impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: 
     }
 }
 
-impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize> Common<N>
-    for Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+    Common<N> for Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     fn value(&self) -> big_uint {
         let limb_values = self.limbs.iter().map(|limb| limb.value()).collect();
@@ -820,7 +830,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         let result = Self::from_big(result.clone(), Rc::clone(&self.rns));
 
         let l = NUMBER_OF_LIMBS;
-        let mut intermediate: Vec<N> = vec![N::zero(); l];
+        let mut intermediate: Vec<N> = vec![N::ZERO; l];
         for k in 0..l {
             for i in 0..=k {
                 let j = k - i;
@@ -876,7 +886,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         let lsh1 = self.rns.left_shifter(1);
         let (rsh1, rsh2) = (self.rns.right_shifter(1), self.rns.right_shifter(2));
 
-        let mut carry = N::zero();
+        let mut carry = N::ZERO;
         // TODO: use chunks
         (0..u_len)
             .map(|i| {

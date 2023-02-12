@@ -6,7 +6,7 @@ use halo2_proofs::{
 };
 use maingate::{AssignedValue, CombinationOptionCommon, MainGateInstructions, RegionCtx, Term};
 
-impl<W: Field, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn assert_in_field_generic(
