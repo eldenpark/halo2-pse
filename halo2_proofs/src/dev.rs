@@ -15,9 +15,11 @@ use crate::{
     arithmetic::{FieldExt, Group},
     circuit,
     plonk::{
-        permutation, Advice, Any, Assigned, Assignment, Challenge, Circuit, Column, ColumnType,
-        ConstraintSystem, Error, Expression, Fixed, FloorPlanner, Instance, Phase, Selector,
-        VirtualCell,
+        permutation,
+        sealed::{self, SealedPhase},
+        Advice, Any, Assigned, Assignment, Challenge, Circuit, Column, ColumnType,
+        ConstraintSystem, Error, Expression, FirstPhase, Fixed, FloorPlanner, Instance, Phase,
+        Selector, VirtualCell,
     },
     poly::Rotation,
 };
@@ -307,6 +309,14 @@ pub struct MockProver<F: Group + Field> {
 
     // A range of available rows for assignment and copies.
     usable_rows: Range<usize>,
+
+    current_phase: sealed::Phase,
+}
+
+impl<F: Field + Group> MockProver<F> {
+    fn in_phase<P: Phase>(&self, phase: P) -> bool {
+        self.current_phase == phase.to_sealed()
+    }
 }
 
 impl<F: Field + Group> Assignment<F> for MockProver<F> {
@@ -315,6 +325,10 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
         NR: Into<String>,
         N: FnOnce() -> NR,
     {
+        if !self.in_phase(FirstPhase) {
+            return;
+        }
+
         assert!(self.current_region.is_none());
         self.current_region = Some(Region {
             name: name().into(),
@@ -327,6 +341,10 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
     }
 
     fn exit_region(&mut self) {
+        if !self.in_phase(FirstPhase) {
+            return;
+        }
+
         self.regions.push(self.current_region.take().unwrap());
     }
 
@@ -335,6 +353,10 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
         A: FnOnce() -> AR,
         AR: Into<String>,
     {
+        if !self.in_phase(FirstPhase) {
+            return;
+        }
+
         if let Some(region) = self.current_region.as_mut() {
             region
                 .annotations
@@ -347,6 +369,10 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
         A: FnOnce() -> AR,
         AR: Into<String>,
     {
+        if !self.in_phase(FirstPhase) {
+            return Ok(());
+        }
+
         if !self.usable_rows.contains(&row) {
             return Err(Error::not_enough_rows_available(self.k));
         }
@@ -395,25 +421,44 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
         A: FnOnce() -> AR,
         AR: Into<String>,
     {
-        if !self.usable_rows.contains(&row) {
-            return Err(Error::not_enough_rows_available(self.k));
+        if self.in_phase(FirstPhase) {
+            if !self.usable_rows.contains(&row) {
+                return Err(Error::not_enough_rows_available(self.k));
+            }
+
+            if let Some(region) = self.current_region.as_mut() {
+                region.update_extent(column.into(), row);
+                region
+                    .cells
+                    .entry((column.into(), row))
+                    .and_modify(|count| *count += 1)
+                    .or_default();
+            }
         }
 
-        if let Some(region) = self.current_region.as_mut() {
-            region.update_extent(column.into(), row);
-            region
-                .cells
-                .entry((column.into(), row))
-                .and_modify(|count| *count += 1)
-                .or_default();
+        match to().into_field().evaluate().assign() {
+            Ok(to) => {
+                let value = self
+                    .advice
+                    .get_mut(column.index())
+                    .and_then(|v| v.get_mut(row))
+                    .ok_or(Error::BoundsFailure)?;
+                if let CellValue::Assigned(value) = value {
+                    // Inconsistent assignment between different phases.
+                    if value != &to {
+                        return Err(Error::Synthesis);
+                    }
+                } else {
+                    *value = CellValue::Assigned(to);
+                }
+            }
+            Err(err) => {
+                // Propagate `assign` error if the column is in current phase.
+                if self.in_phase(column.column_type().phase) {
+                    return Err(err);
+                }
+            }
         }
-
-        *self
-            .advice
-            .get_mut(column.index())
-            .and_then(|v| v.get_mut(row))
-            .ok_or(Error::BoundsFailure)? =
-            CellValue::Assigned(to().into_field().evaluate().assign()?);
 
         Ok(())
     }
@@ -431,6 +476,10 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
         A: FnOnce() -> AR,
         AR: Into<String>,
     {
+        if !self.in_phase(FirstPhase) {
+            return Ok(());
+        }
+
         if !self.usable_rows.contains(&row) {
             return Err(Error::not_enough_rows_available(self.k));
         }
@@ -461,6 +510,10 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
         right_column: Column<Any>,
         right_row: usize,
     ) -> Result<(), crate::plonk::Error> {
+        if !self.in_phase(FirstPhase) {
+            return Ok(());
+        }
+
         if !self.usable_rows.contains(&left_row) || !self.usable_rows.contains(&right_row) {
             return Err(Error::not_enough_rows_available(self.k));
         }
@@ -475,6 +528,10 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
         from_row: usize,
         to: circuit::Value<Assigned<F>>,
     ) -> Result<(), Error> {
+        if !self.in_phase(FirstPhase) {
+            return Ok(());
+        }
+
         if !self.usable_rows.contains(&from_row) {
             return Err(Error::not_enough_rows_available(self.k));
         }
@@ -487,6 +544,10 @@ impl<F: Field + Group> Assignment<F> for MockProver<F> {
     }
 
     fn get_challenge(&self, challenge: Challenge) -> circuit::Value<F> {
+        if self.current_phase <= challenge.phase {
+            return circuit::Value::unknown();
+        }
+
         circuit::Value::known(self.challenges[challenge.index()])
     }
 
@@ -581,9 +642,18 @@ impl<F: FieldExt> MockProver<F> {
             challenges,
             permutation,
             usable_rows: 0..usable_rows,
+            current_phase: FirstPhase.to_sealed(),
         };
 
-        ConcreteCircuit::FloorPlanner::synthesize(&mut prover, circuit, config, constants)?;
+        for current_phase in prover.cs.phases() {
+            prover.current_phase = current_phase;
+            ConcreteCircuit::FloorPlanner::synthesize(
+                &mut prover,
+                circuit,
+                config.clone(),
+                constants.clone(),
+            )?;
+        }
 
         let (cs, selector_polys) = prover.cs.compress_selectors(prover.selectors.clone());
         prover.cs = cs;
@@ -962,8 +1032,7 @@ impl<F: FieldExt> MockProver<F> {
 
     /// Returns `Ok(())` if this `MockProver` is satisfied, or a list of errors indicating
     /// the reasons that the circuit is not satisfied.
-    /// Constraints are only checked at `gate_row_ids`,
-    /// and lookup inputs are only checked at `lookup_input_row_ids`, parallelly.
+    /// Constraints are only checked at `gate_row_ids`, and lookup inputs are only checked at `lookup_input_row_ids`, parallelly.
     pub fn verify_at_rows_par<I: Clone + Iterator<Item = usize>>(
         &self,
         gate_row_ids: I,
@@ -1022,7 +1091,12 @@ impl<F: FieldExt> MockProver<F> {
                                         } else {
                                             Some(VerifyFailure::CellNotAssigned {
                                                 gate: (gate_index, gate.name()).into(),
-                                                region: (r_i, r.name.clone()).into(),
+                                                region: (
+                                                    r_i,
+                                                    r.name.clone(),
+                                                    r.annotations.clone(),
+                                                )
+                                                    .into(),
                                                 gate_offset: *selector_row,
                                                 column: cell.column,
                                                 offset: cell_row as isize
@@ -1346,6 +1420,31 @@ impl<F: FieldExt> MockProver<F> {
     /// ```
     pub fn assert_satisfied_par(&self) {
         if let Err(errs) = self.verify_par() {
+            for err in errs {
+                err.emit(self);
+                eprintln!();
+            }
+            panic!("circuit was not satisfied");
+        }
+    }
+
+    /// Panics if the circuit being checked by this `MockProver` is not satisfied.
+    ///
+    /// Any verification failures will be pretty-printed to stderr before the function
+    /// panics.
+    ///
+    /// Constraints are only checked at `gate_row_ids`, and lookup inputs are only checked at `lookup_input_row_ids`, parallelly.
+    ///
+    /// Apart from the stderr output, this method is equivalent to:
+    /// ```ignore
+    /// assert_eq!(prover.verify_at_rows_par(), Ok(()));
+    /// ```
+    pub fn assert_satisfied_at_rows_par<I: Clone + Iterator<Item = usize>>(
+        &self,
+        gate_row_ids: I,
+        lookup_input_row_ids: I,
+    ) {
+        if let Err(errs) = self.verify_at_rows_par(gate_row_ids, lookup_input_row_ids) {
             for err in errs {
                 err.emit(self);
                 eprintln!();
