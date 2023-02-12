@@ -1,7 +1,7 @@
 use super::{AssignedInteger, UnassignedInteger};
 use crate::maingate::{AssignedCondition, RegionCtx};
 use crate::rns::Integer;
-use halo2_proofs::ff::{Field, PrimeField};
+use halo2_proofs::ff::PrimeField;
 // use halo2_proofs::arithmetic::Field;
 use halo2_proofs::plonk::Error;
 

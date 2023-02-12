@@ -1,4 +1,5 @@
 use halo2_proofs::circuit::Layouter;
+use halo2_proofs::ff::{Field, PrimeField};
 use halo2_proofs::plonk::ConstraintSystem;
 use integer::{IntegerChip, IntegerConfig};
 // use crate::halo2;
@@ -39,7 +40,12 @@ impl EcdsaConfig {
 }
 
 #[derive(Clone, Debug)]
-pub struct EcdsaSig<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize> {
+pub struct EcdsaSig<
+    W: PrimeField,
+    N: PrimeField,
+    const NUMBER_OF_LIMBS: usize,
+    const BIT_LEN_LIMB: usize,
+> {
     pub r: Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
     pub s: Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
 }
@@ -65,12 +71,12 @@ pub struct AssignedPublicKey<
 
 pub struct EcdsaChip<
     E: CurveAffine,
-    N: Field,
+    N: PrimeField,
     const NUMBER_OF_LIMBS: usize,
     const BIT_LEN_LIMB: usize,
 >(GeneralEccChip<E, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>);
 
-impl<E: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<E: CurveAffine, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     EcdsaChip<E, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub fn new(ecc_chip: GeneralEccChip<E, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>) -> Self {
@@ -88,7 +94,7 @@ impl<E: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB:
     }
 }
 
-impl<E: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<E: CurveAffine, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     EcdsaChip<E, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub fn verify(
@@ -144,7 +150,7 @@ pub struct TestCircuitEcdsaVerifyConfig {
 }
 
 impl TestCircuitEcdsaVerifyConfig {
-    pub fn new<C: CurveAffine, N: Field>(meta: &mut ConstraintSystem<N>) -> Self {
+    pub fn new<C: CurveAffine, N: PrimeField>(meta: &mut ConstraintSystem<N>) -> Self {
         let advices = [
             meta.advice_column(),
             meta.advice_column(),
@@ -181,7 +187,10 @@ impl TestCircuitEcdsaVerifyConfig {
         EccConfig::new(self.range_config.clone(), self.main_gate_config.clone())
     }
 
-    pub fn config_range<N: Field>(&self, layouter: &mut impl Layouter<N>) -> Result<(), Error> {
+    pub fn config_range<N: PrimeField>(
+        &self,
+        layouter: &mut impl Layouter<N>,
+    ) -> Result<(), Error> {
         let range_chip = RangeChip::<N>::new(self.range_config.clone());
         range_chip.load_table(layouter)?;
 
@@ -200,10 +209,11 @@ mod tests {
     use ecc::maingate::fe_to_big;
     use ecc::maingate::RegionCtx;
     use ecc::{EccConfig, GeneralEccChip};
-    use group::ff::Field;
-    use group::{Curve, Group};
     use halo2_proofs::arithmetic::CurveAffine;
     use halo2_proofs::circuit::{Layouter, SimpleFloorPlanner, Value};
+    use halo2_proofs::ff::Field;
+    use halo2_proofs::ff::PrimeField;
+    use halo2_proofs::group::{Curve, Group};
     use halo2_proofs::halo2curves::bn256::Bn256;
     use halo2_proofs::halo2curves::bn256::G1Affine;
     use halo2_proofs::halo2curves::pasta;
@@ -214,15 +224,15 @@ mod tests {
     use halo2_proofs::plonk::keygen_pk;
     use halo2_proofs::plonk::keygen_vk;
     use halo2_proofs::plonk::{Circuit, ConstraintSystem, Error};
-    use halo2_proofs::poly::commitment::ParamsProver;
-    use halo2_proofs::poly::ipa::commitment::IPACommitmentScheme;
-    use halo2_proofs::poly::ipa::commitment::ParamsIPA;
-    use halo2_proofs::poly::ipa::multiopen::ProverIPA;
-    use halo2_proofs::poly::kzg::commitment::ParamsKZG;
-    use halo2_proofs::poly::kzg::multiopen::ProverGWC;
+    // use halo2_proofs::poly::commitment::ParamsProver;
+    // use halo2_proofs::poly::ipa::commitment::IPACommitmentScheme;
+    // use halo2_proofs::poly::ipa::commitment::ParamsIPA;
+    // use halo2_proofs::poly::ipa::multiopen::ProverIPA;
+    // use halo2_proofs::poly::kzg::commitment::ParamsKZG;
+    // use halo2_proofs::poly::kzg::multiopen::ProverGWC;
     use halo2_proofs::transcript::Blake2bWrite;
     use halo2_proofs::transcript::Challenge255;
-    use halo2_proofs::transcript::TranscriptWriterBuffer;
+    // use halo2_proofs::transcript::TranscriptWriterBuffer;
     use integer::IntegerInstructions;
     use maingate::mock_prover_verify;
     use maingate::DimensionMeasurement;
@@ -244,7 +254,7 @@ mod tests {
     }
 
     impl TestCircuitEcdsaVerifyConfig {
-        pub fn new<C: CurveAffine, N: Field>(meta: &mut ConstraintSystem<N>) -> Self {
+        pub fn new<C: CurveAffine, N: PrimeField>(meta: &mut ConstraintSystem<N>) -> Self {
             let advices = [
                 meta.advice_column(),
                 meta.advice_column(),
@@ -282,7 +292,10 @@ mod tests {
             EccConfig::new(self.range_config.clone(), self.main_gate_config.clone())
         }
 
-        pub fn config_range<N: Field>(&self, layouter: &mut impl Layouter<N>) -> Result<(), Error> {
+        pub fn config_range<N: PrimeField>(
+            &self,
+            layouter: &mut impl Layouter<N>,
+        ) -> Result<(), Error> {
             let range_chip = RangeChip::<N>::new(self.range_config.clone());
             range_chip.load_table(layouter)?;
 
@@ -301,7 +314,7 @@ mod tests {
         _marker: PhantomData<N>,
     }
 
-    impl<E: CurveAffine, N: Field> Circuit<N> for TestCircuitEcdsaVerify<E, N> {
+    impl<E: CurveAffine, N: PrimeField> Circuit<N> for TestCircuitEcdsaVerify<E, N> {
         type Config = TestCircuitEcdsaVerifyConfig;
         type FloorPlanner = SimpleFloorPlanner;
 

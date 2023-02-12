@@ -23,7 +23,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         // shorter ending window.
         let padding_offset = (window_size - (bits.len() % window_size)) % window_size;
         let zeros: Vec<AssignedCondition<C::Scalar>> = (0..padding_offset)
-            .map(|_| self.main_gate().assign_constant(ctx, C::Scalar::zero()))
+            .map(|_| self.main_gate().assign_constant(ctx, C::Scalar::ZERO))
             .collect::<Result<_, Error>>()?;
         bits.extend(zeros);
         bits.reverse();

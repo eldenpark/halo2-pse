@@ -5,7 +5,7 @@ use crate::integer::{IntegerChip, IntegerInstructions, Range, UnassignedInteger}
 use crate::maingate;
 use halo2_proofs::arithmetic::CurveAffine;
 use halo2_proofs::circuit::{Layouter, Value};
-use halo2_proofs::ff::{Field, PrimeField};
+use halo2_proofs::ff::PrimeField;
 use halo2_proofs::plonk::Error;
 use integer::maingate::RegionCtx;
 use maingate::{AssignedCondition, MainGate};
@@ -403,6 +403,7 @@ mod tests {
     use crate::maingate;
     use halo2_proofs::arithmetic::{CurveAffine, Field};
     use halo2_proofs::circuit::{Layouter, SimpleFloorPlanner, Value};
+    use halo2_proofs::ff::PrimeField;
     use halo2_proofs::group::{prime::PrimeCurveAffine, Curve as _, Group};
     use halo2_proofs::plonk::{Circuit, ConstraintSystem, Error};
     use integer::rns::Integer;
@@ -424,7 +425,12 @@ mod tests {
     const BIT_LEN_LIMB: usize = 68;
 
     #[allow(clippy::type_complexity)]
-    fn setup<C: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>(
+    fn setup<
+        C: CurveAffine,
+        N: PrimeField,
+        const NUMBER_OF_LIMBS: usize,
+        const BIT_LEN_LIMB: usize,
+    >(
         k_override: u32,
     ) -> (
         Rns<C::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
@@ -458,7 +464,7 @@ mod tests {
     impl TestCircuitConfig {
         fn new<
             C: CurveAffine,
-            N: Field,
+            N: PrimeField,
             const NUMBER_OF_LIMBS: usize,
             const BIT_LEN_LIMB: usize,
         >(
@@ -498,7 +504,10 @@ mod tests {
             }
         }
 
-        fn config_range<N: Field>(&self, layouter: &mut impl Layouter<N>) -> Result<(), Error> {
+        fn config_range<N: PrimeField>(
+            &self,
+            layouter: &mut impl Layouter<N>,
+        ) -> Result<(), Error> {
             let range_chip = RangeChip::<N>::new(self.range_config.clone());
             range_chip.load_table(layouter)?;
 
@@ -516,8 +525,12 @@ mod tests {
         _marker: PhantomData<(C, N)>,
     }
 
-    impl<C: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-        Circuit<N> for TestEccAddition<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+    impl<
+            C: CurveAffine,
+            N: PrimeField,
+            const NUMBER_OF_LIMBS: usize,
+            const BIT_LEN_LIMB: usize,
+        > Circuit<N> for TestEccAddition<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
     {
         type Config = TestCircuitConfig;
         type FloorPlanner = SimpleFloorPlanner;
@@ -631,8 +644,12 @@ mod tests {
         _marker: PhantomData<N>,
     }
 
-    impl<C: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-        Circuit<N> for TestEccPublicInput<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+    impl<
+            C: CurveAffine,
+            N: PrimeField,
+            const NUMBER_OF_LIMBS: usize,
+            const BIT_LEN_LIMB: usize,
+        > Circuit<N> for TestEccPublicInput<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
     {
         type Config = TestCircuitConfig;
         type FloorPlanner = SimpleFloorPlanner;
@@ -694,7 +711,7 @@ mod tests {
     fn test_general_ecc_public_input() {
         fn run<
             C: CurveAffine,
-            N: Field,
+            N: PrimeField,
             const NUMBER_OF_LIMBS: usize,
             const BIT_LEN_LIMB: usize,
         >() {
@@ -748,8 +765,12 @@ mod tests {
         _marker: PhantomData<N>,
     }
 
-    impl<C: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-        Circuit<N> for TestEccMul<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+    impl<
+            C: CurveAffine,
+            N: PrimeField,
+            const NUMBER_OF_LIMBS: usize,
+            const BIT_LEN_LIMB: usize,
+        > Circuit<N> for TestEccMul<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
     {
         type Config = TestCircuitConfig;
         type FloorPlanner = SimpleFloorPlanner;
@@ -869,8 +890,12 @@ mod tests {
         _marker: PhantomData<N>,
     }
 
-    impl<C: CurveAffine, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-        Circuit<N> for TestEccBatchMul<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+    impl<
+            C: CurveAffine,
+            N: PrimeField,
+            const NUMBER_OF_LIMBS: usize,
+            const BIT_LEN_LIMB: usize,
+        > Circuit<N> for TestEccBatchMul<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
     {
         type Config = TestCircuitConfig;
         type FloorPlanner = SimpleFloorPlanner;

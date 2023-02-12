@@ -1,5 +1,4 @@
 use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
-use group::ff::{Field, PrimeField};
 use halo2_gadgets::utilities::cond_swap::{CondSwapConfig, CondSwapInstructions};
 use halo2_gadgets::utilities::{UtilitiesInstructions, Var};
 use halo2_gadgets::{
@@ -10,6 +9,8 @@ use halo2_gadgets::{
     utilities::cond_swap::CondSwapChip,
 };
 use halo2_proofs::circuit::Region;
+use halo2_proofs::ff::Field;
+use halo2_proofs::group::ff::PrimeField;
 use halo2_proofs::halo2curves::pasta::{pallas, Fp};
 use halo2_proofs::poly::Rotation;
 use halo2_proofs::{
@@ -67,7 +68,7 @@ impl<F: Field, const WIDTH: usize, const RATE: usize> Chip<F> for MerkleChip<F, 
     }
 }
 
-impl<F: Field, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RATE> {
+impl<F: PrimeField, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RATE> {
     pub fn configure(
         meta: &mut ConstraintSystem<F>,
         advices: [Column<Advice>; 5],
@@ -93,7 +94,7 @@ impl<F: Field, const WIDTH: usize, const RATE: usize> MerkleChip<F, WIDTH, RATE>
 }
 // ANCHOR_END: chip-config
 
-impl<S: Spec<F, WIDTH, RATE>, F: Field, const WIDTH: usize, const RATE: usize>
+impl<S: Spec<F, WIDTH, RATE>, F: PrimeField, const WIDTH: usize, const RATE: usize>
     MerkleInstructions<S, F, WIDTH, RATE> for MerkleChip<F, WIDTH, RATE>
 {
     fn hash_layer(
@@ -147,7 +148,7 @@ impl<F: Field, const WIDTH: usize, const RATE: usize> UtilitiesInstructions<F>
     type Var = AssignedCell<F, F>;
 }
 
-impl<F: Field, const WIDTH: usize, const RATE: usize> CondSwapInstructions<F>
+impl<F: PrimeField, const WIDTH: usize, const RATE: usize> CondSwapInstructions<F>
     for MerkleChip<F, WIDTH, RATE>
 {
     #[allow(clippy::type_complexity)]

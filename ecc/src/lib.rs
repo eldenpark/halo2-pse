@@ -91,8 +91,8 @@ pub struct AssignedPoint<
     pub(crate) y: AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
 }
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize> fmt::Debug
-    for AssignedPoint<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+    fmt::Debug for AssignedPoint<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("AssignedPoint")
@@ -103,7 +103,7 @@ impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize
     }
 }
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     AssignedPoint<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Returns a new `AssignedPoint` given its coordinates as `AssignedInteger`
@@ -216,8 +216,8 @@ pub(crate) struct Table<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const 
     pub(crate) Vec<AssignedPoint<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>>,
 );
 
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize> fmt::Debug
-    for Table<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+    fmt::Debug for Table<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = f.debug_struct("Table");
@@ -240,7 +240,7 @@ struct MulAux<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
 }
 
 /// Constructs `MulAux`
-impl<W: Field, N: Field, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
+impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
     MulAux<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     fn new(

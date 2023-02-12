@@ -54,6 +54,7 @@ tracing = "0.1"
 blake2b_simd = "1"
 
 halo2curves = { git = 'https://github.com/privacy-scaling-explorations/halo2curves.git' }
+sha3 = "0.9.1"
 
 # Developer tooling dependencies
 plotters = { version = "0.3.0", default-features = false, optional = true }

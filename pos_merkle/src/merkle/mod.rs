@@ -1,16 +1,11 @@
 mod chip;
 mod merkle_path;
-mod test1;
 
 use self::chip::{MerkleChip, MerkleConfig};
 use super::ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
 use super::ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
 use crate::merkle::merkle_path::MerklePath;
 use ecc::GeneralEccChip;
-use group::ff::{Field, PrimeField};
-use group::prime::PrimeCurveAffine;
-use group::Curve;
-use group::Group;
 use halo2_gadgets::poseidon::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use halo2_gadgets::utilities::{i2lebsp, Var};
 use halo2_gadgets::{
@@ -21,18 +16,22 @@ use halo2_gadgets::{
     },
     utilities::UtilitiesInstructions,
 };
+use halo2_proofs::group::ff::{Field, PrimeField};
+use halo2_proofs::group::prime::PrimeCurveAffine;
+use halo2_proofs::group::Curve;
+use halo2_proofs::group::Group;
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
 use halo2_proofs::halo2curves::pasta::{pallas, vesta, EpAffine, EqAffine, Fp};
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk};
-use halo2_proofs::poly::commitment::{Params, ParamsProver};
-use halo2_proofs::poly::ipa::commitment::{IPACommitmentScheme, ParamsIPA};
-use halo2_proofs::poly::ipa::multiopen::ProverIPA;
-use halo2_proofs::poly::kzg::multiopen::ProverGWC;
+// use halo2_proofs::poly::commitment::{Params, ParamsProver};
+// use halo2_proofs::poly::ipa::commitment::{IPACommitmentScheme, ParamsIPA};
+// use halo2_proofs::poly::ipa::multiopen::ProverIPA;
+// use halo2_proofs::poly::kzg::multiopen::ProverGWC;
 use halo2_proofs::poly::Rotation;
-use halo2_proofs::transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer};
-use halo2_proofs::SerdeFormat;
+// use halo2_proofs::transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer};
+// use halo2_proofs::SerdeFormat;
 use halo2_proofs::{
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
     dev::MockProver,
@@ -62,7 +61,7 @@ pub struct MyConfig<F: Field, const WIDTH: usize, const RATE: usize> {
     _f: PhantomData<F>,
 }
 
-impl<F: Field, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE> {
+impl<F: PrimeField, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE> {
     pub fn construct_merkle_chip(&self) -> MerkleChip<F, WIDTH, RATE> {
         MerkleChip::construct(self.merkle_config.clone())
     }
@@ -98,7 +97,7 @@ struct HashCircuit<
 impl<
         N: CurveAffine,
         S: Spec<F, WIDTH, RATE>,
-        F: Field,
+        F: PrimeField,
         const WIDTH: usize,
         const RATE: usize,
         const L: usize,
@@ -390,47 +389,48 @@ fn poseidon_hash2() {
     // let instance = vec![vec![root], vec![]];
     // let instance = vec![vec![], vec![]];
 
-    let dimension = DimensionMeasurement::measure(&circuit).unwrap();
-    let k = dimension.k();
+    // let dimension = DimensionMeasurement::measure(&circuit).unwrap();
+    // let k = dimension.k();
+    let dimension_k = 18;
 
     println!("proving");
     // let prover = MockProver::run(k, &circuit, instance).unwrap();
     // assert_eq!(prover.verify(), Ok(()))
 
     println!("params generating, t: {:?}", start.elapsed());
-    let params: ParamsIPA<_> = ParamsIPA::new(k);
+    // let params: ParamsIPA<_> = ParamsIPA::new(k);
 
-    let mut writer = BufWriter::new(params_fd);
-    params.write(&mut writer).unwrap();
-    writer.flush().unwrap();
-
-    println!("11 vk generating, t: {:?}", start.elapsed());
-    let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
-
-    println!("22 pk generating, t: {:?}", start.elapsed());
-    let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
-
-    let mut writer = BufWriter::new(pk_fd);
-    // pk.to_bytes(SerdeFormat::RawBytes);
-    // pk.write(&mut writer, SerdeFormat::RawBytes).unwrap();
+    // let mut writer = BufWriter::new(params_fd);
+    // params.write(&mut writer).unwrap();
     // writer.flush().unwrap();
 
-    let mut rng = OsRng;
-    let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
+    // println!("11 vk generating, t: {:?}", start.elapsed());
+    // let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
 
-    println!("creating proof, t: {:?}", start.elapsed());
-    create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
-        &params,
-        &pk,
-        &[circuit],
-        &[&[&[root], &[]]],
-        &mut rng,
-        &mut transcript,
-    )
-    .unwrap();
+    // println!("22 pk generating, t: {:?}", start.elapsed());
+    // let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
 
-    println!("proof generated, t: {:?}", start.elapsed());
-    let proof = transcript.finalize();
+    // let mut writer = BufWriter::new(pk_fd);
+    // // pk.to_bytes(SerdeFormat::RawBytes);
+    // // pk.write(&mut writer, SerdeFormat::RawBytes).unwrap();
+    // // writer.flush().unwrap();
 
-    println!("proof: {:?}, t: {:?}", proof, start.elapsed());
+    // let mut rng = OsRng;
+    // let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
+
+    // println!("creating proof, t: {:?}", start.elapsed());
+    // create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
+    //     &params,
+    //     &pk,
+    //     &[circuit],
+    //     &[&[&[root], &[]]],
+    //     &mut rng,
+    //     &mut transcript,
+    // )
+    // .unwrap();
+
+    // println!("proof generated, t: {:?}", start.elapsed());
+    // let proof = transcript.finalize();
+
+    // println!("proof: {:?}, t: {:?}", proof, start.elapsed());
 }

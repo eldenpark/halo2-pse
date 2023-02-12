@@ -2,7 +2,6 @@ use super::{
     chip::{MerkleChip, MerkleInstructions},
     PoseidonInstructions, Pow5Chip, Pow5Config, StateWord,
 };
-use group::ff::{Field, PrimeField};
 use halo2_gadgets::utilities::{cond_swap::CondSwapInstructions, UtilitiesInstructions, Var};
 use halo2_gadgets::{
     poseidon::{
@@ -11,6 +10,7 @@ use halo2_gadgets::{
     },
     utilities::i2lebsp,
 };
+use halo2_proofs::group::ff::{Field, PrimeField};
 use halo2_proofs::halo2curves::pasta::{pallas, Fp};
 use halo2_proofs::poly::Rotation;
 use halo2_proofs::{
