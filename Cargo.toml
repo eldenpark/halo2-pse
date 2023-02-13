@@ -8,5 +8,6 @@ members = [
     "ecc",
     "integer",
     "maingate",
-    "pos_merkle"
+    "pos_merkle",
+    "halo2curves",
 ]
