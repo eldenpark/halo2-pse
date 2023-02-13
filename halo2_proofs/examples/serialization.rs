@@ -120,6 +120,7 @@ impl Circuit<Fr> for StandardPlonk {
                 let a = region.assign_advice(|| "", config.a, 2, || Value::known(Fr::one()))?;
                 a.copy_advice(|| "", &mut region, config.b, 3)?;
                 a.copy_advice(|| "", &mut region, config.c, 4)?;
+
                 Ok(())
             },
         )
@@ -143,7 +144,7 @@ fn main() {
     let pk = ProvingKey::<G1Affine>::read::<_, StandardPlonk>(&mut reader, SerdeFormat::RawBytes)
         .unwrap();
 
-    std::fs::remove_file("serialization-test.pk").unwrap();
+    // std::fs::remove_file("serialization-test.pk").unwrap();
 
     let instances: &[&[Fr]] = &[&[circuit.0]];
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);

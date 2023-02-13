@@ -83,6 +83,11 @@ pub struct Dimension {
 
 impl Dimension {
     pub fn k(&self) -> u32 {
+        println!(
+            "dimension: #instance: {}, #advice: {}, #fixed: {}, #blinding_factor: {}",
+            self.instance, self.advice, self.fixed, self.blinding_factor
+        );
+
         u64::BITS
             - ([self.instance, self.advice, self.fixed]
                 .into_iter()

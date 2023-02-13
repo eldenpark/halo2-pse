@@ -1,3 +1,6 @@
+pub mod curve_ext;
+pub mod serde_impl;
+
 pub use pasta_curves::{pallas, vesta, Ep, EpAffine, Eq, EqAffine, Fp, Fq};
 
 impl crate::CurveAffineExt for EpAffine {

@@ -8,6 +8,8 @@ pub mod pasta;
 pub mod secp256k1;
 pub mod serde;
 
+// pub mod serde_impl;
+
 #[macro_use]
 mod derive;
 
