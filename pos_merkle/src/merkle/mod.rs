@@ -393,7 +393,7 @@ fn poseidon_hash2() {
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
-    println!("proving");
+    println!("proving, dimension k: {}", k);
     // let prover = MockProver::run(k, &circuit, instance).unwrap();
     // assert_eq!(prover.verify(), Ok(()))
 
