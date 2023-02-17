@@ -275,9 +275,11 @@ impl<
                     };
 
                     let pk_in_circuit = ecc_chip.assign_point(ctx, self.public_key)?;
+
                     let pk_assigned = AssignedPublicKey {
                         point: pk_in_circuit,
                     };
+
                     let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Remainder)?;
                     ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
                 },
