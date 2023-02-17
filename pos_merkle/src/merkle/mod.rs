@@ -6,11 +6,12 @@ use self::chip::{MerkleChip, MerkleConfig};
 use super::ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
 use super::ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
 use crate::merkle::merkle_path::MerklePath;
-use ecc::GeneralEccChip;
+use ecc::{GeneralEccChip, Point};
 use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
 use group::Curve;
 use group::Group;
+use halo2_gadgets::ecc::NonIdentityPoint;
 use halo2_gadgets::poseidon::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use halo2_gadgets::utilities::{i2lebsp, Var};
 use halo2_gadgets::{
@@ -49,6 +50,7 @@ use std::env;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Seek, Write};
 use std::marker::PhantomData;
+use std::ops::Mul;
 use std::path::PathBuf;
 use std::time::{Instant, SystemTime};
 
@@ -74,6 +76,7 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE
 }
 
 struct HashCircuit<
+    // C: Curve,
     N: CurveAffine,
     S: Spec<F, WIDTH, RATE>,
     F: FieldExt,
@@ -86,6 +89,9 @@ struct HashCircuit<
     leaf_pos: Value<u32>,
     path: Value<[F; 32]>,
 
+    t: Value<N>,
+    u: Value<N>,
+
     public_key: Value<N>,
     signature: Value<(N::Scalar, N::Scalar)>,
     msg_hash: Value<N::Scalar>,
@@ -97,6 +103,7 @@ struct HashCircuit<
 }
 
 impl<
+        // C: Curve,
         N: CurveAffine,
         S: Spec<F, WIDTH, RATE>,
         F: FieldExt,
@@ -114,6 +121,9 @@ impl<
             root: Value::unknown(),
             leaf_pos: Value::unknown(),
             path: Value::unknown(),
+
+            t: Value::unknown(),
+            u: Value::unknown(),
 
             public_key: Value::unknown(),
             signature: Value::unknown(),
@@ -289,7 +299,19 @@ impl<
                     };
 
                     let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Remainder)?;
-                    ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
+
+                    let t_in_circuit = ecc_chip.assign_point(ctx, self.t)?;
+                    let u_in_circuit = ecc_chip.assign_point(ctx, self.u)?;
+
+                    // ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
+                    ecdsa_chip.verify2(
+                        ctx,
+                        &sig,
+                        &pk_assigned,
+                        &msg_hash,
+                        &t_in_circuit,
+                        &u_in_circuit,
+                    )
                 },
             )?;
 
@@ -395,6 +417,7 @@ fn poseidon_hash2() {
     // Generate a key pair
     let sk = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
     let public_key = (g * sk).to_affine();
+    println!("public key: {:?}", public_key,);
 
     // Generate a valid signature
     // Suppose `m_hash` is the message hash
@@ -405,47 +428,75 @@ fn poseidon_hash2() {
     let k_inv = k.invert().unwrap();
 
     // Calculate `r`
-    let r_point = (g * k).to_affine().coordinates().unwrap();
+    let big_r = g * k;
+    let r_point = big_r.to_affine().coordinates().unwrap();
     let x = r_point.x();
     let r = mod_n::<pallas::Affine>(*x);
 
     // Calculate `s`
     let s = k_inv * (msg_hash + (r * sk));
+    println!("r: {:?}, s: {:?}", r, s);
 
     // Sanity check. Ensure we construct a valid signature. So lets verify it
     {
         let s_inv = s.invert().unwrap();
         let u_1 = msg_hash * s_inv;
         let u_2 = r * s_inv;
-        let aa = g * u_1;
         let r_point = ((g * u_1) + (public_key * u_2))
             .to_affine()
             .coordinates()
             .unwrap();
         let x_candidate = r_point.x();
         let r_candidate = mod_n::<pallas::Affine>(*x_candidate);
+
+        println!(
+            "x_candidate: {:?}, r_candidate: {:?}",
+            x_candidate, r_candidate
+        );
+
         assert_eq!(r, r_candidate);
     }
 
-    {
+    let (t, u) = {
         let r_inv = r.invert().unwrap();
-        let t = r_inv * r;
-        let u = g * r_inv * msg_hash;
+        let t = big_r * r_inv;
+        let u = g * (r_inv * msg_hash);
 
-        let st = s * t;
-        let a = st + u;
-        // a + u;
+        let pk_candidate = (t * s - u).to_affine();
+        assert_eq!(public_key, pk_candidate);
+
+        let t_affine = t.to_affine();
+        let u_affine = u.to_affine();
+        let pp = (t_affine * s - u_affine).to_affine();
+
+        println!("pp: {:?}", pp);
+
+        (t.to_affine(), u.to_affine())
     };
+
+    println!("t: {:?}, u: {:?}", t, u);
 
     println!("aux gen, t: {:?}", start.elapsed());
 
     let aux_generator = <pallas::Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
-    let circuit = HashCircuit::<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2> {
+    // pallas::Point;
+    let circuit = HashCircuit::<
+        // pallas::Point,
+        pallas::Affine,
+        OrchardNullifier,
+        Fp,
+        3,
+        2,
+        2,
+    > {
         message: Value::known(leaf),
         root: Value::known(root),
         leaf_pos: Value::known(pos),
         path: Value::known(path),
+
+        t: Value::known(t),
+        u: Value::known(u),
 
         public_key: Value::known(public_key),
         signature: Value::known((r, s)),
@@ -456,15 +507,17 @@ fn poseidon_hash2() {
         _spec2: PhantomData,
     };
 
-    // let instance = vec![vec![root], vec![]];
+    let instance = vec![vec![root], vec![]];
     // let instance = vec![vec![], vec![]];
 
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
     println!("proving, dimension k: {}", k);
-    // let prover = MockProver::run(k, &circuit, instance).unwrap();
-    // assert_eq!(prover.verify(), Ok(()))
+    let prover = MockProver::run(k, &circuit, instance).unwrap();
+    assert_eq!(prover.verify(), Ok(()));
+
+    return;
 
     // let params: ParamsIPA<EqAffine> = if read {
     //     println!("params reading, t: {:?}", start.elapsed());
@@ -533,7 +586,15 @@ fn poseidon_hash2() {
     let mut reader = BufReader::new(vk_fd);
     let vk = VerifyingKey::<EqAffine>::read::<
         _,
-        HashCircuit<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2>,
+        HashCircuit<
+            // pallas::Point,
+            pallas::Affine,
+            OrchardNullifier,
+            Fp,
+            3,
+            2,
+            2,
+        >,
     >(&mut reader, SerdeFormat::Processed)
     .unwrap();
 
@@ -595,7 +656,15 @@ fn poseidon_hash2() {
     let mut reader = BufReader::new(pk_fd);
     let pk = ProvingKey::<EqAffine>::read::<
         _,
-        HashCircuit<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2>,
+        HashCircuit<
+            // pallas::Point,
+            pallas::Affine,
+            OrchardNullifier,
+            Fp,
+            3,
+            2,
+            2,
+        >,
     >(&mut reader, SerdeFormat::Processed)
     .unwrap();
 

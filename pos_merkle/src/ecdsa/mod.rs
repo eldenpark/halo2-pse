@@ -160,6 +160,79 @@ impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
 
         Ok(())
     }
+
+    pub fn verify2(
+        &self,
+        ctx: &mut RegionCtx<'_, N>,
+        sig: &AssignedEcdsaSig<E::Scalar, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
+        pk: &AssignedPublicKey<E::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
+        msg_hash: &AssignedInteger<E::Scalar, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
+        // t: &AssignedPublicKey<E::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
+        // u: &AssignedPublicKey<E::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
+        t: &AssignedPoint<E::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
+        u: &AssignedPoint<E::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
+    ) -> Result<(), Error> {
+        let start = Instant::now();
+
+        let ecc_chip = self.ecc_chip();
+        let scalar_chip = ecc_chip.scalar_field_chip();
+        let base_chip = ecc_chip.base_field_chip();
+
+        // 1. check 0 < r, s < n
+
+        // since `assert_not_zero` already includes a in-field check, we can just
+        // call `assert_not_zero`
+        scalar_chip.assert_not_zero(ctx, &sig.r)?;
+        scalar_chip.assert_not_zero(ctx, &sig.s)?;
+
+        let s_t = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
+
+        let res = ecc_chip.add(ctx, &s_t, &u)?;
+        println!("111 res: {:?}", res);
+
+        // // 2. r_inv = r^(-1) (mod n)
+        // // let (s_inv, _) = scalar_chip.invert(ctx, &sig.s)?;
+        // let (r_int, _) = scalar_chip.invert(ctx, &sig.r)?;
+
+        // println!("synthesize(), verify 2, t: {:?}", start.elapsed(),);
+
+        // // 3. u1 = m' * w (mod n)
+        // let u1 = scalar_chip.mul(ctx, msg_hash, &s_inv)?;
+
+        // println!("synthesize(), verify 3, t: {:?}", start.elapsed(),);
+
+        // // 4. u2 = r * w (mod n)
+        // let u2 = scalar_chip.mul(ctx, &sig.r, &s_inv)?;
+
+        // println!("synthesize(), verify 4, t: {:?}", start.elapsed(),);
+
+        // // 5. compute Q = u1*G + u2*pk
+        // let e_gen = ecc_chip.assign_point(ctx, Value::known(E::generator()))?;
+        // let g1 = ecc_chip.mul(ctx, &e_gen, &u1, 2)?;
+
+        // println!("synthesize(), verify 5-1, t: {:?}", start.elapsed(),);
+
+        // let g2 = ecc_chip.mul(ctx, &pk.point, &u2, 2)?;
+
+        // println!("synthesize(), verify 5-2, t: {:?}", start.elapsed(),);
+
+        // let q = ecc_chip.add(ctx, &g1, &g2)?;
+
+        // println!("synthesize(), verify 5-3, t: {:?}", start.elapsed(),);
+
+        // // 6. reduce q_x in E::ScalarExt
+        // // assuming E::Base/E::ScalarExt have the same number of limbs
+        // let q_x = q.x();
+        // let q_x_reduced_in_q = base_chip.reduce(ctx, q_x)?;
+        // let q_x_reduced_in_r = scalar_chip.reduce_external(ctx, &q_x_reduced_in_q)?;
+
+        // println!("synthesize(), verify 6, t: {:?}", start.elapsed(),);
+
+        // // 7. check if Q.x == r (mod n)
+        // scalar_chip.assert_strict_equal(ctx, &q_x_reduced_in_r, &sig.r)?;
+
+        Ok(())
+    }
 }
 
 #[derive(Clone, Debug)]
