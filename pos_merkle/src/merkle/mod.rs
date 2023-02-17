@@ -23,7 +23,7 @@ use halo2_gadgets::{
 };
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
-use halo2_proofs::halo2curves::pasta::{pallas, vesta, EpAffine, EqAffine, Fp};
+use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp};
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
 use halo2_proofs::poly::commitment::{Params, ParamsProver};
@@ -50,7 +50,7 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter, Seek, Write};
 use std::marker::PhantomData;
 use std::path::PathBuf;
-use std::time::Instant;
+use std::time::{Instant, SystemTime};
 
 #[derive(Clone, Debug)]
 pub struct MyConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
@@ -203,7 +203,10 @@ impl<
         config: MyConfig<F, WIDTH, RATE>,
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
-        println!("synthesize()");
+        println!(
+            "synthesize(), t: {:?}",
+            SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+        );
 
         // let merkle_chip = config.construct_merkle_chip();
 
@@ -273,6 +276,11 @@ impl<
                         r: r_assigned,
                         s: s_assigned,
                     };
+
+                    println!(
+                        "synthesize(), got sig, t: {:?}",
+                        SystemTime::now().duration_since(SystemTime::UNIX_EPOCH),
+                    );
 
                     let pk_in_circuit = ecc_chip.assign_point(ctx, self.public_key)?;
 
@@ -409,6 +417,7 @@ fn poseidon_hash2() {
         let s_inv = s.invert().unwrap();
         let u_1 = msg_hash * s_inv;
         let u_2 = r * s_inv;
+        let aa = g * u_1;
         let r_point = ((g * u_1) + (public_key * u_2))
             .to_affine()
             .coordinates()
@@ -417,6 +426,16 @@ fn poseidon_hash2() {
         let r_candidate = mod_n::<pallas::Affine>(*x_candidate);
         assert_eq!(r, r_candidate);
     }
+
+    {
+        let r_inv = r.invert().unwrap();
+        let t = r_inv * r;
+        let u = g * r_inv * msg_hash;
+
+        let st = s * t;
+        let a = st + u;
+        // a + u;
+    };
 
     println!("aux gen, t: {:?}", start.elapsed());
 
