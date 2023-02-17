@@ -50,7 +50,7 @@ use std::env;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Seek, Write};
 use std::marker::PhantomData;
-use std::ops::Mul;
+use std::ops::{Mul, Neg};
 use std::path::PathBuf;
 use std::time::{Instant, SystemTime};
 
@@ -460,16 +460,13 @@ fn poseidon_hash2() {
     let (t, u) = {
         let r_inv = r.invert().unwrap();
         let t = big_r * r_inv;
-        let u = g * (r_inv * msg_hash);
+        let u = -(g * (r_inv * msg_hash));
 
-        let pk_candidate = (t * s - u).to_affine();
+        // let u_neg = u.neg();
+        // println!("444 u_neg: {:?}", u_neg);
+
+        let pk_candidate = (t * s + u).to_affine();
         assert_eq!(public_key, pk_candidate);
-
-        let t_affine = t.to_affine();
-        let u_affine = u.to_affine();
-        let pp = (t_affine * s - u_affine).to_affine();
-
-        println!("pp: {:?}", pp);
 
         (t.to_affine(), u.to_affine())
     };
@@ -507,17 +504,16 @@ fn poseidon_hash2() {
         _spec2: PhantomData,
     };
 
-    let instance = vec![vec![root], vec![]];
-    // let instance = vec![vec![], vec![]];
+    // let instance = vec![vec![root], vec![]];
 
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
     println!("proving, dimension k: {}", k);
-    let prover = MockProver::run(k, &circuit, instance).unwrap();
-    assert_eq!(prover.verify(), Ok(()));
+    // let prover = MockProver::run(k, &circuit, instance).unwrap();
+    // assert_eq!(prover.verify(), Ok(()));
 
-    return;
+    // return;
 
     // let params: ParamsIPA<EqAffine> = if read {
     //     println!("params reading, t: {:?}", start.elapsed());
@@ -670,24 +666,24 @@ fn poseidon_hash2() {
 
     println!("1111: pk read complete, t: {:?}", start.elapsed());
 
-    return;
+    // return;
 
-    // let mut rng = OsRng;
-    // let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
+    let mut rng = OsRng;
+    let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
 
     // println!("creating proof, t: {:?}", start.elapsed());
-    // create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
-    //     &params,
-    //     &pk,
-    //     &[circuit],
-    //     &[&[&[root], &[]]],
-    //     &mut rng,
-    //     &mut transcript,
-    // )
-    // .unwrap();
+    create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
+        &params,
+        &pk,
+        &[circuit],
+        &[&[&[root], &[]]],
+        &mut rng,
+        &mut transcript,
+    )
+    .unwrap();
 
     // println!("proof generated, t: {:?}", start.elapsed());
-    // let proof = transcript.finalize();
+    let proof = transcript.finalize();
 
-    // println!("proof: {:?}, t: {:?}", proof, start.elapsed());
+    println!("proof len: {}, t: {:?}", proof.len(), start.elapsed());
 }

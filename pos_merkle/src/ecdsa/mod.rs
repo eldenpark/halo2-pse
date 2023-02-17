@@ -187,7 +187,11 @@ impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
 
         let s_t = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
 
+        // let u_neg = ecc_chip.neg(ctx, &u)?;
+        // println!("u_neg: {:?}", u_neg);
+
         let res = ecc_chip.add(ctx, &s_t, &u)?;
+
         println!("111 res: {:?}", res);
 
         // // 2. r_inv = r^(-1) (mod n)
@@ -230,6 +234,9 @@ impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
 
         // // 7. check if Q.x == r (mod n)
         // scalar_chip.assert_strict_equal(ctx, &q_x_reduced_in_r, &sig.r)?;
+        ecc_chip.assert_equal(ctx, &pk.point, &res)?;
+
+        println!("111111");
 
         Ok(())
     }
