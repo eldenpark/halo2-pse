@@ -9,7 +9,6 @@ function wrapExports({ generate }) {
     const start = performance.now();
     const rawImageData = generate(width, height, maxIterations);
     const time = performance.now() - start;
-
     return {
       // Little perf boost to transfer data to the main thread w/o copying.
       rawImageData: Comlink.transfer(rawImageData, [rawImageData.buffer]),
@@ -23,6 +22,7 @@ async function initHandlers() {
 
   let [singleThread, multiThread] = await Promise.all([
     (async () => {
+      console.log('single');
       const singleThread = await import('./pkg/web.js');
       await singleThread.default();
       return wrapExports(singleThread);
@@ -32,7 +32,6 @@ async function initHandlers() {
       // If threads are unsupported in this browser, skip this handler.
       if (!(await threads())) {
         console.log('thread is not supported');
-
         return;
       }
 
@@ -47,6 +46,8 @@ async function initHandlers() {
     })()
   ]);
 
+  console.log(341, singleThread, multiThread);
+
   return Comlink.proxy({
     singleThread,
     supportsThreads: !!multiThread,
@@ -54,6 +55,9 @@ async function initHandlers() {
   });
 }
 
+console.log(241, initHandlers);
+
 Comlink.expose({
-  handlers: initHandlers()
+  handlers: await initHandlers(),
 });
+

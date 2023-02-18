@@ -15,6 +15,12 @@ const nextConfig = {
       value: 'same-origin',
     },
   ],
+  webpack: (config) => {
+    config.experiments = {
+      topLevelAwait: true,
+    };
+    return config
+  }
 };
 
 module.exports = nextConfig;
