@@ -10,5 +10,6 @@ members = [
     "maingate",
     "pos_merkle",
     "halo2curves",
+    "web_demo",
     "web",
 ]
