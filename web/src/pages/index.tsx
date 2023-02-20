@@ -8,11 +8,17 @@ import * as Comlink from 'comlink';
 
 const inter = Inter({ subsets: ['latin'] })
 
+const state = {
+  aa: false,
+};
+
+console.log('index.js');
+
+
+
 export default function Home() {
   React.useEffect(() => {
-    console.log(11, 2);
-
-    console.log('00');
+    console.log('Home()');
 
     const maxIterations = 1000;
 
@@ -21,10 +27,16 @@ export default function Home() {
     const ctx = canvas!.getContext('2d');
     const timeOutput = document.getElementById('time');
 
-    console.log('11');
-
     (async function init() {
-      console.log('initializing');
+      console.log('init()');
+
+      if (state.aa === false) {
+        console.log('init() initial');
+        state.aa = true;
+      } else {
+        console.log('init() 2');
+        return;
+      }
 
       // Create a separate thread from wasm-worker.js and get a proxy to its handlers.
       let handlers = (await Comlink.wrap(
@@ -36,7 +48,7 @@ export default function Home() {
       console.log(444, handlers);
 
       function setupBtn(id: any) {
-        console.log(123, id);
+        console.log('setupBtn()', id);
 
         // Handlers are named in the same way as buttons.
         let handler = handlers[id];
@@ -69,10 +81,11 @@ export default function Home() {
 
       if (handlers.supportsThreads) {
         console.log('support threads!');
+
         setupBtn('multiThread');
       }
-    })();
 
+    })();
   }, []);
 
   return (

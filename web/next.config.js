@@ -26,6 +26,7 @@ const nextConfig = {
     config.experiments = {
       topLevelAwait: true,
       asyncWebAssembly: true,
+      layers: true,
     };
     return config
   }
