@@ -1,20 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  headers: [
-    {
-      key: 'Access-Control-Allow-Origin',
-      value: '*',
-    },
-    {
-      key: 'Cross-Origin-Embedder-Policy',
-      value: 'require-corp',
-    },
-    {
-      key: 'Cross-Origin-Opener-Policy',
-      value: 'same-origin',
-    },
-  ],
+  async headers() {
+    return [
+      {
+        source: '/:page*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+        ],
+      },
+    ]
+  },
   webpack: (config) => {
     config.experiments = {
       topLevelAwait: true,

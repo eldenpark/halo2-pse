@@ -46,16 +46,12 @@ async function initHandlers() {
     })()
   ]);
 
-  console.log(341, singleThread, multiThread);
-
   return Comlink.proxy({
     singleThread,
     supportsThreads: !!multiThread,
     multiThread
   });
 }
-
-console.log(241, initHandlers);
 
 Comlink.expose({
   handlers: await initHandlers(),

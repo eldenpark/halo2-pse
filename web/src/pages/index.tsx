@@ -53,9 +53,9 @@ export default function Home() {
               height,
               maxIterations
             });
-            console.log(44);
+
             (timeOutput as any).value = `${time.toFixed(2)} ms`;
-            console.log(66);
+
             const imgData = new ImageData(rawImageData, width, height);
             ctx.putImageData(imgData, 0, 0);
           },
