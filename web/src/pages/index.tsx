@@ -67,7 +67,7 @@ export default function Home() {
 
       setupBtn('singleThread');
 
-      if (await handlers.supportsThreads) {
+      if (handlers.supportsThreads) {
         console.log('support threads!');
         setupBtn('multiThread');
       }

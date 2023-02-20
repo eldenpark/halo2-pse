@@ -18,7 +18,7 @@ function wrapExports({ generate }) {
 }
 
 async function initHandlers() {
-  console.log(33);
+  console.log('init handlers');
 
   let [singleThread, multiThread] = await Promise.all([
     (async () => {
@@ -45,6 +45,8 @@ async function initHandlers() {
       return wrapExports(multiThread);
     })()
   ]);
+
+  console.log('handlers are ready');
 
   return Comlink.proxy({
     singleThread,
