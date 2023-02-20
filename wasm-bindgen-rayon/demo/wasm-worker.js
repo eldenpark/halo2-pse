@@ -23,7 +23,7 @@ async function initHandlers() {
 
   let [singleThread, multiThread] = await Promise.all([
     (async () => {
-      const singleThread = await import('./pkg/web.js');
+      const singleThread = await import('./pkg/wasm_bindgen_rayon_demo');
       await singleThread.default();
       return wrapExports(singleThread);
     })(),
@@ -37,7 +37,7 @@ async function initHandlers() {
       }
 
       const multiThread = await import(
-        './pkg-parallel/web.js'
+        './pkg-parallel/wasm_bindgen_rayon_demo.js'
       );
 
       await multiThread.default();

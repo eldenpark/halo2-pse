@@ -33,6 +33,8 @@ console.log('11');
     })
   ).handlers;
 
+  console.log('handlers', handlers);
+
   function setupBtn(id) {
     // Handlers are named in the same way as buttons.
     let handler = handlers[id];

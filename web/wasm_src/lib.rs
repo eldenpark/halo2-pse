@@ -1,3 +1,4 @@
+mod temp;
 /*
  * Copyright 2022 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,12 +14,8 @@
 use hsl::HSL;
 use num_complex::Complex64;
 use rand::Rng;
-use wasm_bindgen::{prelude::*, Clamped};
-
-#[cfg(feature = "parallel")]
 use rayon::prelude::*;
-
-#[cfg(feature = "parallel")]
+use wasm_bindgen::{prelude::*, Clamped};
 pub use wasm_bindgen_rayon::init_thread_pool;
 
 type RGBA = [u8; 4];
@@ -74,18 +71,10 @@ impl Generator {
             .copied()
     }
 
-    // Multi-threaded implementation.
-    #[cfg(feature = "rayon")]
     fn iter_bytes(&self) -> impl '_ + ParallelIterator<Item = u8> {
         (0..self.height)
             .into_par_iter()
             .flat_map_iter(move |y| self.iter_row_bytes(y))
-    }
-
-    // Single-threaded implementation.
-    #[cfg(not(feature = "rayon"))]
-    fn iter_bytes(&self) -> impl '_ + Iterator<Item = u8> {
-        (0..self.height).flat_map(move |y| self.iter_row_bytes(y))
     }
 }
 

@@ -1,11 +1,13 @@
 import { threads } from 'wasm-feature-detect';
 import * as Comlink from 'comlink';
 
-console.log(22);
+console.log('reading wasm-worker');
 
 // Wrap wasm-bindgen exports (the `generate` function) to add time measurement.
 function wrapExports({ generate }) {
+  console.log(232);
   return ({ width, height, maxIterations }) => {
+    console.log(11);
     const start = performance.now();
     const rawImageData = generate(width, height, maxIterations);
     const time = performance.now() - start;
@@ -18,44 +20,36 @@ function wrapExports({ generate }) {
 }
 
 async function initHandlers() {
-  console.log(33);
+  console.log('init handlers()');
 
-  let [singleThread, multiThread] = await Promise.all([
-    (async () => {
-      console.log('single');
-      const singleThread = await import('./pkg/web.js');
-      await singleThread.default();
-      return wrapExports(singleThread);
-    })(),
-    (async () => {
-      console.log('checking hardware concurrency');
-      // If threads are unsupported in this browser, skip this handler.
-      if (!(await threads())) {
-        console.log('thread is not supported');
-        return;
-      }
+  let multiThread = (async () => {
+    console.log('checking hardware concurrency');
+    // If threads are unsupported in this browser, skip this handler.
+    if (!(await threads())) {
+      console.log('thread is not supported');
+      return;
+    }
 
-      const multiThread = await import(
-        './pkg-parallel/web.js'
-      );
+    console.log("thread is supported");
 
-      await multiThread.default();
-      await multiThread.initThreadPool(navigator.hardwareConcurrency);
+    const multiThread = await import(
+      './pkg-parallel/web.js'
+    );
 
-      return wrapExports(multiThread);
-    })()
-  ]);
+    await multiThread.default();
+    await multiThread.initThreadPool(navigator.hardwareConcurrency);
 
-  console.log(341, singleThread, multiThread);
+    console.log(55)
+
+    return wrapExports(multiThread);
+  })();
 
   return Comlink.proxy({
-    singleThread,
+    // singleThread,
     supportsThreads: !!multiThread,
     multiThread
   });
 }
-
-console.log(241, initHandlers);
 
 Comlink.expose({
   handlers: await initHandlers(),
