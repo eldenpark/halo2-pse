@@ -20,5 +20,7 @@ getrandom = { version = "0.2.2", features = ["js"] }
 rand = "0.8.3"
 hsl = "0.1.1"
 
+pos_merkle = { path = "../pos_merkle" }
+
 [features]
 parallel = ["rayon", "wasm-bindgen-rayon"]

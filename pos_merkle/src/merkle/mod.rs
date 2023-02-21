@@ -52,7 +52,7 @@ use std::io::{BufReader, BufWriter, Seek, Write};
 use std::marker::PhantomData;
 use std::ops::{Mul, Neg};
 use std::path::PathBuf;
-use std::time::{Instant, SystemTime};
+// use std::time::{Instant, SystemTime};
 
 #[derive(Clone, Debug)]
 pub struct MyConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
@@ -213,10 +213,10 @@ impl<
         config: MyConfig<F, WIDTH, RATE>,
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
-        println!(
-            "synthesize(), t: {:?}",
-            SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-        );
+        // println!(
+        //     "synthesize(), t: {:?}",
+        //     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
+        // );
 
         // let merkle_chip = config.construct_merkle_chip();
 
@@ -287,10 +287,10 @@ impl<
                         s: s_assigned,
                     };
 
-                    println!(
-                        "synthesize(), got sig, t: {:?}",
-                        SystemTime::now().duration_since(SystemTime::UNIX_EPOCH),
-                    );
+                    // println!(
+                    //     "synthesize(), got sig, t: {:?}",
+                    //     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH),
+                    // );
 
                     let pk_in_circuit = ecc_chip.assign_point(ctx, self.public_key)?;
 
@@ -315,19 +315,25 @@ impl<
                 },
             )?;
 
-            println!("synthesize(): start range chip thing");
+            // println!("synthesize(): start range chip thing");
             let range_chip = RangeChip::<F>::new(config.ecdsa_config.range_config);
             range_chip.load_table(&mut layouter)?;
         }
 
-        println!("synthesize(): end");
+        // println!("synthesize(): end");
 
         Ok(())
     }
 }
 
 #[test]
-fn poseidon_hash2() {
+pub fn test_poseidon2() {
+    gen_id_proof();
+}
+
+pub fn a() {}
+
+pub fn gen_id_proof() -> Vec<u8> {
     let args: Vec<String> = env::args().collect();
     println!("args:{:?}", args);
 
@@ -339,23 +345,18 @@ fn poseidon_hash2() {
         big_to_fe(x_big)
     }
 
-    let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let params_path = project_root.join("params.dat");
-    // let params_fd = File::create(&params_path).unwrap();
+    // let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    // let params_path = project_root.join("params.dat");
+    // let pk_path = project_root.join("pk.dat");
+    // let vk_path = project_root.join("vk.dat");
 
-    let pk_path = project_root.join("pk.dat");
-    // let pk_fd = File::create(&pk_path).unwrap();
+    // println!(
+    //     "params path: {:?}, pk_path: {:?}, vk_path: {:?}",
+    //     params_path, pk_path, vk_path,
+    // );
 
-    let vk_path = project_root.join("vk.dat");
-    // let vk_fd = File::create(&vk_path).unwrap();
-
-    println!(
-        "params path: {:?}, pk_path: {:?}, vk_path: {:?}",
-        params_path, pk_path, vk_path,
-    );
-
-    let start = Instant::now();
-    println!("poseidon_hash2(): t: {:?}", start.elapsed());
+    // let start = Instant::now();
+    // println!("poseidon_hash2(): t: {:?}", start.elapsed());
 
     let leaf = Fp::from(2);
     let path = [
@@ -410,7 +411,7 @@ fn poseidon_hash2() {
         root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 
-    println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
+    // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
 
     let g = pallas::Affine::generator();
 
@@ -473,7 +474,7 @@ fn poseidon_hash2() {
 
     println!("t: {:?}, u: {:?}", t, u);
 
-    println!("aux gen, t: {:?}", start.elapsed());
+    //
 
     let aux_generator = <pallas::Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
@@ -509,7 +510,9 @@ fn poseidon_hash2() {
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
-    println!("proving, dimension k: {}", k);
+    return vec![55];
+
+    // println!("proving, dimension k: {}", k);
     // let prover = MockProver::run(k, &circuit, instance).unwrap();
     // assert_eq!(prover.verify(), Ok(()));
 
@@ -533,19 +536,21 @@ fn poseidon_hash2() {
     //     params
     // };
 
-    println!("params generating, t: {:?}", start.elapsed());
+    // println!("params generating, t: {:?}", start.elapsed());
+    //
 
-    let params_fd = File::create(&params_path).unwrap();
-    let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
-    let mut writer = BufWriter::new(params_fd);
-    params.write(&mut writer).unwrap();
-    writer.flush().unwrap();
+    // let params_fd = File::create(&params_path).unwrap();
+    let params_fd = File::create("params").unwrap();
+    // let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
+    // let mut writer = BufWriter::new(params_fd);
+    // params.write(&mut writer).unwrap();
+    // writer.flush().unwrap();
 
-    println!("params reading, t: {:?}", start.elapsed());
+    // println!("params reading, t: {:?}", start.elapsed());
 
-    let params_fd = File::open(&params_path).unwrap();
-    let mut reader = BufReader::new(params_fd);
-    let params = ParamsIPA::read(&mut reader).unwrap();
+    // let params_fd = File::open(&params_path).unwrap();
+    // let mut reader = BufReader::new(params_fd);
+    // let params = ParamsIPA::read(&mut reader).unwrap();
 
     // let vk = if read {
     //     println!("11 vk reading, t: {:?}", start.elapsed());
@@ -568,122 +573,78 @@ fn poseidon_hash2() {
     //     vk
     // };
 
-    println!("11 vk generating, t: {:?}", start.elapsed());
+    // println!("11 vk generating, t: {:?}", start.elapsed());
 
-    let vk_fd = File::create(&vk_path).unwrap();
-    let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
-    let mut writer = BufWriter::new(vk_fd);
-    vk.write(&mut writer, SerdeFormat::Processed).unwrap();
-    writer.flush().unwrap();
+    // let vk_fd = File::create(&vk_path).unwrap();
+    // let vk_fd = File::create("vk").unwrap();
+    // let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
+    // let mut writer = BufWriter::new(vk_fd);
+    // vk.write(&mut writer, SerdeFormat::Processed).unwrap();
+    // writer.flush().unwrap();
 
-    println!("11 vk reading, t: {:?}", start.elapsed());
+    // println!("11 vk reading, t: {:?}", start.elapsed());
 
-    let vk_fd = File::open(&vk_path).unwrap();
-    let mut reader = BufReader::new(vk_fd);
-    let vk = VerifyingKey::<EqAffine>::read::<
-        _,
-        HashCircuit<
-            // pallas::Point,
-            pallas::Affine,
-            OrchardNullifier,
-            Fp,
-            3,
-            2,
-            2,
-        >,
-    >(&mut reader, SerdeFormat::Processed)
-    .unwrap();
+    // let vk_fd = File::open(&vk_path).unwrap();
+    // let mut reader = BufReader::new(vk_fd);
+    // let vk = VerifyingKey::<EqAffine>::read::<
+    //     _,
+    //     HashCircuit<
+    //         // pallas::Point,
+    //         pallas::Affine,
+    //         OrchardNullifier,
+    //         Fp,
+    //         3,
+    //         2,
+    //         2,
+    //     >,
+    // >(&mut reader, SerdeFormat::Processed)
+    // .unwrap();
 
-    // let pk = if read {
-    //     println!("22 pk reading, t: {:?}", start.elapsed());
+    // println!("22 pk generating, t: {:?}", start.elapsed());
 
-    //     let pk_fd = File::open(&pk_path).unwrap();
-    //     let mut reader = BufReader::new(pk_fd);
-    //     ProvingKey::read::<_, HashCircuit<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2>>(
-    //         &mut reader,
-    //         SerdeFormat::RawBytes,
-    //     )
-    //     .unwrap()
-    // } else {
-    //     println!("22 pk generating, t: {:?}", start.elapsed());
+    // let pk_fd = File::create(&pk_path).unwrap();
+    // let pk_fd = File::create("pk").unwrap();
+    // let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
+    // let mut writer = BufWriter::new(pk_fd);
+    // pk.write(&mut writer, SerdeFormat::Processed).unwrap();
+    // writer.flush().unwrap();
 
-    //     let pk_fd = File::create(&pk_path).unwrap();
-    //     let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
-    //     let mut writer = BufWriter::new(pk_fd);
-    //     pk.write(&mut writer, SerdeFormat::RawBytes).unwrap();
-    //     writer.flush().unwrap();
+    // println!("22 pk reading, t: {:?}", start.elapsed());
 
-    //     pk
-    // };
+    // let pk_fd = File::open(&pk_path).unwrap();
+    // let mut reader = BufReader::new(pk_fd);
+    // let pk = ProvingKey::<EqAffine>::read::<
+    //     _,
+    //     HashCircuit<
+    //         // pallas::Point,
+    //         pallas::Affine,
+    //         OrchardNullifier,
+    //         Fp,
+    //         3,
+    //         2,
+    //         2,
+    //     >,
+    // >(&mut reader, SerdeFormat::Processed)
+    // .unwrap();
 
-    // let pk = if read {
-    //     println!("22 pk reading, t: {:?}", start.elapsed());
-
-    //     let pk_fd = File::open(&pk_path).unwrap();
-    //     let mut reader = BufReader::new(pk_fd);
-    //     ProvingKey::read::<_, HashCircuit<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2>>(
-    //         &mut reader,
-    //         SerdeFormat::RawBytes,
-    //     )
-    //     .unwrap()
-    // } else {
-    //     println!("22 pk generating, t: {:?}", start.elapsed());
-
-    //     let pk_fd = File::create(&pk_path).unwrap();
-    //     let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
-    //     let mut writer = BufWriter::new(pk_fd);
-    //     pk.write(&mut writer, SerdeFormat::RawBytes).unwrap();
-    //     writer.flush().unwrap();
-
-    //     pk
-    // };
-
-    println!("22 pk generating, t: {:?}", start.elapsed());
-
-    let pk_fd = File::create(&pk_path).unwrap();
-    let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
-    let mut writer = BufWriter::new(pk_fd);
-    pk.write(&mut writer, SerdeFormat::Processed).unwrap();
-    writer.flush().unwrap();
-
-    println!("22 pk reading, t: {:?}", start.elapsed());
-
-    let pk_fd = File::open(&pk_path).unwrap();
-    let mut reader = BufReader::new(pk_fd);
-    let pk = ProvingKey::<EqAffine>::read::<
-        _,
-        HashCircuit<
-            // pallas::Point,
-            pallas::Affine,
-            OrchardNullifier,
-            Fp,
-            3,
-            2,
-            2,
-        >,
-    >(&mut reader, SerdeFormat::Processed)
-    .unwrap();
-
-    println!("1111: pk read complete, t: {:?}", start.elapsed());
-
-    // return;
+    // println!("1111: pk read complete, t: {:?}", start.elapsed());
 
     let mut rng = OsRng;
     let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
 
     // println!("creating proof, t: {:?}", start.elapsed());
-    create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
-        &params,
-        &pk,
-        &[circuit],
-        &[&[&[root], &[]]],
-        &mut rng,
-        &mut transcript,
-    )
-    .unwrap();
+    // create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
+    //     &params,
+    //     &pk,
+    //     &[circuit],
+    //     &[&[&[root], &[]]],
+    //     &mut rng,
+    //     &mut transcript,
+    // )
+    // .unwrap();
 
     // println!("proof generated, t: {:?}", start.elapsed());
-    let proof = transcript.finalize();
+    // let proof = transcript.finalize();
 
-    println!("proof len: {}, t: {:?}", proof.len(), start.elapsed());
+    // println!("proof len: {}, t: {:?}", proof.len(), start.elapsed());
 }

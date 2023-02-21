@@ -9,8 +9,7 @@
     "lint": "next lint",
     "build:wasm-st": "wasm-pack build --target web",
     "build:wasm-mt": "cross-env RUSTFLAGS=\"-C target-feature=+atomics,+bulk-memory,+mutable-globals\" rustup run nightly-2022-12-12 wasm-pack build --target web --out-dir pkg-parallel -- --features parallel -Z build-std=panic_abort,std",
-    "build2": "run-p build:wasm-st build:wasm-mt",
-    "serve": "webpack serve"
+    "build2": "run-p build:wasm-st build:wasm-mt"
   },
   "dependencies": {
     "@next/font": "13.1.6",

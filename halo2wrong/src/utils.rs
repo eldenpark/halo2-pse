@@ -128,12 +128,13 @@ impl DimensionMeasurement {
         let config = C::configure(&mut cs);
         let mut measurement = Self::default();
         C::FloorPlanner::synthesize(&mut measurement, circuit, config, cs.constants().to_vec())?;
-        Ok(Dimension {
-            blinding_factor: cs.blinding_factors() as u64,
-            instance: measurement.instance.take(),
-            advice: measurement.advice.take(),
-            fixed: measurement.fixed.take(),
-        })
+        Err(Error::Opening)
+        // Ok(Dimension {
+        //     blinding_factor: cs.blinding_factors() as u64,
+        //     instance: measurement.instance.take(),
+        //     advice: measurement.advice.take(),
+        //     fixed: measurement.fixed.take(),
+        // })
     }
 }
 

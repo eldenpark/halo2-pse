@@ -4,17 +4,25 @@ import * as Comlink from 'comlink';
 console.log(22);
 
 // Wrap wasm-bindgen exports (the `generate` function) to add time measurement.
-function wrapExports({ generate }) {
-  return ({ width, height, maxIterations }) => {
-    const start = performance.now();
-    const rawImageData = generate(width, height, maxIterations);
-    const time = performance.now() - start;
+function wrapExports({ generate, gen_id_proof }) {
+  return ({ arg }) => {
+    let res = gen_id_proof();
+
     return {
-      // Little perf boost to transfer data to the main thread w/o copying.
-      rawImageData: Comlink.transfer(rawImageData, [rawImageData.buffer]),
-      time
+      val: Comlink.transfer(res, [res.buffer]),
     };
   };
+
+  // return ({ width, height, maxIterations }) => {
+  //   const start = performance.now();
+  //   const rawImageData = generate(width, height, maxIterations);
+  //   const time = performance.now() - start;
+  //   return {
+  //     // Little perf boost to transfer data to the main thread w/o copying.
+  //     rawImageData: Comlink.transfer(rawImageData, [rawImageData.buffer]),
+  //     time
+  //   };
+  // };
 }
 
 async function initHandlers() {

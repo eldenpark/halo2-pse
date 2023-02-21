@@ -14,8 +14,6 @@ const state = {
 
 console.log('index.js');
 
-
-
 export default function Home() {
   React.useEffect(() => {
     console.log('Home()');
@@ -58,18 +56,21 @@ export default function Home() {
         // Assign onclick handler + enable the button.
         Object.assign(document.getElementById(id) as any, {
           async onclick() {
-            console.log(555, handler);
+            let res = await handler({ arg: 3 });
 
-            let { rawImageData, time } = await handler({
-              width,
-              height,
-              maxIterations
-            });
+            console.log('res', res);
+            // console.log(555, handler);
 
-            (timeOutput as any).value = `${time.toFixed(2)} ms`;
+            // let { rawImageData, time } = await handler({
+            //   width,
+            //   height,
+            //   maxIterations
+            // });
 
-            const imgData = new ImageData(rawImageData, width, height);
-            ctx.putImageData(imgData, 0, 0);
+            // (timeOutput as any).value = `${time.toFixed(2)} ms`;
+
+            // const imgData = new ImageData(rawImageData, width, height);
+            // ctx.putImageData(imgData, 0, 0);
           },
           disabled: false
         });
@@ -77,14 +78,13 @@ export default function Home() {
 
       console.log('setting up buttons');
 
-      setupBtn('singleThread');
+      // setupBtn('singleThread');
 
       if (handlers.supportsThreads) {
         console.log('support threads!');
 
         setupBtn('multiThread');
       }
-
     })();
   }, []);
 
