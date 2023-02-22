@@ -19,7 +19,8 @@ maingate = { path = "../maingate" }
 group = "0.12"
 rand = "0.8"
 ff = "0.12"
-web-sys = { version = "0.3.61", features = ["console"] }
+
+# web-sys = { version = "0.3.61", features = ["console", "Window", "Performance", "PerformanceTiming"] }
 
 [lib]
 bench = false

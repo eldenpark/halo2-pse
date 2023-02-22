@@ -56,9 +56,10 @@ export default function Home() {
         // Assign onclick handler + enable the button.
         Object.assign(document.getElementById(id) as any, {
           async onclick() {
-            let res = await handler({ arg: 3 });
+            console.log('btn clicked', handlers);
+            await handler({ arg: 3 });
 
-            console.log('res', res);
+            // console.log('res', res);
             // console.log(555, handler);
 
             // let { rawImageData, time } = await handler({

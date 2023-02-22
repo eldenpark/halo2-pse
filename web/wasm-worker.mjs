@@ -4,12 +4,15 @@ import * as Comlink from 'comlink';
 console.log(22);
 
 // Wrap wasm-bindgen exports (the `generate` function) to add time measurement.
-function wrapExports({ generate, gen_id_proof }) {
+function wrapExports({ run }) {
+  console.log(11111, run);
+
   return ({ arg }) => {
-    let res = gen_id_proof();
+    run();
+    // let res = gen_id_proof();
 
     return {
-      val: Comlink.transfer(res, [res.buffer]),
+      // val: Comlink.transfer(res, [res.buffer]),
     };
   };
 

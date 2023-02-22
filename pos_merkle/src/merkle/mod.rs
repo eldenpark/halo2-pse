@@ -52,7 +52,7 @@ use std::io::{BufReader, BufWriter, Seek, Write};
 use std::marker::PhantomData;
 use std::ops::{Mul, Neg};
 use std::path::PathBuf;
-use web_sys::console;
+// use web_sys::console;
 // use std::time::{Instant, SystemTime};
 
 #[derive(Clone, Debug)]
@@ -540,11 +540,22 @@ pub fn gen_id_proof() -> Vec<u8> {
     // let params_fd = File::create(&params_path).unwrap();
     // let params_fd = File::create("params").unwrap();
 
-    console::log_1(&"Hello using web-sys".into());
+    // let window = web_sys::window().expect("should have a window in this context");
+    // let performance = window
+    //     .performance()
+    //     .expect("performance should be available");
+
+    // let b = performance.now();
+
+    // console::log_1(&"11".into());
+
     let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
     // let mut writer = BufWriter::new(params_fd);
     // params.write(&mut writer).unwrap();
     // writer.flush().unwrap();
+    //
+    // let b = performance.now();
+    // console::log_1(&format!("t: {}", b).into());
 
     return vec![33];
 
