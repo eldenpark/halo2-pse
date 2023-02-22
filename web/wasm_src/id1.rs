@@ -28,7 +28,7 @@ use crate::WasmError;
 
 #[wasm_bindgen]
 pub fn gen_id_proof() -> Clamped<Vec<u8>> {
-    let b = pos_merkle::gen_id_proof();
+    let b = pos_merkle::gen_id_proof().unwrap();
 
     Clamped(b)
 }

@@ -6,6 +6,7 @@ use self::chip::{MerkleChip, MerkleConfig};
 use super::ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
 use super::ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
 use crate::merkle::merkle_path::MerklePath;
+use crate::ProofError;
 use ecc::{GeneralEccChip, Point};
 use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
@@ -52,6 +53,7 @@ use std::io::{BufReader, BufWriter, Seek, Write};
 use std::marker::PhantomData;
 use std::ops::{Mul, Neg};
 use std::path::PathBuf;
+use std::time::Instant;
 // use web_sys::console;
 // use std::time::{Instant, SystemTime};
 
@@ -329,10 +331,11 @@ impl<
 
 #[test]
 pub fn test_poseidon2() {
+    println!("111");
     gen_id_proof();
 }
 
-pub fn gen_id_proof() -> Vec<u8> {
+pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     let args: Vec<String> = env::args().collect();
     // println!("args:{:?}", args);
 
@@ -344,17 +347,17 @@ pub fn gen_id_proof() -> Vec<u8> {
         big_to_fe(x_big)
     }
 
-    // let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    // let params_path = project_root.join("params.dat");
-    // let pk_path = project_root.join("pk.dat");
-    // let vk_path = project_root.join("vk.dat");
+    let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let params_path = project_root.join("params.dat");
+    let pk_path = project_root.join("pk.dat");
+    let vk_path = project_root.join("vk.dat");
 
-    // println!(
-    //     "params path: {:?}, pk_path: {:?}, vk_path: {:?}",
-    //     params_path, pk_path, vk_path,
-    // );
+    println!(
+        "params path: {:?}, pk_path: {:?}, vk_path: {:?}",
+        params_path, pk_path, vk_path,
+    );
 
-    // let start = Instant::now();
+    let start = Instant::now();
     // println!("poseidon_hash2(): t: {:?}", start.elapsed());
 
     let leaf = Fp::from(2);
@@ -537,27 +540,18 @@ pub fn gen_id_proof() -> Vec<u8> {
     // println!("params generating, t: {:?}", start.elapsed());
     //
 
-    // let params_fd = File::create(&params_path).unwrap();
+    let params_fd = File::create(&params_path).unwrap();
     // let params_fd = File::create("params").unwrap();
 
-    // let window = web_sys::window().expect("should have a window in this context");
-    // let performance = window
-    //     .performance()
-    //     .expect("performance should be available");
-
-    // let b = performance.now();
-
-    // console::log_1(&"11".into());
-
     let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
-    // let mut writer = BufWriter::new(params_fd);
-    // params.write(&mut writer).unwrap();
-    // writer.flush().unwrap();
+    let mut writer = BufWriter::new(params_fd);
+    params.write(&mut writer).unwrap();
+    writer.flush().unwrap();
     //
     // let b = performance.now();
     // console::log_1(&format!("t: {}", b).into());
 
-    return vec![33];
+    // return vec![33];
 
     // println!("params reading, t: {:?}", start.elapsed());
 
@@ -590,7 +584,7 @@ pub fn gen_id_proof() -> Vec<u8> {
 
     // let vk_fd = File::create(&vk_path).unwrap();
     // let vk_fd = File::create("vk").unwrap();
-    // let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
+    let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
     // let mut writer = BufWriter::new(vk_fd);
     // vk.write(&mut writer, SerdeFormat::Processed).unwrap();
     // writer.flush().unwrap();
@@ -617,7 +611,9 @@ pub fn gen_id_proof() -> Vec<u8> {
 
     // let pk_fd = File::create(&pk_path).unwrap();
     // let pk_fd = File::create("pk").unwrap();
-    // let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
+    let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
+
+    return Ok(vec![12]);
     // let mut writer = BufWriter::new(pk_fd);
     // pk.write(&mut writer, SerdeFormat::Processed).unwrap();
     // writer.flush().unwrap();
