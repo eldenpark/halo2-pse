@@ -52,6 +52,7 @@ use std::io::{BufReader, BufWriter, Seek, Write};
 use std::marker::PhantomData;
 use std::ops::{Mul, Neg};
 use std::path::PathBuf;
+use web_sys::console;
 // use std::time::{Instant, SystemTime};
 
 #[derive(Clone, Debug)]
@@ -331,14 +332,12 @@ pub fn test_poseidon2() {
     gen_id_proof();
 }
 
-pub fn a() {}
-
 pub fn gen_id_proof() -> Vec<u8> {
     let args: Vec<String> = env::args().collect();
-    println!("args:{:?}", args);
+    // println!("args:{:?}", args);
 
     let read = args.contains(&String::from("read"));
-    println!("read: {}", read);
+    // println!("read: {}", read);
 
     fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
         let x_big = fe_to_big(x);
@@ -396,8 +395,8 @@ pub fn gen_id_proof() -> Vec<u8> {
     let pos = 0;
     let pos_bits: [bool; 32] = i2lebsp(pos as u64);
 
-    println!("out-circuit: pos_bits: {:?}", pos_bits);
-    println!("out-circuit: leaf: {:?}", leaf);
+    // println!("out-circuit: pos_bits: {:?}", pos_bits);
+    // println!("out-circuit: leaf: {:?}", leaf);
 
     let mut root = leaf;
     for (idx, el) in path.iter().enumerate() {
@@ -407,7 +406,7 @@ pub fn gen_id_proof() -> Vec<u8> {
             [root, *el]
         };
 
-        println!("idx: {}, msg: {:?}", idx, msg);
+        // println!("idx: {}, msg: {:?}", idx, msg);
         root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 
@@ -418,7 +417,7 @@ pub fn gen_id_proof() -> Vec<u8> {
     // Generate a key pair
     let sk = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
     let public_key = (g * sk).to_affine();
-    println!("public key: {:?}", public_key,);
+    // println!("public key: {:?}", public_key,);
 
     // Generate a valid signature
     // Suppose `m_hash` is the message hash
@@ -436,7 +435,7 @@ pub fn gen_id_proof() -> Vec<u8> {
 
     // Calculate `s`
     let s = k_inv * (msg_hash + (r * sk));
-    println!("r: {:?}, s: {:?}", r, s);
+    // println!("r: {:?}, s: {:?}", r, s);
 
     // Sanity check. Ensure we construct a valid signature. So lets verify it
     {
@@ -450,10 +449,10 @@ pub fn gen_id_proof() -> Vec<u8> {
         let x_candidate = r_point.x();
         let r_candidate = mod_n::<pallas::Affine>(*x_candidate);
 
-        println!(
-            "x_candidate: {:?}, r_candidate: {:?}",
-            x_candidate, r_candidate
-        );
+        // println!(
+        //     "x_candidate: {:?}, r_candidate: {:?}",
+        //     x_candidate, r_candidate
+        // );
 
         assert_eq!(r, r_candidate);
     }
@@ -472,7 +471,7 @@ pub fn gen_id_proof() -> Vec<u8> {
         (t.to_affine(), u.to_affine())
     };
 
-    println!("t: {:?}, u: {:?}", t, u);
+    // println!("t: {:?}, u: {:?}", t, u);
 
     //
 
@@ -506,11 +505,10 @@ pub fn gen_id_proof() -> Vec<u8> {
     };
 
     // let instance = vec![vec![root], vec![]];
+    //
 
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
-
-    return vec![55];
 
     // println!("proving, dimension k: {}", k);
     // let prover = MockProver::run(k, &circuit, instance).unwrap();
@@ -540,11 +538,15 @@ pub fn gen_id_proof() -> Vec<u8> {
     //
 
     // let params_fd = File::create(&params_path).unwrap();
-    let params_fd = File::create("params").unwrap();
-    // let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
+    // let params_fd = File::create("params").unwrap();
+
+    console::log_1(&"Hello using web-sys".into());
+    let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
     // let mut writer = BufWriter::new(params_fd);
     // params.write(&mut writer).unwrap();
     // writer.flush().unwrap();
+
+    return vec![33];
 
     // println!("params reading, t: {:?}", start.elapsed());
 

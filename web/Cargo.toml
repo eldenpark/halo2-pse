@@ -19,6 +19,7 @@ once_cell = "1.7.2"
 getrandom = { version = "0.2.2", features = ["js"] }
 rand = "0.8.3"
 hsl = "0.1.1"
+web-sys = "0.3.61"
 
 pos_merkle = { path = "../pos_merkle" }
 
