@@ -177,65 +177,27 @@ impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
         let scalar_chip = ecc_chip.scalar_field_chip();
         let base_chip = ecc_chip.base_field_chip();
 
-        // 1. check 0 < r, s < n
+        {
+            // let aa = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
 
-        // since `assert_not_zero` already includes a in-field check, we can just
-        // call `assert_not_zero`
+            // println!(
+            //     "\n\naa: {:?}, t: {:?}, s: {:?}",
+            //     aa.x().native().value(),
+            //     t.x().native().value(),
+            //     sig.s.native().value()
+            // );
+
+            return Ok(());
+        }
+
         scalar_chip.assert_not_zero(ctx, &sig.r)?;
         scalar_chip.assert_not_zero(ctx, &sig.s)?;
 
         let s_t = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
 
-        // let u_neg = ecc_chip.neg(ctx, &u)?;
-        // println!("u_neg: {:?}", u_neg);
-
         let res = ecc_chip.add(ctx, &s_t, &u)?;
 
-        // println!("111 res: {:?}", res);
-
-        // // 2. r_inv = r^(-1) (mod n)
-        // // let (s_inv, _) = scalar_chip.invert(ctx, &sig.s)?;
-        // let (r_int, _) = scalar_chip.invert(ctx, &sig.r)?;
-
-        // println!("synthesize(), verify 2, t: {:?}", start.elapsed(),);
-
-        // // 3. u1 = m' * w (mod n)
-        // let u1 = scalar_chip.mul(ctx, msg_hash, &s_inv)?;
-
-        // println!("synthesize(), verify 3, t: {:?}", start.elapsed(),);
-
-        // // 4. u2 = r * w (mod n)
-        // let u2 = scalar_chip.mul(ctx, &sig.r, &s_inv)?;
-
-        // println!("synthesize(), verify 4, t: {:?}", start.elapsed(),);
-
-        // // 5. compute Q = u1*G + u2*pk
-        // let e_gen = ecc_chip.assign_point(ctx, Value::known(E::generator()))?;
-        // let g1 = ecc_chip.mul(ctx, &e_gen, &u1, 2)?;
-
-        // println!("synthesize(), verify 5-1, t: {:?}", start.elapsed(),);
-
-        // let g2 = ecc_chip.mul(ctx, &pk.point, &u2, 2)?;
-
-        // println!("synthesize(), verify 5-2, t: {:?}", start.elapsed(),);
-
-        // let q = ecc_chip.add(ctx, &g1, &g2)?;
-
-        // println!("synthesize(), verify 5-3, t: {:?}", start.elapsed(),);
-
-        // // 6. reduce q_x in E::ScalarExt
-        // // assuming E::Base/E::ScalarExt have the same number of limbs
-        // let q_x = q.x();
-        // let q_x_reduced_in_q = base_chip.reduce(ctx, q_x)?;
-        // let q_x_reduced_in_r = scalar_chip.reduce_external(ctx, &q_x_reduced_in_q)?;
-
-        // println!("synthesize(), verify 6, t: {:?}", start.elapsed(),);
-
-        // // 7. check if Q.x == r (mod n)
-        // scalar_chip.assert_strict_equal(ctx, &q_x_reduced_in_r, &sig.r)?;
         ecc_chip.assert_equal(ctx, &pk.point, &res)?;
-
-        // println!("111111");
 
         Ok(())
     }

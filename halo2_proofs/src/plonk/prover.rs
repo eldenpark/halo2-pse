@@ -56,8 +56,12 @@ pub fn create_proof<
 ) -> Result<(), Error> {
     for instance in instances.iter() {
         if instance.len() != pk.vk.cs.num_instance_columns {
-            println!("instance.len: {}, vk instance cols: {}", 
-                instance.len(), pk.vk.cs.num_instance_columns);
+            println!(
+                "instance.len: {}, vk instance cols: {}",
+                instance.len(),
+                pk.vk.cs.num_instance_columns
+            );
+
             return Err(Error::InvalidInstances);
         }
     }

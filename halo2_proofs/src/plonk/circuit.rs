@@ -1925,6 +1925,7 @@ impl<F: Field> ConstraintSystem<F> {
 
     /// Allocate a new instance column
     pub fn instance_column(&mut self) -> Column<Instance> {
+        println!("instance!!!");
         let tmp = Column {
             index: self.num_instance_columns,
             column_type: Instance,
