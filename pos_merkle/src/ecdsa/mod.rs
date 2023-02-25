@@ -180,7 +180,7 @@ impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
         // scalar_chip.assert_not_zero(ctx, &sig.r)?;
         // scalar_chip.assert_not_zero(ctx, &sig.s)?;
 
-        // let s_t = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
+        let s_t = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
 
         // let res = ecc_chip.add(ctx, &s_t, &u)?;
         // let res = ecc_chip.add(ctx, &t, &u)?;
