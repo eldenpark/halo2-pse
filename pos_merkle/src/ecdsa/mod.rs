@@ -177,27 +177,15 @@ impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
         let scalar_chip = ecc_chip.scalar_field_chip();
         let base_chip = ecc_chip.base_field_chip();
 
-        {
-            // let aa = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
+        // scalar_chip.assert_not_zero(ctx, &sig.r)?;
+        // scalar_chip.assert_not_zero(ctx, &sig.s)?;
 
-            // println!(
-            //     "\n\naa: {:?}, t: {:?}, s: {:?}",
-            //     aa.x().native().value(),
-            //     t.x().native().value(),
-            //     sig.s.native().value()
-            // );
+        // let s_t = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
 
-            return Ok(());
-        }
+        // let res = ecc_chip.add(ctx, &s_t, &u)?;
+        // let res = ecc_chip.add(ctx, &t, &u)?;
 
-        scalar_chip.assert_not_zero(ctx, &sig.r)?;
-        scalar_chip.assert_not_zero(ctx, &sig.s)?;
-
-        let s_t = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
-
-        let res = ecc_chip.add(ctx, &s_t, &u)?;
-
-        ecc_chip.assert_equal(ctx, &pk.point, &res)?;
+        // ecc_chip.assert_equal(ctx, &pk.point, &res)?;
 
         Ok(())
     }

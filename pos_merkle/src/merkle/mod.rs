@@ -60,7 +60,7 @@ use std::time::Instant;
 #[derive(Clone, Debug)]
 pub struct MyConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
     advices: [Column<Advice>; 5],
-    // instance: Column<Instance>,
+    instance: Column<Instance>,
     merkle_config: MerkleConfig<F, WIDTH, RATE>,
     poseidon_config: Pow5Config<F, WIDTH, RATE>,
     ecdsa_config: EcdsaConfig,
@@ -149,10 +149,8 @@ impl<
         let rc_a = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
         let rc_b = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
 
-        // let instance = meta.instance_column();
-        // meta.enable_equality(instance);
-
-        println!("2222");
+        let instance = meta.instance_column();
+        meta.enable_equality(instance);
 
         meta.enable_constant(rc_b[0]);
 
@@ -163,8 +161,6 @@ impl<
             rc_a.try_into().unwrap(),
             rc_b.try_into().unwrap(),
         );
-
-        println!("3333");
 
         let advices = [
             state[0].clone(),
@@ -193,6 +189,11 @@ impl<
             overflow_bit_lens.extend(rns_scalar.overflow_lengths());
             let composition_bit_lens = vec![BIT_LEN_LIMB / NUMBER_OF_LIMBS];
 
+            println!(
+                "composition bit lens: {:?}, overflow bit lens: {:?}",
+                composition_bit_lens, overflow_bit_lens
+            );
+
             let range_config = RangeChip::<F>::configure(
                 meta,
                 &main_gate_config,
@@ -205,7 +206,7 @@ impl<
 
         let my_config = MyConfig {
             advices: advices.try_into().unwrap(),
-            // instance,
+            instance,
             poseidon_config,
             merkle_config,
             ecdsa_config,
@@ -252,118 +253,110 @@ impl<
 
         // layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
         //
-        let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
-            config.ecdsa_config.ecc_chip_config(),
-        );
+        // let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
+        //     config.ecdsa_config.ecc_chip_config(),
+        // );
 
-        layouter.assign_region(
-            || "assign aux values",
-            |region| {
-                let offset = 0;
-                let ctx = &mut RegionCtx::new(region, offset);
+        // layouter.assign_region(
+        //     || "assign aux values",
+        //     |region| {
+        //         let offset = 0;
+        //         let ctx = &mut RegionCtx::new(region, offset);
 
-                let r = self.signature.map(|signature| signature.0);
-                let s = self.signature.map(|signature| signature.1);
+        //         let r = self.signature.map(|signature| signature.0);
+        //         let s = self.signature.map(|signature| signature.1);
 
-                let scalar_chip = ecc_chip.scalar_field_chip();
+        //         let scalar_chip = ecc_chip.scalar_field_chip();
 
-                // let integer_r = ecc_chip.new_unassigned_scalar(r);
-                // let integer_s = ecc_chip.new_unassigned_scalar(s);
+        //         // let integer_r = ecc_chip.new_unassigned_scalar(r);
+        //         // let integer_s = ecc_chip.new_unassigned_scalar(s);
 
-                // let r_assigned = scalar_chip.assign_integer(ctx, integer_r, Range::Remainder)?;
-                // let s_assigned = scalar_chip.assign_integer(ctx, integer_s, Range::Remainder)?;
+        //         // let r_assigned = scalar_chip.assign_integer(ctx, integer_r, Range::Remainder)?;
+        //         // let s_assigned = scalar_chip.assign_integer(ctx, integer_s, Range::Remainder)?;
 
-                let t = ecc_chip.assign_point(ctx, self.t)?;
-                let u = ecc_chip.assign_point(ctx, self.u)?;
+        //         let t = ecc_chip.assign_point(ctx, self.t)?;
+        //         // let u = ecc_chip.assign_point(ctx, self.u)?;
 
-                // let res = ecc_chip.add(ctx, &t, &u)?;
-                // println!("res: {:?}", res);
+        //         // let res = ecc_chip.add(ctx, &t, &u)?;
+        //         // println!("res: {:?}", res);
 
-                // t.add(u);
+        //         // t.add(u);
 
-                Ok(())
-            },
-        )?;
+        //         Ok(())
+        //     },
+        // )?;
 
-        // {
-        //     let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
-        //         config.ecdsa_config.ecc_chip_config(),
-        //     );
+        {
+            let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
+                config.ecdsa_config.ecc_chip_config(),
+            );
 
-        //     layouter.assign_region(
-        //         || "assign aux values",
-        //         |region| {
-        //             let offset = 0;
-        //             let ctx = &mut RegionCtx::new(region, offset);
+            // layouter.assign_region(
+            //     || "assign aux values",
+            //     |region| {
+            //         let offset = 0;
+            //         let ctx = &mut RegionCtx::new(region, offset);
 
-        //             ecc_chip.assign_aux_generator(ctx, Value::known(self.aux_generator))?;
-        //             ecc_chip.assign_aux(ctx, self.window_size, 1)?;
-        //             Ok(())
-        //         },
-        //     )?;
+            //         ecc_chip.assign_aux_generator(ctx, Value::known(self.aux_generator))?;
+            //         ecc_chip.assign_aux(ctx, self.window_size, 1)?;
+            //         Ok(())
+            //     },
+            // )?;
 
-        // let ecdsa_chip = EcdsaChip::new(ecc_chip.clone());
-        //     let scalar_chip = ecc_chip.scalar_field_chip();
+            let ecdsa_chip = EcdsaChip::new(ecc_chip.clone());
+            let scalar_chip = ecc_chip.scalar_field_chip();
 
-        //     layouter.assign_region(
-        //         || "region 0",
-        //         |region| {
-        //             let offset = 0;
-        //             let ctx = &mut RegionCtx::new(region, offset);
+            layouter.assign_region(
+                || "region 0",
+                |region| {
+                    let offset = 0;
+                    let ctx = &mut RegionCtx::new(region, offset);
 
-        //             let r = self.signature.map(|signature| signature.0);
-        //             let s = self.signature.map(|signature| signature.1);
-        //             // let s = Value::known(N::ScalarExt::one());
+                    let r = self.signature.map(|signature| signature.0);
+                    let s = self.signature.map(|signature| signature.1);
 
-        //             let integer_r = ecc_chip.new_unassigned_scalar(r);
-        //             let integer_s = ecc_chip.new_unassigned_scalar(s);
-        //             let msg_hash = ecc_chip.new_unassigned_scalar(self.msg_hash);
+                    let integer_r = ecc_chip.new_unassigned_scalar(r);
+                    let integer_s = ecc_chip.new_unassigned_scalar(s);
+                    let msg_hash = ecc_chip.new_unassigned_scalar(self.msg_hash);
 
-        //             let r_assigned =
-        //                 scalar_chip.assign_integer(ctx, integer_r, Range::Remainder)?;
+                    let r_assigned =
+                        scalar_chip.assign_integer(ctx, integer_r, Range::Unreduced)?;
 
-        //             let s_assigned =
-        //                 scalar_chip.assign_integer(ctx, integer_s, Range::Remainder)?;
+                    println!("r_assigned: {:?}", r_assigned.native().value());
 
-        //             let sig = AssignedEcdsaSig {
-        //                 r: r_assigned,
-        //                 s: s_assigned,
-        //             };
+                    let s_assigned =
+                        scalar_chip.assign_integer(ctx, integer_s, Range::Unreduced)?;
 
-        //             // println!(
-        //             //     "synthesize(), got sig, t: {:?}",
-        //             //     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH),
-        //             // );
+                    let sig = AssignedEcdsaSig {
+                        r: r_assigned,
+                        s: s_assigned,
+                    };
 
-        //             let pk_in_circuit = ecc_chip.assign_point(ctx, self.public_key)?;
+                    let pk_in_circuit = ecc_chip.assign_point(ctx, self.public_key)?;
 
-        //             let pk_assigned = AssignedPublicKey {
-        //                 point: pk_in_circuit,
-        //             };
+                    let pk_assigned = AssignedPublicKey {
+                        point: pk_in_circuit,
+                    };
 
-        //             let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Remainder)?;
+                    let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Unreduced)?;
 
-        //             let t_in_circuit = ecc_chip.assign_point(ctx, self.t)?;
-        //             let u_in_circuit = ecc_chip.assign_point(ctx, self.u)?;
+                    let t = ecc_chip.assign_point2(ctx, self.t)?;
+                    let u = ecc_chip.assign_point2(ctx, self.u)?;
 
-        //             return Ok(());
+                    println!("- t: {:?}", t.x().native());
+                    println!("- u: {:?}", u.x().native());
 
-        //             // ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
-        //             // ecdsa_chip.verify2(
-        //             //     ctx,
-        //             //     &sig,
-        //             //     &pk_assigned,
-        //             //     &msg_hash,
-        //             //     &t_in_circuit,
-        //             //     &u_in_circuit,
-        //             // )
-        //         },
-        //     )?;
+                    return Ok(());
 
-        //     // println!("synthesize(): start range chip thing");
-        // let range_chip = RangeChip::<F>::new(config.ecdsa_config.range_config);
-        // range_chip.load_table(&mut layouter)?;
-        // }
+                    // ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
+                    ecdsa_chip.verify2(ctx, &sig, &pk_assigned, &msg_hash, &t, &u)
+                },
+            )?;
+
+            //     // println!("synthesize(): start range chip thing");
+            // let range_chip = RangeChip::<F>::new(config.ecdsa_config.range_config);
+            // range_chip.load_table(&mut layouter)?;
+        }
 
         // println!("synthesize(): end");
 
@@ -381,16 +374,13 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     let args: Vec<String> = env::args().collect();
     // println!("args:{:?}", args);
 
-    let read = args.contains(&String::from("read"));
-    // println!("read: {}", read);
-
     fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
         let x_big = fe_to_big(x);
         big_to_fe(x_big)
     }
 
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let params_path = project_root.join("params.dat");
+    let params_path = project_root.clone();
     let pk_path = project_root.join("pk.dat");
     let vk_path = project_root.join("vk.dat");
 
@@ -498,6 +488,8 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
         //     "x_candidate: {:?}, r_candidate: {:?}",
         //     x_candidate, r_candidate
         // );
+        //
+        println!("r: {:?}", r);
 
         assert_eq!(r, r_candidate);
     }
@@ -516,7 +508,7 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
         (t.to_affine(), u.to_affine())
     };
 
-    // println!("t: {:?}, u: {:?}", t, u);
+    println!("t: {:?}, u: {:?}", t, u);
 
     //
 
@@ -550,55 +542,42 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     };
 
     // let instance = vec![vec![root], vec![]];
-    // let instance = vec![vec![], vec![]];
+    let instance = vec![vec![], vec![]];
     //
 
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
+    // let k = 18;
+    println!("proving, dimension k: {}", k);
 
-    // println!("proving, dimension k: {}", k);
-    // let prover = MockProver::run(k, &circuit, instance).unwrap();
-    // assert_eq!(prover.verify(), Ok(()));
+    let prover = MockProver::run(k, &circuit, instance).unwrap();
+    assert_eq!(prover.verify(), Ok(()));
+
+    // return Ok(vec![]);
 
     // return Ok(vec![12]);
 
-    // let params: ParamsIPA<EqAffine> = if read {
-    //     println!("params reading, t: {:?}", start.elapsed());
+    let params = {
+        let params_path = params_path.join(format!("params_{}.dat", k));
+        println!("params:path: {:?}", params_path);
 
-    //     let params_fd = File::open(&params_path).unwrap();
-    //     let mut reader = BufReader::new(params_fd);
-    //     ParamsIPA::read(&mut reader).unwrap()
-    // } else {
-    //     println!("params generating, t: {:?}", start.elapsed());
+        match File::open(&params_path) {
+            Ok(fd) => {
+                // let params_fd = File::open(&params_path).unwrap();
+                let mut reader = BufReader::new(fd);
+                ParamsIPA::read(&mut reader).unwrap()
+            }
+            Err(err) => {
+                let params_fd = File::create(&params_path).unwrap();
+                let params: ParamsIPA<_> = ParamsIPA::new(k);
+                let mut writer = BufWriter::new(params_fd);
+                params.write(&mut writer).unwrap();
+                writer.flush().unwrap();
 
-    //     let params_fd = File::create(&params_path).unwrap();
-    //     let params: ParamsIPA<_> = ParamsIPA::new(k);
-    //     let mut writer = BufWriter::new(params_fd);
-    //     params.write(&mut writer).unwrap();
-    //     writer.flush().unwrap();
-
-    //     params
-    // };
-
-    println!("params generating, t: {:?}", start.elapsed());
-    let params_fd = File::create(&params_path).unwrap();
-    // let params_fd = File::create("params").unwrap();
-
-    let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
-    let mut writer = BufWriter::new(params_fd);
-    params.write(&mut writer).unwrap();
-    writer.flush().unwrap();
-    //
-    // let b = performance.now();
-    // console::log_1(&format!("t: {}", b).into());
-
-    // return vec![33];
-
-    // println!("params reading, t: {:?}", start.elapsed());
-
-    // let params_fd = File::open(&params_path).unwrap();
-    // let mut reader = BufReader::new(params_fd);
-    // let params = ParamsIPA::read(&mut reader).unwrap();
+                params
+            }
+        }
+    };
 
     // let vk = if read {
     //     println!("11 vk reading, t: {:?}", start.elapsed());
@@ -682,11 +661,12 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
 
     println!("creating proof, t: {:?}", start.elapsed());
+
     create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
         &params,
         &pk,
         &[circuit],
-        &[&[&[]]],
+        &[&[&[], &[]]],
         &mut rng,
         &mut transcript,
     )

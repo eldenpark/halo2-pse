@@ -223,6 +223,29 @@ impl<
         Ok(point)
     }
 
+    pub fn assign_point2(
+        &self,
+        ctx: &mut RegionCtx<'_, N>,
+        point: Value<Emulated>,
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+        // ) -> Result<(), Error> {
+        let integer_chip = self.base_field_chip();
+
+        let point = point.map(|point| self.to_rns_point(point));
+        let (x, y) = point
+            .map(|point| (point.x().clone(), point.y().clone()))
+            .unzip();
+
+        let x = integer_chip.assign_integer(ctx, x.into(), Range::Remainder)?;
+        let y = integer_chip.assign_integer(ctx, y.into(), Range::Remainder)?;
+
+        let point = AssignedPoint::new(x, y);
+
+        // self.assert_is_on_curve(ctx, &point)?;
+        Ok(point)
+        // Ok(())
+    }
+
     /// Assigns the auxiliary generator point
     pub fn assign_aux_generator(
         &mut self,

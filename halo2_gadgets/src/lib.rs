@@ -20,7 +20,7 @@
 // Catch documentation errors caused by code changes.
 #![deny(rustdoc::broken_intra_doc_links)]
 #![deny(missing_debug_implementations)]
-#![deny(missing_docs)]
+// #![deny(missing_docs)]
 #![deny(unsafe_code)]
 
 pub mod ecc;
@@ -30,3 +30,5 @@ pub mod poseidon;
 pub mod sha256;
 pub mod sinsemilla;
 pub mod utilities;
+
+pub mod ecc2;

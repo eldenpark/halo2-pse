@@ -100,6 +100,7 @@ impl<FF: FieldExt> StandardCs<FF> for StandardPlonk<FF> {
         region.assign_fixed(|| "a * b", self.config.sm, 0, || Value::known(FF::one()))?;
         Ok((lhs.cell(), rhs.cell(), out.cell()))
     }
+
     fn raw_add<F>(&self, region: &mut Region<FF>, mut f: F) -> Result<(Cell, Cell, Cell), Error>
     where
         F: FnMut() -> Value<(Assigned<FF>, Assigned<FF>, Assigned<FF>)>,

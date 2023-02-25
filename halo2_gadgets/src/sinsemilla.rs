@@ -465,7 +465,7 @@ pub(crate) mod tests {
     };
 
     use crate::{
-        ecc::ScalarFixed,
+        ecc::{EccInstructions, ScalarFixed},
         sinsemilla::primitives::{self as sinsemilla, K},
         {
             ecc::{

@@ -1,7 +1,7 @@
 //! `ecc` implements constraints for ellictic curve operations
 
 #![deny(missing_debug_implementations)]
-#![deny(missing_docs)]
+// #![deny(missing_docs)]
 
 pub use base_field_ecc::*;
 pub use general_ecc::*;
