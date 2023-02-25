@@ -449,7 +449,11 @@ pub mod tests {
             layouter.namespace(|| "endo^2(-P)"),
             Value::known(endo_2_p_neg.to_affine()),
         )?;
-        p.add(layouter.namespace(|| "P + endo^2(-P)"), &endo_2_p_neg)?;
+        let res = p.add(layouter.namespace(|| "P + endo^2(-P)"), &endo_2_p_neg)?;
+
+        println!("p: {:?}", p.inner());
+        println!("endo_2_p_neg: {:?}", endo_2_p_neg.inner());
+        println!("res: {:?}", res.inner().x().value());
 
         Ok(())
     }
