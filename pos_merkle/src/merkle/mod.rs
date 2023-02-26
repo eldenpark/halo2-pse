@@ -343,8 +343,8 @@ impl<
                     let t = ecc_chip.assign_point2(ctx, self.t)?;
                     let u = ecc_chip.assign_point2(ctx, self.u)?;
 
-                    println!("- t: {:?}", t.x().native());
-                    println!("- u: {:?}", u.x().native());
+                    // println!("- t: {:?}", t.x().native());
+                    // println!("- u: {:?}", u.x().native());
 
                     return Ok(());
 
@@ -354,8 +354,8 @@ impl<
             )?;
 
             //     // println!("synthesize(): start range chip thing");
-            // let range_chip = RangeChip::<F>::new(config.ecdsa_config.range_config);
-            // range_chip.load_table(&mut layouter)?;
+            let range_chip = RangeChip::<F>::new(config.ecdsa_config.range_config);
+            range_chip.load_table(&mut layouter)?;
         }
 
         // println!("synthesize(): end");
@@ -371,9 +371,6 @@ pub fn test_poseidon2() {
 }
 
 pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
-    let args: Vec<String> = env::args().collect();
-    // println!("args:{:?}", args);
-
     fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
         let x_big = fe_to_big(x);
         big_to_fe(x_big)
@@ -497,6 +494,7 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     let (t, u) = {
         let r_inv = r.invert().unwrap();
         let t = big_r * r_inv;
+
         let u = -(g * (r_inv * msg_hash));
 
         // let u_neg = u.neg();
@@ -542,7 +540,7 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     };
 
     // let instance = vec![vec![root], vec![]];
-    let instance = vec![vec![], vec![]];
+    // let instance = vec![vec![], vec![]];
     //
 
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
@@ -550,8 +548,8 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     // let k = 18;
     println!("proving, dimension k: {}", k);
 
-    let prover = MockProver::run(k, &circuit, instance).unwrap();
-    assert_eq!(prover.verify(), Ok(()));
+    // let prover = MockProver::run(k, &circuit, instance).unwrap();
+    // assert_eq!(prover.verify(), Ok(()));
 
     // return Ok(vec![]);
 

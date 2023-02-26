@@ -10,9 +10,10 @@ pub mod test22 {
 
     use crate::{
         ecc::{
-            chip::{self, EccChip, EccConfig, ScalarVar},
+            chip::{self, EccChip, EccConfig, FixedPoint},
             tests::TestFixedBases,
             BaseFitsInScalarInstructions, EccInstructions, NonIdentityPoint, Point, ScalarFixed,
+            ScalarVar,
         },
         utilities::{lookup_range_check::LookupRangeCheckConfig, UtilitiesInstructions},
     };
@@ -94,32 +95,19 @@ pub mod test22 {
             let res = NonIdentityPoint::new(chip.clone(), layouter.namespace(|| "P"), self.res)?;
             let res2 = b.add(layouter.namespace(|| "b + c"), &c)?;
 
+            // d.mul()
+
             {
-                let scalar = ScalarFixed::new(
-                    chip,
-                    layouter.namespace(|| "scalar"),
-                    Value::known(pallas::Scalar::one()),
-                )?;
+                println!("111111111");
+                let scalar = ScalarVar::new(chip, layouter.namespace(|| "pp"), self.e)?;
+                println!("222222222");
 
-                // chip.scalar_var_from_base();
-                // let a = chip.witness_scalar_fixed(&mut layouter.namespace(|| "e"), self.e)?;
-                // d.mul(layouter.namespace(|| "e"), a);
-                // d.mul()
-
-                // let scalar = ScalarFixed::new(
-                //     chip.clone(),
-                //     layouter.namespace(|| "rcv"),
-                //     self.e,
-                //     // self.rcv.as_ref().map(|rcv| rcv.inner()),
-                // )?;
-
-                // let scalar = ScalarVar::from_base(
-                //     chip.clone(),
-                //     layouter.namespace(|| "ScalarVar from_base"),
-                //     &scalar,
-                // )?;
-
-                // d.mul(layouter, scalar);
+                let (p, sc) = d.mul(layouter.namespace(|| "a"), scalar)?;
+                println!(
+                    "- mul_res (d*e): p: {:?}, sc: {:?}",
+                    p.inner().x().value(),
+                    sc
+                )
             }
 
             println!("- b: {:?}", b.inner().x());
@@ -153,7 +141,7 @@ pub mod test22 {
         println!("d: {:?}", d);
         println!("e: {:?}", e);
         println!("res: {:?}", res);
-        println!("mul res: {:?}", mul_res);
+        println!("mul res (d*e): {:?}", mul_res);
 
         let circuit = MyCircuit2 {
             test_errors: true,

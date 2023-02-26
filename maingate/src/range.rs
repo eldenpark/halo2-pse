@@ -206,6 +206,7 @@ impl<F: FieldExt> RangeChip<F> {
     /// Given config creates new chip that implements ranging
     pub fn new(config: RangeConfig) -> Self {
         let main_gate = MainGate::new(config.main_gate_config.clone());
+
         let bases = config
             .bit_len_tag
             .keys()
@@ -213,9 +214,10 @@ impl<F: FieldExt> RangeChip<F> {
                 if bit_len == 0 {
                     None
                 } else {
-                    let bases = (0..F::NUM_BITS as usize / bit_len)
+                    let bases: Vec<F> = (0..F::NUM_BITS as usize / bit_len)
                         .map(|i| F::from(2).pow(&[(bit_len * i) as u64, 0, 0, 0]))
                         .collect();
+
                     Some((bit_len, bases))
                 }
             })
