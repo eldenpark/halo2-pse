@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod test22 {
-    use group::{prime::PrimeCurveAffine, Curve, Group};
+    use group::{prime::PrimeCurveAffine, Curve, Group, ScalarMul};
     use halo2_proofs::{
         circuit::{Layouter, SimpleFloorPlanner, Value},
         dev::MockProver,
@@ -12,7 +12,7 @@ pub mod test22 {
         ecc::{
             chip::{self, EccChip, EccConfig, ScalarVar},
             tests::TestFixedBases,
-            EccInstructions, NonIdentityPoint, Point, ScalarFixed,
+            BaseFitsInScalarInstructions, EccInstructions, NonIdentityPoint, Point, ScalarFixed,
         },
         utilities::{lookup_range_check::LookupRangeCheckConfig, UtilitiesInstructions},
     };
@@ -95,8 +95,16 @@ pub mod test22 {
             let res2 = b.add(layouter.namespace(|| "b + c"), &c)?;
 
             {
-                let a = chip.witness_scalar_fixed(&mut layouter.namespace(|| "e"), self.e)?;
+                let scalar = ScalarFixed::new(
+                    chip,
+                    layouter.namespace(|| "scalar"),
+                    Value::known(pallas::Scalar::one()),
+                )?;
+
+                // chip.scalar_var_from_base();
+                // let a = chip.witness_scalar_fixed(&mut layouter.namespace(|| "e"), self.e)?;
                 // d.mul(layouter.namespace(|| "e"), a);
+                // d.mul()
 
                 // let scalar = ScalarFixed::new(
                 //     chip.clone(),
@@ -111,7 +119,7 @@ pub mod test22 {
                 //     &scalar,
                 // )?;
 
-                d.mul(layouter, scalar);
+                // d.mul(layouter, scalar);
             }
 
             println!("- b: {:?}", b.inner().x());
