@@ -185,6 +185,7 @@ impl<E: CurveAffine, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LI
         scalar_chip.assert_not_zero(ctx, &sig.s)?;
 
         let s_t = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
+        // let s_t = ecc_chip.mul(ctx, &t, &sig.s, 2)?;
 
         // let u_neg = ecc_chip.neg(ctx, &u)?;
         // println!("u_neg: {:?}", u_neg);

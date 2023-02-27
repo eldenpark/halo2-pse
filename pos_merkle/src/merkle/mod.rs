@@ -303,18 +303,18 @@ impl<
 
                     let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Remainder)?;
 
-                    let t_in_circuit = ecc_chip.assign_point(ctx, self.t)?;
-                    let u_in_circuit = ecc_chip.assign_point(ctx, self.u)?;
+                    // let t_in_circuit = ecc_chip.assign_point(ctx, self.t)?;
+                    // let u_in_circuit = ecc_chip.assign_point(ctx, self.u)?;
 
-                    // ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
-                    ecdsa_chip.verify2(
-                        ctx,
-                        &sig,
-                        &pk_assigned,
-                        &msg_hash,
-                        &t_in_circuit,
-                        &u_in_circuit,
-                    )
+                    ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
+                    // ecdsa_chip.verify2(
+                    //     ctx,
+                    //     &sig,
+                    //     &pk_assigned,
+                    //     &msg_hash,
+                    //     &t_in_circuit,
+                    //     &u_in_circuit,
+                    // )
                 },
             )?;
 
@@ -336,26 +336,12 @@ pub fn test_poseidon2() {
 }
 
 pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
-    let args: Vec<String> = env::args().collect();
-    // println!("args:{:?}", args);
-
-    let read = args.contains(&String::from("read"));
-    // println!("read: {}", read);
-
     fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
         let x_big = fe_to_big(x);
         big_to_fe(x_big)
     }
 
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let params_path = project_root.clone();
-    let pk_path = project_root.join("pk.dat");
-    let vk_path = project_root.join("vk.dat");
-
-    println!(
-        "params path: {:?}, pk_path: {:?}, vk_path: {:?}",
-        params_path, pk_path, vk_path,
-    );
 
     let start = Instant::now();
     // println!("poseidon_hash2(): t: {:?}", start.elapsed());
@@ -508,151 +494,125 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     };
 
     // let instance = vec![vec![root], vec![]];
-    //
 
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
-    // println!("proving, dimension k: {}", k);
-    // let prover = MockProver::run(k, &circuit, instance).unwrap();
-    // assert_eq!(prover.verify(), Ok(()));
-
-    // return;
-
-    // let params: ParamsIPA<EqAffine> = if read {
-    //     println!("params reading, t: {:?}", start.elapsed());
-
-    //     let params_fd = File::open(&params_path).unwrap();
-    //     let mut reader = BufReader::new(params_fd);
-    //     ParamsIPA::read(&mut reader).unwrap()
-    // } else {
-    //     println!("params generating, t: {:?}", start.elapsed());
-
-    //     let params_fd = File::create(&params_path).unwrap();
-    //     let params: ParamsIPA<_> = ParamsIPA::new(k);
-    //     let mut writer = BufWriter::new(params_fd);
-    //     params.write(&mut writer).unwrap();
-    //     writer.flush().unwrap();
-
-    //     params
-    // };
-
-    // println!("params generating, t: {:?}", start.elapsed());
-    //
+    println!("params generating, t: {:?}", start.elapsed());
 
     let params = {
-        let params_path = params_path.join(format!("params_{}.dat", k));
+        let params_path = project_root.join(format!("params_{}.dat", k));
 
-        let fd = match File::open(params_path) {
-            Ok(f) => f,
-            Err(_) => File::create(&params_path).unwrap(),
-        };
-
-        let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
-        let mut writer = BufWriter::new(fd);
-        params.write(&mut writer).unwrap();
-        writer.flush().unwrap();
+        match File::open(&params_path) {
+            Ok(fd) => {
+                let mut reader = BufReader::new(fd);
+                ParamsIPA::read(&mut reader).unwrap()
+            }
+            Err(_) => {
+                let fd = File::create(&params_path).unwrap();
+                let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
+                let mut writer = BufWriter::new(fd);
+                params.write(&mut writer).unwrap();
+                writer.flush().unwrap();
+                params
+            }
+        }
     };
 
-    // let params_fd = File::open(&params_path).unwrap();
-    // let mut reader = BufReader::new(params_fd);
-    // let params = ParamsIPA::read(&mut reader).unwrap();
+    println!("11 vk loading, t: {:?}", start.elapsed());
 
-    // let vk = if read {
-    //     println!("11 vk reading, t: {:?}", start.elapsed());
+    let circuit_name = "pos_merkle";
+    let vk = {
+        let vk_path = project_root.join(format!("vk_{}.dat", circuit_name));
 
-    //     let vk_fd = File::open(&vk_path).unwrap();
-    //     let mut reader = BufReader::new(vk_fd);
-    //     VerifyingKey::read::<_, HashCircuit<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2>>(
-    //         &mut reader,
-    //         SerdeFormat::RawBytes,
-    //     )
-    //     .unwrap()
-    // } else {
-    //     println!("11 vk generating, t: {:?}", start.elapsed());
+        match File::open(&vk_path) {
+            Ok(fd) => {
+                let mut reader = BufReader::new(fd);
+                let vk = VerifyingKey::<EqAffine>::read::<
+                    _,
+                    HashCircuit<
+                        // pallas::Point,
+                        pallas::Affine,
+                        OrchardNullifier,
+                        Fp,
+                        3,
+                        2,
+                        2,
+                    >,
+                >(&mut reader, SerdeFormat::Processed)
+                .unwrap();
+                vk
+            }
+            Err(_) => {
+                let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
+                let fd = File::create(&vk_path).unwrap();
+                let mut writer = BufWriter::new(fd);
+                vk.write(&mut writer, SerdeFormat::Processed).unwrap();
+                writer.flush().unwrap();
+                vk
+            }
+        }
+    };
 
-    //     let vk_fd = File::create(&vk_path).unwrap();
-    //     let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
-    //     let mut writer = BufWriter::new(vk_fd);
-    //     vk.write(&mut writer, SerdeFormat::Processed).unwrap();
-    //     writer.flush().unwrap();
-    //     vk
-    // };
+    println!("11 pk loading, t: {:?}", start.elapsed());
 
-    // println!("11 vk generating, t: {:?}", start.elapsed());
+    let pk = {
+        let pk_path = project_root.join(format!("pk_{}.dat", circuit_name));
 
-    // let vk_fd = File::create(&vk_path).unwrap();
-    // let vk_fd = File::create("vk").unwrap();
-    let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
-    // let mut writer = BufWriter::new(vk_fd);
-    // vk.write(&mut writer, SerdeFormat::Processed).unwrap();
-    // writer.flush().unwrap();
+        match File::open(&pk_path) {
+            Ok(fd) => {
+                let mut reader = BufReader::new(fd);
+                let pk = ProvingKey::<EqAffine>::read::<
+                    _,
+                    HashCircuit<
+                        // pallas::Point,
+                        pallas::Affine,
+                        OrchardNullifier,
+                        Fp,
+                        3,
+                        2,
+                        2,
+                    >,
+                >(&mut reader, SerdeFormat::Processed)
+                .unwrap();
 
-    // println!("11 vk reading, t: {:?}", start.elapsed());
-
-    // let vk_fd = File::open(&vk_path).unwrap();
-    // let mut reader = BufReader::new(vk_fd);
-    // let vk = VerifyingKey::<EqAffine>::read::<
-    //     _,
-    //     HashCircuit<
-    //         // pallas::Point,
-    //         pallas::Affine,
-    //         OrchardNullifier,
-    //         Fp,
-    //         3,
-    //         2,
-    //         2,
-    //     >,
-    // >(&mut reader, SerdeFormat::Processed)
-    // .unwrap();
-
-    // println!("22 pk generating, t: {:?}", start.elapsed());
-
-    // let pk_fd = File::create(&pk_path).unwrap();
-    // let pk_fd = File::create("pk").unwrap();
-    let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
-
-    return Ok(vec![12]);
-    // let mut writer = BufWriter::new(pk_fd);
-    // pk.write(&mut writer, SerdeFormat::Processed).unwrap();
-    // writer.flush().unwrap();
-
-    // println!("22 pk reading, t: {:?}", start.elapsed());
-
-    // let pk_fd = File::open(&pk_path).unwrap();
-    // let mut reader = BufReader::new(pk_fd);
-    // let pk = ProvingKey::<EqAffine>::read::<
-    //     _,
-    //     HashCircuit<
-    //         // pallas::Point,
-    //         pallas::Affine,
-    //         OrchardNullifier,
-    //         Fp,
-    //         3,
-    //         2,
-    //         2,
-    //     >,
-    // >(&mut reader, SerdeFormat::Processed)
-    // .unwrap();
-
-    // println!("1111: pk read complete, t: {:?}", start.elapsed());
+                pk
+            }
+            Err(_) => {
+                let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
+                let fd = File::create(&pk_path).unwrap();
+                let mut writer = BufWriter::new(fd);
+                pk.write(&mut writer, SerdeFormat::Processed).unwrap();
+                writer.flush().unwrap();
+                pk
+            }
+        }
+    };
 
     let mut rng = OsRng;
     let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
 
-    // println!("creating proof, t: {:?}", start.elapsed());
-    // create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
-    //     &params,
-    //     &pk,
-    //     &[circuit],
-    //     &[&[&[root], &[]]],
-    //     &mut rng,
-    //     &mut transcript,
-    // )
-    // .unwrap();
+    println!("creating proof, t: {:?}", start.elapsed());
 
-    // println!("proof generated, t: {:?}", start.elapsed());
-    // let proof = transcript.finalize();
+    create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
+        &params,
+        &pk,
+        &[circuit],
+        &[&[&[root], &[]]],
+        &mut rng,
+        &mut transcript,
+    )
+    .unwrap();
+
+    let proof = transcript.finalize();
+
+    println!(
+        "proof generated, len: {}, t: {:?}",
+        proof.len(),
+        start.elapsed()
+    );
+
+    return Ok(vec![]);
 
     // println!("proof len: {}, t: {:?}", proof.len(), start.elapsed());
 }
