@@ -348,7 +348,7 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     }
 
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let params_path = project_root.join("params.dat");
+    let params_path = project_root.clone();
     let pk_path = project_root.join("pk.dat");
     let vk_path = project_root.join("vk.dat");
 
@@ -540,20 +540,19 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     // println!("params generating, t: {:?}", start.elapsed());
     //
 
-    let params_fd = File::create(&params_path).unwrap();
-    // let params_fd = File::create("params").unwrap();
+    let params = {
+        let params_path = params_path.join(format!("params_{}.dat", k));
 
-    let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
-    let mut writer = BufWriter::new(params_fd);
-    params.write(&mut writer).unwrap();
-    writer.flush().unwrap();
-    //
-    // let b = performance.now();
-    // console::log_1(&format!("t: {}", b).into());
+        let fd = match File::open(params_path) {
+            Ok(f) => f,
+            Err(_) => File::create(&params_path).unwrap(),
+        };
 
-    // return vec![33];
-
-    // println!("params reading, t: {:?}", start.elapsed());
+        let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
+        let mut writer = BufWriter::new(fd);
+        params.write(&mut writer).unwrap();
+        writer.flush().unwrap();
+    };
 
     // let params_fd = File::open(&params_path).unwrap();
     // let mut reader = BufReader::new(params_fd);
