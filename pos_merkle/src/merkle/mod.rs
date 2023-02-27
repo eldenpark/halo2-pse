@@ -320,12 +320,12 @@ impl<
                     let msg_hash = ecc_chip.new_unassigned_scalar(self.msg_hash);
 
                     let r_assigned =
-                        scalar_chip.assign_integer(ctx, integer_r, Range::Unreduced)?;
+                        scalar_chip.assign_integer(ctx, integer_r, Range::Remainder)?;
 
                     println!("r_assigned: {:?}", r_assigned.native().value());
 
                     let s_assigned =
-                        scalar_chip.assign_integer(ctx, integer_s, Range::Unreduced)?;
+                        scalar_chip.assign_integer(ctx, integer_s, Range::Remainder)?;
 
                     let sig = AssignedEcdsaSig {
                         r: r_assigned,
@@ -338,7 +338,7 @@ impl<
                         point: pk_in_circuit,
                     };
 
-                    let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Unreduced)?;
+                    let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Remainder)?;
 
                     let t = ecc_chip.assign_point2(ctx, self.t)?;
                     let u = ecc_chip.assign_point2(ctx, self.u)?;
@@ -346,7 +346,7 @@ impl<
                     // println!("- t: {:?}", t.x().native());
                     // println!("- u: {:?}", u.x().native());
 
-                    return Ok(());
+                    // return Ok(());
 
                     // ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
                     ecdsa_chip.verify2(ctx, &sig, &pk_assigned, &msg_hash, &t, &u)
@@ -669,6 +669,8 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
         &mut transcript,
     )
     .unwrap();
+
+    println!("finish creating proof, t: {:?}", start.elapsed());
 
     return Ok(vec![]);
 
