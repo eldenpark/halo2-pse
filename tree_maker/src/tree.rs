@@ -3,7 +3,7 @@ use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
 use aws_sdk_rds::{Client as RDSClient, Error, Region, PKG_VERSION};
 
-pub async fn retrieve_addresses_in_range() -> Result<(), TreeMakerError> {
+pub async fn make_tree() -> Result<(), TreeMakerError> {
     let region_provider = RegionProviderChain::default_provider();
     let config = aws_config::from_env().region(region_provider).load().await;
     let dynamo_client = DynamoClient::new(&config);
@@ -36,11 +36,16 @@ pub async fn retrieve_addresses_in_range() -> Result<(), TreeMakerError> {
             }
             _ => {
                 println!("nothing found!!!");
+
                 is_remaining = false;
             }
         };
     }
 
+    Ok(())
+}
+
+async fn put_in_rds() -> Result<(), TreeMakerError> {
     Ok(())
 }
 

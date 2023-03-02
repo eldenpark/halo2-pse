@@ -1,5 +1,4 @@
-mod dynamodb;
-mod rds;
+mod tree;
 
 use chrono::prelude::*;
 use hyper::{body::HttpBody as _, Client, Uri};
@@ -16,11 +15,9 @@ pub type TreeMakerError = Box<dyn std::error::Error + Send + Sync>;
 
 #[tokio::main]
 async fn main() -> Result<(), TreeMakerError> {
-    println!("Hello, world!");
+    println!("Tree maker starts");
 
-    dynamodb::retrieve_addresses_in_range().await?;
-
-    // rds::make_tree().await?;
+    tree::make_tree().await?;
 
     Ok(())
 }
