@@ -103,13 +103,18 @@ async fn put_in_rds(
                 w.parse::<i64>().unwrap()
             };
 
-            pg_client
+            match pg_client
                 .execute(
                     "INSERT INTO nodes (pos, table_id, val, wei) VALUES ($1, $2, $3, $4)",
                     &[&pos, &table_id, &addr, &wei],
                 )
                 .await
-                .unwrap();
+            {
+                Ok(_) => (),
+                Err(_err) => {
+                    println!("error putting in rds, addr: {}", addr);
+                }
+            }
         });
 
         v.push(task);

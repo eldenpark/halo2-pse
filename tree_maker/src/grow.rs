@@ -29,27 +29,40 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
 
     pin_mut!(it);
 
-    while let Some(row) = it.try_next().await? {
-        println!("222");
-        let foo: i64 = row.get(0);
+    let count = match it.try_next().await? {
+        Some(row) => {
+            let count: i64 = row.get(0);
+            count
+        }
+        None => {
+            return Err("Cannot retrieve row count".into());
+        }
+    };
 
-        println!("foo: {}", foo);
+    for height in 0..32 {
+        let mut curr = 0;
+
+        let a = pg_client
+            .query(
+                "SELECT pos, table_id, val FROM nodes WHERE pos in ($1, $2)",
+                &[&"0_0", &"0_1"],
+            )
+            .await?;
+
+        let bb: &str = a.get(0).unwrap().get("table_id");
+        println!("bb: {}", bb);
+
+        return Ok(());
+
+        // while true {
+        //     pg_client.query(
+        //         "SELECT pos, table_id, val FROM nodes WHERE pos in ($1, $2)",
+        //         &[],
+        //     );
+
+        //     curr += 2;
+        // }
     }
 
-    // let count: &str = leaves_count.Box::pin(0);
-
-    // println!("leaves_count: {:?}", count);
-
-    // for height in 0..32 {
-    //     let mut curr = 0;
-    //     while true {
-    //         pg_client.query(
-    //             "SELECT pos, table_id, val FROM nodes WHERE pos in ($1, $2)",
-    //             &[],
-    //         );
-
-    //         curr += 2;
-    //     }
-    // }
     Ok(())
 }
