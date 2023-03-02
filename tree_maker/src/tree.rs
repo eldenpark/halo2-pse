@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::TreeMakerError;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
@@ -33,6 +35,10 @@ pub async fn make_tree() -> Result<(), TreeMakerError> {
                 println!("result: {:?}", results.count());
 
                 last_key = results.last_evaluated_key().unwrap().clone();
+
+                if results.count() > 0 {
+                    put_in_rds(&rds_client, results.items).await?;
+                }
             }
             _ => {
                 println!("nothing found!!!");
@@ -45,7 +51,17 @@ pub async fn make_tree() -> Result<(), TreeMakerError> {
     Ok(())
 }
 
-async fn put_in_rds() -> Result<(), TreeMakerError> {
+async fn put_in_rds(
+    rds_client: &RDSClient,
+    items: Option<Vec<HashMap<std::string::String, AttributeValue>>>,
+) -> Result<(), TreeMakerError> {
+    let items = items.unwrap();
+
+    for item in items {
+        let addr = item.get("item").unwrap();
+        let wei = item.get("wei").unwrap();
+    }
+
     Ok(())
 }
 
@@ -56,5 +72,5 @@ fn get_range_scan_query(dynamo_client: &DynamoClient) -> fluent_builders::Scan {
         .filter_expression(":wei1 < wei AND wei < :wei2")
         .expression_attribute_values(":wei1", AttributeValue::N("400000000000000000".to_string()))
         .expression_attribute_values(":wei2", AttributeValue::N("500000000000000000".to_string()))
-        .limit(100)
+        .limit(200)
 }
