@@ -1,4 +1,5 @@
-mod tree;
+mod grow;
+mod leaves;
 
 use chrono::prelude::*;
 use hyper::{body::HttpBody as _, Client, Uri};
@@ -17,7 +18,9 @@ pub type TreeMakerError = Box<dyn std::error::Error + Send + Sync>;
 async fn main() -> Result<(), TreeMakerError> {
     println!("Tree maker starts");
 
-    tree::make_tree().await?;
+    leaves::make_leaves().await?;
+
+    // grow::grow_tree().await?;
 
     Ok(())
 }
