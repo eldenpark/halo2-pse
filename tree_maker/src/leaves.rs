@@ -1,8 +1,8 @@
 use crate::TreeMakerError;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
-use std::collections::HashMap;
-use tokio_postgres::{Client as PgClient, Error, NoTls};
+use std::{collections::HashMap, sync::Arc};
+use tokio_postgres::{types::ToSql, Client as PgClient, Error, NoTls};
 
 pub async fn make_leaves() -> Result<(), TreeMakerError> {
     let region_provider = RegionProviderChain::default_provider();
@@ -15,6 +15,8 @@ pub async fn make_leaves() -> Result<(), TreeMakerError> {
     )
     .await?;
 
+    let pg_client = Arc::new(pg_client);
+
     tokio::spawn(async move {
         if let Err(e) = connection.await {
             println!("connection error: {}", e);
@@ -26,9 +28,13 @@ pub async fn make_leaves() -> Result<(), TreeMakerError> {
     let mut is_remaining = true;
     let mut last_key = results.last_evaluated_key().unwrap().clone();
     let mut total_count: u64 = 0;
+    let mut attempt = 1;
 
     while is_remaining {
-        println!("last key: {:?}, total_count: {}", last_key, total_count);
+        println!(
+            "last key: {:?}, total_count: {}, attempt: {}",
+            last_key, total_count, attempt
+        );
 
         let last_addr = last_key.get("addr");
         let last_wei = last_key.get("wei");
@@ -48,7 +54,7 @@ pub async fn make_leaves() -> Result<(), TreeMakerError> {
                 let result_count = results.count();
 
                 if result_count > 0 {
-                    put_in_rds(&pg_client, results.items, total_count).await?;
+                    put_in_rds(pg_client.clone(), results.items, total_count).await?;
                     total_count += result_count as u64;
                 }
             }
@@ -58,39 +64,53 @@ pub async fn make_leaves() -> Result<(), TreeMakerError> {
                 is_remaining = false;
             }
         };
+
+        attempt += 1;
     }
 
     Ok(())
 }
 
 async fn put_in_rds(
-    pg_client: &PgClient,
+    pg_client: Arc<PgClient>,
     items: Option<Vec<HashMap<std::string::String, AttributeValue>>>,
     total_count: u64,
 ) -> Result<(), TreeMakerError> {
     let items = items.unwrap();
 
-    for (idx, item) in items.iter().enumerate() {
-        let addr = item.get("addr").expect("addr should be non null");
-        let wei = item.get("wei").expect("wei should be non null");
+    let mut v = vec![];
+    for (idx, item) in items.into_iter().enumerate() {
+        let pg_client = pg_client.clone();
 
-        println!("rds addr: {:?}, wei: {:?}", addr, wei);
+        let task = tokio::spawn(async move {
+            let addr = item.get("addr").expect("addr should be non null");
+            let wei = item.get("wei").expect("wei should be non null");
 
-        let pos = format!("0_{}", total_count + idx as u64);
-        let table_id = "0";
-        let addr = addr.as_s().expect("addr should be string");
-        let wei: i64 = {
-            let w = wei.as_n().expect("wei should be number");
+            // println!("rds addr: {:?}, wei: {:?}", addr, wei);
 
-            w.parse::<i64>().unwrap()
-        };
+            let pos = format!("0_{}", total_count + idx as u64);
+            let table_id = "0".to_string();
+            let addr = addr.as_s().expect("addr should be string");
+            let wei: i64 = {
+                let w = wei.as_n().expect("wei should be number");
 
-        pg_client
-            .execute(
-                "INSERT INTO nodes (pos, table_id, val, wei) VALUES ($1, $2, $3, $4)",
-                &[&pos, &table_id, &addr, &wei],
-            )
-            .await?;
+                w.parse::<i64>().unwrap()
+            };
+
+            pg_client
+                .execute(
+                    "INSERT INTO nodes (pos, table_id, val, wei) VALUES ($1, $2, $3, $4)",
+                    &[&pos, &table_id, &addr, &wei],
+                )
+                .await
+                .unwrap()
+        });
+
+        v.push(task);
+    }
+
+    for f in v {
+        f.await.unwrap();
     }
 
     Ok(())
