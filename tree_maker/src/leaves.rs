@@ -49,7 +49,13 @@ pub async fn make_leaves() -> Result<(), TreeMakerError> {
 
                 println!("result: {:?}", results.count());
 
-                last_key = results.last_evaluated_key().unwrap().clone();
+                last_key = match results.last_evaluated_key() {
+                    Some(lk) => lk.clone(),
+                    None => {
+                        println!("last evaluated key is missing. We've probably reached the end");
+                        break;
+                    }
+                };
 
                 let result_count = results.count();
 
@@ -103,7 +109,7 @@ async fn put_in_rds(
                     &[&pos, &table_id, &addr, &wei],
                 )
                 .await
-                .unwrap()
+                .unwrap();
         });
 
         v.push(task);
