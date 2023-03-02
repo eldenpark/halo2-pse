@@ -11,6 +11,7 @@ members = [
     "pos_merkle",
     "halo2curves",
     "web",
+    "tree_maker",
 
     "web_demo",
 ]
