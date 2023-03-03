@@ -10,3 +10,8 @@ pub fn convert_addr_to_hex(addr: &str) -> Result<Fp, TreeMakerError> {
     let arr: [u8; 32] = v.try_into().unwrap();
     Ok(Fp::from_repr(arr).unwrap())
 }
+
+pub fn convert_fp_to_string(fp: Fp) -> String {
+    let slice = fp.to_repr();
+    hex::encode(slice)
+}

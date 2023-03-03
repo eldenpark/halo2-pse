@@ -1,4 +1,7 @@
-use crate::TreeMakerError;
+use crate::{
+    hexutils::{convert_addr_to_hex, convert_fp_to_string},
+    TreeMakerError,
+};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
 use ff::PrimeField;
@@ -51,52 +54,128 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
 
     println!("total row count: {}", total_row_count);
 
+    let mut curr_cardinality = total_row_count;
+
     for height in 0..31 {
-        println!("processing height {}", height);
+        println!(
+            "processing height {}, cardinality: {}",
+            height, curr_cardinality
+        );
 
-        let mut curr = 0;
+        let mut tasks = vec![];
 
-        let rows = pg_client
-            .query(
-                "SELECT pos, table_id, val FROM nodes WHERE pos in ($1, $2)",
-                &[&"0_0", &"0_1"],
-            )
-            .await?;
+        for idx in (0..=curr_cardinality - 1).step_by(2) {
+            println!("idx: {}", idx);
+            let pg_client = pg_client.clone();
 
-        match rows.len() {
-            0 => {}
-            1 => {}
-            2 => {
-                let left = rows.get(0).expect("left node");
-                let right = rows.get(1).expect("right node");
+            let task = tokio::spawn(async move {
+                let l_pos = format!("{}_{}", height, idx);
+                let r_pos = format!("{}_{}", height, idx + 1);
 
-                let l_val: &str = left.get("val");
-                let r_val: &str = right.get("val");
+                let rows = pg_client
+                    .query(
+                        "SELECT pos, table_id, val FROM nodes WHERE pos in ($1, $2)",
+                        &[&l_pos, &r_pos],
+                    )
+                    .await?;
 
-                println!("f, l_val: {}", l_val);
+                let parent_pos = format!("{}_{}", height + 1, idx / 2);
 
-                // let hash = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
-                //     .hash([0]);
-                // println!("val: {:?}", l_val);
-            }
-            _ => {
-                return Err("Error! row count is over 2".into());
-            }
+                match rows.len() {
+                    0 => {
+                        // we are done looping
+                    }
+                    1 => {
+                        let left = rows.get(0).expect("left node (last node)");
+                        let l_val: &str = left.get("val");
+
+                        let l_node = if l_val.len() == 20 {
+                            convert_addr_to_hex(&l_val[2..]).unwrap()
+                        } else {
+                            let a: [u8; 32] = l_val.as_bytes().try_into().unwrap();
+                            Fp::from_repr(a).unwrap()
+                        };
+
+                        let r_node = Fp::from(0);
+
+                        let hash =
+                            poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
+                                .hash([l_node, r_node]);
+
+                        let val = convert_fp_to_string(hash);
+
+                        pg_client
+                            .execute(
+                                "INSERT INTO nodes (pos, table_id, val) VALUES ($1, $2, $3)",
+                                &[&parent_pos, &"0", &val],
+                            )
+                            .await;
+
+                        println!("val: {:?}, parent_pos: {}", val, parent_pos);
+                    }
+                    2 => {
+                        let left = rows.get(0).expect("left node");
+                        let right = rows.get(1).expect("right node");
+
+                        let l_val: &str = left.get("val");
+                        let r_val: &str = right.get("val");
+
+                        // println!("f, l_val: {}, r_val: {}", l_val, r_val);
+
+                        let l_node = if l_val.len() == 42 {
+                            convert_addr_to_hex(&l_val[2..]).unwrap()
+                        } else {
+                            let a: [u8; 32] = l_val.as_bytes().try_into().unwrap();
+                            Fp::from_repr(a).unwrap()
+                        };
+
+                        let r_node = if r_val.len() == 42 {
+                            convert_addr_to_hex(&r_val[2..]).unwrap()
+                        } else {
+                            let a: [u8; 32] = r_val.as_bytes().try_into().unwrap();
+                            Fp::from_repr(a).unwrap()
+                        };
+
+                        let hash =
+                            poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
+                                .hash([l_node, r_node]);
+
+                        let val = convert_fp_to_string(hash);
+
+                        pg_client
+                            .execute(
+                                "INSERT INTO nodes (pos, table_id, val) VALUES ($1, $2, $3)",
+                                &[&parent_pos, &"0", &val],
+                            )
+                            .await;
+
+                        println!("val: {:?}, parent_pos: {}", val, parent_pos);
+                    }
+                    _ => {
+                        panic!("Error! row count is over 2");
+                    }
+                }
+
+                Ok::<_, TreeMakerError>(())
+            });
+
+            tasks.push(task);
+        }
+
+        let mut result = vec![];
+        for t in tasks {
+            result.push(t.await.unwrap());
+        }
+
+        println!("done!!!");
+
+        curr_cardinality = if curr_cardinality % 2 == 1 {
+            (curr_cardinality + 1) / 2
+        } else {
+            curr_cardinality / 2
         };
 
-        // let bb: &str = a.get(0).unwrap().get("table_id");
-        // println!("bb: {}", bb);
-
         return Ok(());
-
-        // while true {
-        //     pg_client.query(
-        //         "SELECT pos, table_id, val FROM nodes WHERE pos in ($1, $2)",
-        //         &[],
-        //     );
-
-        //     curr += 2;
-        // }
     }
 
     Ok(())

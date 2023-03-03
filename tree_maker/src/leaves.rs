@@ -127,8 +127,9 @@ async fn put_in_rds(
         v.push(task);
     }
 
+    let mut result = vec![];
     for f in v {
-        f.await.unwrap();
+        result.push(f.await.unwrap());
     }
 
     Ok(())
