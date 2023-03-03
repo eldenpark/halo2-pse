@@ -1,5 +1,5 @@
 use ff::PrimeField;
-use halo2_proofs::halo2curves::pasta::Fp;
+use halo2_proofs::halo2curves::{pasta::Fp, serde::SerdeObject};
 
 use crate::TreeMakerError;
 
@@ -12,6 +12,6 @@ pub fn convert_addr_to_hex(addr: &str) -> Result<Fp, TreeMakerError> {
 }
 
 pub fn convert_fp_to_string(fp: Fp) -> String {
-    let slice = fp.to_repr();
+    let slice = fp.to_raw_bytes();
     hex::encode(slice)
 }

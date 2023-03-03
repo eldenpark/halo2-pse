@@ -104,8 +104,9 @@ async fn put_in_rds(
 
                 w.parse::<i64>().unwrap()
             };
-            let val: &str = {
-                let v = addr.strip_prefix("0x").unwrap();
+            let val = {
+                let v = addr.strip_prefix("0x").unwrap().to_string();
+                let v = v + "000000000000000000000000";
                 v
             };
 
