@@ -29,7 +29,7 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
 
     pin_mut!(it);
 
-    let count = match it.try_next().await? {
+    let total_row_count = match it.try_next().await? {
         Some(row) => {
             let count: i64 = row.get(0);
             count
@@ -39,18 +39,38 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
         }
     };
 
-    for height in 0..32 {
+    println!("total row count: {}", total_row_count);
+
+    for height in 0..31 {
+        println!("processing height {}", height);
+
         let mut curr = 0;
 
-        let a = pg_client
+        let rows = pg_client
             .query(
                 "SELECT pos, table_id, val FROM nodes WHERE pos in ($1, $2)",
                 &[&"0_0", &"0_1"],
             )
             .await?;
 
-        let bb: &str = a.get(0).unwrap().get("table_id");
-        println!("bb: {}", bb);
+        match rows.len() {
+            0 => {}
+            1 => {}
+            2 => {
+                let left = rows.get(0).expect("left node");
+                let right = rows.get(1).expect("right node");
+
+                let l_val: &str = left.get("val");
+                let r_val: &str = right.get("val");
+                println!("val: {:?}", l_val);
+            }
+            _ => {
+                return Err("Error! row count is over 2".into());
+            }
+        };
+
+        // let bb: &str = a.get(0).unwrap().get("table_id");
+        // println!("bb: {}", bb);
 
         return Ok(());
 

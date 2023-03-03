@@ -19,3 +19,9 @@ hyper-tls = "0.5.0"
 tokio-stream = "0.1"
 tokio-postgres = "0.7.7"
 futures-util = "0.3.26"
+
+halo2_proofs = { path = "../halo2_proofs" }
+halo2_gadgets = { path = "../halo2_gadgets" }
+group = "0.12"
+rand = "0.8"
+ff = "0.12"
