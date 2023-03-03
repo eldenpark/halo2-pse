@@ -105,10 +105,13 @@ async fn put_in_rds(
                 w.parse::<i64>().unwrap()
             };
             let val = {
+                // 160 bit
                 let v = addr.strip_prefix("0x").unwrap().to_string();
-                let v = v + "000000000000000000000000";
+                // let v = v + "000000000000000000000000";
                 v
             };
+
+            // Fp::from_repr()
 
             // println!("val: {:?}", val);
 

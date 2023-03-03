@@ -1,5 +1,5 @@
 use crate::{
-    hexutils::{convert_addr_to_hex, convert_fp_to_string},
+    hexutils::{convert_addr_to_hex, convert_fp_to_string, convert_string_into_fp},
     TreeMakerError,
 };
 use aws_config::meta::region::RegionProviderChain;
@@ -99,12 +99,8 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
                     let left = rows.get(0).expect("left node (last node)");
                     let l_val: &str = left.get("val");
 
-                    let l_node = if l_val.len() == 20 {
-                        convert_addr_to_hex(&l_val[2..]).unwrap()
-                    } else {
-                        let a: [u8; 32] = l_val.as_bytes().try_into().unwrap();
-                        Fp::from_repr(a).unwrap()
-                    };
+                    let l_node =
+                        convert_string_into_fp(l_val).expect("val needs to be converte to fp");
 
                     let r_node = Fp::from(0);
 
@@ -112,14 +108,20 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
                         poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
                             .hash([l_node, r_node]);
 
-                    let val = convert_fp_to_string(hash);
+                    let val = convert_fp_to_string(hash).unwrap();
 
-                    pg_client
+                    match pg_client
                         .execute(
                             "INSERT INTO nodes (pos, table_id, val) VALUES ($1, $2, $3)",
                             &[&parent_pos, &"0", &val],
                         )
-                        .await;
+                        .await
+                    {
+                        Ok(_) => (),
+                        Err(err) => {
+                            println!("error executing stmt, {}", err);
+                        }
+                    };
 
                     println!("val: {:?}, parent_pos: {}", val, parent_pos);
                 }
@@ -130,48 +132,29 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
                     let l_val: &str = left.get("val");
                     let r_val: &str = right.get("val");
 
-                    // println!("f, l_val: {}, r_val: {}", l_val, r_val);
-
-                    let l_node = if l_val.len() == 42 {
-                        convert_addr_to_hex(&l_val[2..]).unwrap()
-                    } else {
-                        println!("l_val: {}, {}", l_val, l_val.len());
-                        let mut a = hex::decode(l_val).unwrap();
-                        println!("aa: {:?}, {}", a, a.len());
-                        a.extend_from_slice(&[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
-                        // let a: Vec<u8> = l_val.as_bytes().try_into().unwrap();
-                        // let b = a.as_slice();
-                        let c: &[u64] = bytemuck::try_cast_slice(&a).unwrap();
-                        println!("c: {:?}, c len: {}", c, c.len());
-                        let c: [u64; 4] = c.try_into().unwrap();
-
-                        // byteorder::LittleEndian
-                        // println!("a: {:?}, {}", a, a.len());
-                        let b = Fp::from_raw(c);
-                        println!("b: {:?}", b);
-                        Fp::from(11)
-                    };
-                    // 31edc964ea080e4e8381ae22d01366e72028b8cb
-
-                    let r_node = if r_val.len() == 42 {
-                        convert_addr_to_hex(&r_val[2..]).unwrap()
-                    } else {
-                        let a: [u8; 32] = r_val.as_bytes().try_into().unwrap();
-                        Fp::from_repr(a).unwrap()
-                    };
+                    let l_node =
+                        convert_string_into_fp(l_val).expect("val needs to be converte to fp");
+                    let r_node =
+                        convert_string_into_fp(r_val).expect("val needs to be converte to fp");
 
                     let hash =
                         poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
                             .hash([l_node, r_node]);
 
-                    let val = convert_fp_to_string(hash);
+                    let val = convert_fp_to_string(hash).unwrap();
 
-                    pg_client
+                    match pg_client
                         .execute(
                             "INSERT INTO nodes (pos, table_id, val) VALUES ($1, $2, $3)",
                             &[&parent_pos, &"0", &val],
                         )
-                        .await;
+                        .await
+                    {
+                        Ok(_) => (),
+                        Err(err) => {
+                            println!("error executing stmt, {}", err);
+                        }
+                    };
 
                     println!("val: {:?}, parent_pos: {}", val, parent_pos);
                 }

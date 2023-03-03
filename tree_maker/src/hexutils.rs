@@ -11,7 +11,20 @@ pub fn convert_addr_to_hex(addr: &str) -> Result<Fp, TreeMakerError> {
     Ok(Fp::from_repr(arr).unwrap())
 }
 
-pub fn convert_fp_to_string(fp: Fp) -> String {
+pub fn convert_fp_to_string(fp: Fp) -> Result<String, TreeMakerError> {
     let slice = fp.to_raw_bytes();
-    hex::encode(slice)
+    let str = format!("{:?}", fp);
+    let s = str.strip_prefix("0x").ok_or("error stripping the string")?;
+    Ok(s.to_string())
+}
+
+pub fn convert_string_into_fp(val: &str) -> Result<Fp, TreeMakerError> {
+    let v = hex::decode(val).expect("value should be converted to byte array");
+    let c: &[u64] = match bytemuck::try_cast_slice(&v) {
+        Ok(c) => c,
+        Err(err) => return Err(format!("error converting casting, err: {}", err).into()),
+    };
+    let c: [u64; 4] = c.try_into()?;
+
+    Ok(Fp::from_raw(c))
 }
