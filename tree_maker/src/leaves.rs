@@ -109,7 +109,7 @@ async fn put_in_rds(
                 v
             };
 
-            println!("val: {:?}", val);
+            // println!("val: {:?}", val);
 
             match pg_client
                 .execute(
@@ -119,8 +119,8 @@ async fn put_in_rds(
                 .await
             {
                 Ok(_) => (),
-                Err(_err) => {
-                    println!("error putting in rds, addr: {}", addr);
+                Err(err) => {
+                    println!("error putting in rds, addr: {}, err: {}", addr, err);
                 }
             }
         });
