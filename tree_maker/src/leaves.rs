@@ -111,8 +111,6 @@ async fn put_in_rds(
                 v
             };
 
-            // Fp::from_repr()
-
             // println!("val: {:?}", val);
 
             match pg_client
@@ -145,7 +143,7 @@ fn get_range_scan_query(dynamo_client: &DynamoClient) -> fluent_builders::Scan {
         .scan()
         .table_name("balances-2")
         .filter_expression(":wei1 < wei AND wei <= :wei2")
-        .expression_attribute_values(":wei1", AttributeValue::N("260000000000000000".to_string()))
-        .expression_attribute_values(":wei2", AttributeValue::N("280000000000000000".to_string()))
+        .expression_attribute_values(":wei1", AttributeValue::N("275000000000000000".to_string()))
+        .expression_attribute_values(":wei2", AttributeValue::N("278000000000000000".to_string()))
         .limit(200)
 }
