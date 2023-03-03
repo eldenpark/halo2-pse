@@ -1,10 +1,20 @@
 use crate::TreeMakerError;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
+use ff::PrimeField;
 use futures_util::pin_mut;
+use halo2_proofs::halo2curves::{pasta::Fp, serde::SerdeObject};
 use std::{collections::HashMap, sync::Arc};
 // use tokio_postgres::types::ToSql;
 use futures_util::TryStreamExt;
+use halo2_gadgets::{
+    poseidon::{
+        // merkle::merkle_path::MerklePath,
+        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
+        Hash,
+    },
+    utilities::UtilitiesInstructions,
+};
 use tokio_postgres::{Client as PgClient, Error, GenericClient, NoTls};
 
 pub async fn grow_tree() -> Result<(), TreeMakerError> {
@@ -62,7 +72,12 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
 
                 let l_val: &str = left.get("val");
                 let r_val: &str = right.get("val");
-                println!("val: {:?}", l_val);
+
+                println!("f, l_val: {}", l_val);
+
+                // let hash = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
+                //     .hash([0]);
+                // println!("val: {:?}", l_val);
             }
             _ => {
                 return Err("Error! row count is over 2".into());

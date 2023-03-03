@@ -1,6 +1,7 @@
 use crate::TreeMakerError;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
+use halo2_proofs::halo2curves::pasta::Fp;
 use std::{collections::HashMap, sync::Arc};
 use tokio_postgres::{types::ToSql, Client as PgClient, Error, NoTls};
 
@@ -102,11 +103,17 @@ async fn put_in_rds(
 
                 w.parse::<i64>().unwrap()
             };
+            let val = {
+                let v = addr.strip_prefix("0x").unwrap();
+                i64::from_str_radix(v, 16).unwrap()
+            };
+
+            println!("val: {:?}", val);
 
             match pg_client
                 .execute(
-                    "INSERT INTO nodes (pos, table_id, val, wei) VALUES ($1, $2, $3, $4)",
-                    &[&pos, &table_id, &addr, &wei],
+                    "INSERT INTO nodes (pos, table_id, val, wei, addr) VALUES ($1, $2, $3, $4, $5)",
+                    &[&pos, &table_id, &val, &wei, &addr],
                 )
                 .await
             {
