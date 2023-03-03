@@ -72,12 +72,22 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
                 let l_pos = format!("{}_{}", height, idx);
                 let r_pos = format!("{}_{}", height, idx + 1);
 
-                let rows = pg_client
+                let rows = match pg_client
                     .query(
                         "SELECT pos, table_id, val FROM nodes WHERE pos in ($1, $2)",
                         &[&l_pos, &r_pos],
                     )
-                    .await?;
+                    .await
+                {
+                    Ok(r) => r,
+                    Err(err) => {
+                        println!(
+                            "error fetching the rows, l_pos: {}, r_pos: {}",
+                            l_pos, r_pos
+                        );
+                        panic!();
+                    }
+                };
 
                 let parent_pos = format!("{}_{}", height + 1, idx / 2);
 

@@ -1,6 +1,7 @@
 use crate::TreeMakerError;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
+use ff::PrimeField;
 use halo2_proofs::halo2curves::pasta::Fp;
 use std::{collections::HashMap, sync::Arc};
 use tokio_postgres::{types::ToSql, Client as PgClient, Error, NoTls};
@@ -103,9 +104,9 @@ async fn put_in_rds(
 
                 w.parse::<i64>().unwrap()
             };
-            let val = {
+            let val: &str = {
                 let v = addr.strip_prefix("0x").unwrap();
-                i64::from_str_radix(v, 16).unwrap()
+                v
             };
 
             println!("val: {:?}", val);
@@ -140,7 +141,7 @@ fn get_range_scan_query(dynamo_client: &DynamoClient) -> fluent_builders::Scan {
         .scan()
         .table_name("balances-2")
         .filter_expression(":wei1 < wei AND wei <= :wei2")
-        .expression_attribute_values(":wei1", AttributeValue::N("0".to_string()))
-        .expression_attribute_values(":wei2", AttributeValue::N("500000000000000000".to_string()))
+        .expression_attribute_values(":wei1", AttributeValue::N("200000000000000000".to_string()))
+        .expression_attribute_values(":wei2", AttributeValue::N("300000000000000000".to_string()))
         .limit(200)
 }
