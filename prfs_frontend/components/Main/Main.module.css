@@ -9,15 +9,6 @@
   display: flex;
 }
 
-.left {
-  border: 1px solid blue;
-  padding: 0 50px;
-}
-
-.proofsLabel {
-  font-size: 2em;
-  padding: 0px 5px;
-}
 
 .right {
   border: 1px solid green;

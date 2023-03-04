@@ -1,0 +1,12 @@
+.wrapper {
+  border: 1px solid blue;
+  padding: 0 50px;
+}
+
+.leftLabel {
+  height: 2em;
+}
+
+.desc {
+  margin-top: 1.56em;
+}
