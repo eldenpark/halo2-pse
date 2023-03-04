@@ -8,7 +8,9 @@ use std::marker::PhantomData;
 use halo2_proofs::arithmetic::FieldExt;
 
 pub(crate) mod fp;
+pub(crate) mod fp_sec;
 pub(crate) mod fq;
+pub(crate) mod fq_sec;
 pub(crate) mod grain;
 pub(crate) mod mds;
 
@@ -17,6 +19,9 @@ pub(crate) mod test_vectors;
 
 mod p128pow5t3;
 pub use p128pow5t3::P128Pow5T3;
+
+mod p128pow5t3_sec;
+pub use p128pow5t3_sec::P128Pow5T3Sec;
 
 use grain::SboxType;
 

@@ -34,22 +34,13 @@ const ProofSummaryList = () => {
   let [list, setList] = React.useState<any>([]);
 
   React.useEffect(() => {
-    const fetchData = async () => {
-      let { data } = await axios.get("http://localhost:4000/proofs");
-      console.log(11, data);
-      return data;
-    };
-
-    fetchData().then((res) => {
-      console.log(113, res);
-    });
 
     setList([1, 2, 3]);
   }, []);
 
-  let contents = list.map((elem: any) => {
+  let contents = list.map((elem: any, idx: any) => {
     return (
-      <ProofSummary>
+      <ProofSummary key={idx}>
         power
       </ProofSummary>
     )

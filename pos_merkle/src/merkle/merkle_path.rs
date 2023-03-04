@@ -39,13 +39,10 @@ pub struct MerklePath<
     const RATE: usize,
 > where
     MerkleChip: MerkleInstructions<S, F, WIDTH, RATE> + Clone,
-    // S: Spec<F, WIDTH, RATE>,
 {
     pub chip: MerkleChip,
-    // domain: MerkleChip::HashDomains,
-    pub leaf_pos: Value<u32>,
-    // The Merkle path is ordered from leaves to root.
-    pub path: Value<[F; 32]>,
+    pub leaf_idx: Value<u32>,
+    pub path: Value<[F; 31]>,
     pub phantom: PhantomData<S>,
 }
 
@@ -64,15 +61,15 @@ where
     pub fn construct(
         chip: MerkleChip,
         // domain: MerkleChip::HashDomains,
-        leaf_pos: Value<u32>,
-        path: Value<[F; 32]>,
+        leaf_idx: Value<u32>,
+        path: Value<[F; 31]>,
     ) -> Self {
         // assert_ne!(PAR, 0);
         Self {
             // chips,
             // domain,
             chip,
-            leaf_pos,
+            leaf_idx,
             path,
             phantom: PhantomData,
         }
@@ -107,7 +104,7 @@ where
 
         // Get position as a PATH_LENGTH-bit bitstring (little-endian bit order).
         let pos: [Value<bool>; 31] = {
-            let pos: Value<[bool; 31]> = self.leaf_pos.map(|pos| i2lebsp(pos as u64));
+            let pos: Value<[bool; 31]> = self.leaf_idx.map(|pos| i2lebsp(pos as u64));
             pos.transpose_array()
         };
 
