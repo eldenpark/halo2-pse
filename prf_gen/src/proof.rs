@@ -16,7 +16,10 @@ use halo2_gadgets::{
 };
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
-use halo2_proofs::halo2curves::pasta::{self, pallas, vesta, Ep, EpAffine, EqAffine, Fp, Fq};
+use halo2_proofs::halo2curves::pasta::{
+    self, pallas, vesta, Ep, EpAffine, EqAffine, Fp as PastaFp, Fq as PastaFq,
+};
+use halo2_proofs::halo2curves::secp256k1::{Fp, Fq, Secp256k1Affine};
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
 use halo2_proofs::poly::commitment::{Params, ParamsProver};
@@ -190,27 +193,27 @@ async fn gen_proof(
     ////////////////////////////////////////////////////////
 
     // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
-    let g = pallas::Affine::generator();
+    let g = Secp256k1Affine::generator();
 
     // Generate a key pair
-    let sk = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let sk = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
     let public_key = (g * sk).to_affine();
     // EpAffine::from_bytes(bytes)
     // println!("public key: {:?}", public_key,);
 
     // Generate a valid signature
     // Suppose `m_hash` is the message hash
-    let msg_hash = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let msg_hash = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
 
     // Draw arandomness
-    let k = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let k = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
     let k_inv = k.invert().unwrap();
 
     // Calculate `r`
     let big_r = g * k;
     let r_point = big_r.to_affine().coordinates().unwrap();
     let x = r_point.x();
-    let r = mod_n::<pallas::Affine>(*x);
+    let r = mod_n::<Secp256k1Affine>(*x);
 
     // Calculate `s`
     let s = k_inv * (msg_hash + (r * sk));
@@ -226,7 +229,7 @@ async fn gen_proof(
             .coordinates()
             .unwrap();
         let x_candidate = r_point.x();
-        let r_candidate = mod_n::<pallas::Affine>(*x_candidate);
+        let r_candidate = mod_n::<Secp256k1Affine>(*x_candidate);
 
         assert_eq!(r, r_candidate);
     }

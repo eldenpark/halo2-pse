@@ -1,6 +1,6 @@
 use crate::PrfGenError;
 use ff::PrimeField;
-use halo2_proofs::halo2curves::{pasta::Fp, serde::SerdeObject};
+use halo2_proofs::halo2curves::{pasta::Fp as PastaFp, secp256k1::Fp, serde::SerdeObject};
 
 pub fn convert_fp_to_string(fp: Fp) -> String {
     let repr = fp.to_repr();

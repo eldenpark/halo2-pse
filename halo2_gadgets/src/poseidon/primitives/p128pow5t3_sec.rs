@@ -302,7 +302,7 @@ mod tests {
     }
 
     #[test]
-    fn hash_test_vectors() {
+    fn hash_test_vectors333() {
         for tv in crate::poseidon::primitives::test_vectors::fp::hash() {
             let message = [
                 SecFp::from_repr(tv.input[0]).unwrap(),
@@ -328,4 +328,3 @@ mod tests {
         }
     }
 }
-
