@@ -12,6 +12,8 @@ members = [
     "halo2curves",
     "web",
     "tree_maker",
+    "prf_gen",
+    "prfs_backend",
 
     "web_demo",
 ]

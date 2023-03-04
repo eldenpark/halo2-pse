@@ -108,7 +108,6 @@ async fn put_in_rds(
                 // 160 bit
                 let v = addr.strip_prefix("0x").unwrap().to_string();
                 let v = v + "000000000000000000000000";
-                convert_string_into_fp(&v);
                 v
             };
 
