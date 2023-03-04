@@ -1,5 +1,5 @@
 use crate::{
-    hexutils::{convert_addr_to_hex, convert_fp_to_string, convert_string_into_fp},
+    hexutils::{convert_fp_to_string, convert_string_into_fp},
     TreeMakerError,
 };
 use aws_config::meta::region::RegionProviderChain;

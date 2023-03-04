@@ -25,7 +25,7 @@ use halo2_gadgets::{
 };
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
-use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp};
+use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp, Fq};
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
 use halo2_proofs::poly::commitment::{Params, ParamsProver};
@@ -87,14 +87,13 @@ struct HashCircuit<
     const RATE: usize,
     const L: usize,
 > {
-    message: Value<F>,
+    leaf: Value<F>,
     root: Value<F>,
     leaf_pos: Value<u32>,
     path: Value<[F; 32]>,
 
-    t: Value<N>,
-    u: Value<N>,
-
+    // t: Value<N>,
+    // u: Value<N>,
     public_key: Value<N>,
     signature: Value<(N::Scalar, N::Scalar)>,
     msg_hash: Value<N::Scalar>,
@@ -120,13 +119,10 @@ impl<
 
     fn without_witnesses(&self) -> Self {
         Self {
-            message: Value::unknown(),
+            leaf: Value::unknown(),
             root: Value::unknown(),
             leaf_pos: Value::unknown(),
             path: Value::unknown(),
-
-            t: Value::unknown(),
-            u: Value::unknown(),
 
             public_key: Value::unknown(),
             signature: Value::unknown(),
@@ -216,36 +212,29 @@ impl<
         config: MyConfig<F, WIDTH, RATE>,
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
-        // println!(
-        //     "synthesize(), t: {:?}",
-        //     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)
-        // );
+        let merkle_chip = config.construct_merkle_chip();
 
-        // let merkle_chip = config.construct_merkle_chip();
+        let leaf = merkle_chip.load_private(
+            layouter.namespace(|| "load_private"),
+            config.advices[0],
+            self.leaf,
+        )?;
 
-        // let leaf = merkle_chip.load_private(
-        //     layouter.namespace(|| "load_private"),
-        //     config.advices[0],
-        //     self.message,
-        // )?;
+        println!("in-circuit: leaf: {:?}", leaf);
 
-        // println!("in-circuit: leaf: {:?}", leaf);
+        let merkle_inputs = MerklePath::<S, _, _, WIDTH, RATE> {
+            chip: merkle_chip,
+            leaf_pos: self.leaf_pos,
+            path: self.path,
+            phantom: PhantomData,
+        };
 
-        // let merkle_chip = config.construct_merkle_chip();
+        let calculated_root =
+            merkle_inputs.calculate_root(layouter.namespace(|| "merkle root calculation"), leaf)?;
 
-        // let merkle_inputs = MerklePath::<S, _, _, WIDTH, RATE> {
-        //     chip: merkle_chip,
-        //     leaf_pos: self.leaf_pos,
-        //     path: self.path,
-        //     phantom: PhantomData,
-        // };
+        println!("in_circuit: root: {:?}", calculated_root);
 
-        // let calculated_root =
-        //     merkle_inputs.calculate_root(layouter.namespace(|| "merkle root calculation"), leaf)?;
-
-        // println!("in_circuit: root: {:?}", calculated_root);
-
-        // layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
+        layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
 
         {
             let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
@@ -332,21 +321,12 @@ impl<
 #[test]
 pub fn test_poseidon2() {
     println!("111");
-    gen_id_proof();
-}
 
-pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
         let x_big = fe_to_big(x);
         big_to_fe(x_big)
     }
 
-    let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-
-    let start = Instant::now();
-    // println!("poseidon_hash2(): t: {:?}", start.elapsed());
-
-    let leaf = Fp::from(2);
     let path = [
         Fp::from(1),
         Fp::from(1),
@@ -381,11 +361,12 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
         Fp::from(1),
         Fp::from(1),
     ];
-    let pos = 0;
-    let pos_bits: [bool; 32] = i2lebsp(pos as u64);
 
-    // println!("out-circuit: pos_bits: {:?}", pos_bits);
-    // println!("out-circuit: leaf: {:?}", leaf);
+    let leaf = Fp::from(2);
+
+    let pos = 0;
+
+    let pos_bits: [bool; 32] = i2lebsp(pos as u64);
 
     let mut root = leaf;
     for (idx, el) in path.iter().enumerate() {
@@ -400,7 +381,6 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     }
 
     // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
-
     let g = pallas::Affine::generator();
 
     // Generate a key pair
@@ -438,65 +418,69 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
         let x_candidate = r_point.x();
         let r_candidate = mod_n::<pallas::Affine>(*x_candidate);
 
-        // println!(
-        //     "x_candidate: {:?}, r_candidate: {:?}",
-        //     x_candidate, r_candidate
-        // );
-
         assert_eq!(r, r_candidate);
     }
 
-    let (t, u) = {
-        let r_inv = r.invert().unwrap();
-        let t = big_r * r_inv;
-        let u = -(g * (r_inv * msg_hash));
+    // let (t, u) = {
+    //     let r_inv = r.invert().unwrap();
+    //     let t = big_r * r_inv;
+    //     let u = -(g * (r_inv * msg_hash));
 
-        // let u_neg = u.neg();
-        // println!("444 u_neg: {:?}", u_neg);
+    //     // let u_neg = u.neg();
+    //     // println!("444 u_neg: {:?}", u_neg);
 
-        let pk_candidate = (t * s + u).to_affine();
-        assert_eq!(public_key, pk_candidate);
+    //     let pk_candidate = (t * s + u).to_affine();
+    //     assert_eq!(public_key, pk_candidate);
 
-        (t.to_affine(), u.to_affine())
-    };
+    //     (t.to_affine(), u.to_affine())
+    // };
 
-    // println!("t: {:?}, u: {:?}", t, u);
+    gen_id_proof(path, msg_hash, leaf, root, pos, public_key, r, s).unwrap();
+}
 
-    //
+pub fn gen_id_proof(
+    path: [Fp; 32],
+    msg_hash: Fq,
+    leaf: Fp,
+    root: Fp,
+    pos: u32,
+    public_key: EpAffine,
+    r: Fq,
+    s: Fq,
+) -> Result<Vec<u8>, ProofError> {
+    fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
+        let x_big = fe_to_big(x);
+        big_to_fe(x_big)
+    }
+
+    let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+
+    let start = Instant::now();
 
     let aux_generator = <pallas::Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
-    // pallas::Point;
-    let circuit = HashCircuit::<
-        // pallas::Point,
-        pallas::Affine,
-        OrchardNullifier,
-        Fp,
-        3,
-        2,
-        2,
-    > {
-        message: Value::known(leaf),
+    let circuit = HashCircuit::<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2> {
+        leaf: Value::known(leaf),
         root: Value::known(root),
         leaf_pos: Value::known(pos),
         path: Value::known(path),
-
-        t: Value::known(t),
-        u: Value::known(u),
 
         public_key: Value::known(public_key),
         signature: Value::known((r, s)),
         msg_hash: Value::known(msg_hash),
         aux_generator,
         window_size: 2,
+
         _spec: PhantomData,
         _spec2: PhantomData,
     };
 
-    // let instance = vec![vec![root], vec![]];
+    let instance = vec![vec![root], vec![]];
 
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
+
+    MockProver::run(k, &circuit, instance).unwrap();
 
     println!("params generating, t: {:?}", start.elapsed());
 
@@ -613,6 +597,4 @@ pub fn gen_id_proof() -> Result<Vec<u8>, ProofError> {
     );
 
     return Ok(vec![]);
-
-    // println!("proof len: {}, t: {:?}", proof.len(), start.elapsed());
 }

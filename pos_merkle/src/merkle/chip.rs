@@ -135,7 +135,7 @@ impl<S: Spec<F, WIDTH, RATE>, F: FieldExt, const WIDTH: usize, const RATE: usize
 
         let output = hasher.hash(layouter.namespace(|| "hash"), message)?;
 
-        println!("output: {:?}", output);
+        // println!("output: {:?}", output);
 
         Ok(output)
     }

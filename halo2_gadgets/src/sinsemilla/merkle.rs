@@ -155,7 +155,7 @@ where
                 chip.swap(layouter.namespace(|| "node position"), pair, *pos)?
             };
 
-            println!("l: {}, pos: {:?}, pair: {:?}\n", l, pos, pair);
+            println!("l: {}, pos: {:?}, pair: {:?}", l, pos, pair);
 
             // Compute the node in layer l from its children:
             //     M^l_i = MerkleCRH(l, M^{l+1}_{2i}, M^{l+1}_{2i+1})
@@ -166,6 +166,8 @@ where
                 pair.0,
                 pair.1,
             )?;
+
+            println!("output: {:?}\n", node);
         }
 
         Ok(node)
