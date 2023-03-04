@@ -3,7 +3,6 @@ use hyper::{header, Body, Request, Response, Server, StatusCode};
 use routerify::prelude::*;
 use routerify::{Middleware, RequestInfo, Router, RouterService};
 use routerify_cors::enable_cors_all;
-use routerify_json_response::{json_failed_resp_with_message, json_success_resp};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{convert::Infallible, net::SocketAddr};
@@ -12,7 +11,7 @@ use tokio_postgres::{Client, NoTls};
 // Define an app state to share it across the route handlers and middlewares.
 struct State {
     pg_client: Arc<Client>,
-};
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Proof {
@@ -24,12 +23,17 @@ async fn home_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> 
     // Access the app state.
     let state = req.data::<State>().unwrap();
 
-    let rows = state.pg_client.query("SELECT * from proofs", &[]).await.unwrap();
+    let rows = state
+        .pg_client
+        .query("SELECT * from proofs", &[])
+        .await
+        .unwrap();
 
-    let mut v =vec![];
-    for row in rows {
+    // let mut v =vec![];
 
-    }
+    // for row in rows {
+
+    // }
 
     // println!("State value: {}", state.0);
 
@@ -86,10 +90,10 @@ fn router(pg_client: Arc<Client>) -> Router<Body, Infallible> {
     // Create a router and specify the logger middleware and the handlers.
     // Here, "Middleware::pre" means we're adding a pre middleware which will be executed
     // before any route handlers.
+    let state = State { pg_client };
+
     Router::builder()
-        // Specify the state data which will be available to every route handlers,
-        // error handler and middlewares.
-        .data(State(pg_client))
+        .data(state)
         .middleware(Middleware::pre(logger))
         .middleware(enable_cors_all())
         .get("/proofs", home_handler)

@@ -22,7 +22,6 @@ futures-util = "0.3.26"
 hex = "0.4.3"
 routerify = "3.0.0"
 routerify-cors = "3"
-routerify-json-response = "3"
 
 halo2_proofs = { path = "../halo2_proofs" }
 halo2_gadgets = { path = "../halo2_gadgets" }
