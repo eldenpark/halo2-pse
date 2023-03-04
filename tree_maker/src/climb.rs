@@ -46,7 +46,7 @@ pub async fn climb_up() -> Result<(), TreeMakerError> {
 
     let addr: &str = addr.get("val");
 
-    let addr_val = convert_string_into_fp(addr).unwrap();
+    let addr_val = convert_string_into_fp(addr);
 
     println!("STARTING addr: {}, addr_val (fp): {:?}", addr, addr_val);
 
@@ -54,9 +54,10 @@ pub async fn climb_up() -> Result<(), TreeMakerError> {
 
     let mut curr = addr_val;
 
-    for path in auth_paths {
+    for (height, path) in auth_paths.iter().enumerate() {
         println!("");
-        let pos = path.node_loc;
+        let curr_idx = path.idx;
+        let pos = &path.node_loc;
 
         let node = match pg_client
             .query_one("SELECT pos, table_id, val FROM nodes WHERE pos=$1", &[&pos])
@@ -68,7 +69,7 @@ pub async fn climb_up() -> Result<(), TreeMakerError> {
 
                 println!("sibling node, pos: {}, val: {}", pos, val);
 
-                let node = convert_string_into_fp(val).expect("val needs to be converte to fp");
+                let node = convert_string_into_fp(val);
 
                 node
             }
@@ -81,8 +82,8 @@ pub async fn climb_up() -> Result<(), TreeMakerError> {
         };
 
         if path.direction {
-            let l = convert_fp_to_string(node)?;
-            let r = convert_fp_to_string(curr)?;
+            let l = convert_fp_to_string(node);
+            let r = convert_fp_to_string(curr);
 
             println!("l (fp): {:?}, r (fp): {:?}", node, curr);
             println!("l : {:?}, r : {:?}", l, r);
@@ -92,24 +93,31 @@ pub async fn climb_up() -> Result<(), TreeMakerError> {
 
             curr = hash;
         } else {
-            let l = convert_fp_to_string(curr)?;
-            let r = convert_fp_to_string(node)?;
+            let l = convert_fp_to_string(curr);
+            let r = convert_fp_to_string(node);
 
             // println!("l: {:?}, r: {:?}", l, r);
             println!("l (fp): {:?}, r (fp): {:?}", curr, node);
-            println!("l : {:?}, r : {:?}", l, r);
+            println!("l: {:?}, r : {:?}", l, r);
             let hash = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
                 .hash([curr, node]);
 
             curr = hash;
         }
 
-        let c = convert_fp_to_string(curr).unwrap();
-        println!("curr (fp): {:?}, string: {}", curr, c);
+        let c = convert_fp_to_string(curr);
+
+        println!(
+            "curr (fp): {:?}, string: {}, parent_pos: {}",
+            curr,
+            c,
+            format!("{}_{}", height + 1, curr_idx / 2)
+        );
     }
 
-    let c = convert_fp_to_string(curr).unwrap();
-    println!("finally curr: {:?}", curr);
+    let c = convert_fp_to_string(curr);
+
+    println!("finally curr: {:?}", curr,);
     println!("c: {:?}", c);
 
     Ok(())

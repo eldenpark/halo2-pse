@@ -1,4 +1,4 @@
-use crate::TreeMakerError;
+use crate::{hexutils::convert_string_into_fp, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
 use ff::PrimeField;
@@ -108,6 +108,7 @@ async fn put_in_rds(
                 // 160 bit
                 let v = addr.strip_prefix("0x").unwrap().to_string();
                 let v = v + "000000000000000000000000";
+                convert_string_into_fp(&v);
                 v
             };
 

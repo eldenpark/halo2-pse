@@ -72,7 +72,7 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
             {
                 Ok(r) => {
                     let val: &str = r.get("val");
-                    let node = convert_string_into_fp(val)?;
+                    let node = convert_string_into_fp(val);
                     node
                 }
                 Err(err) => {
@@ -94,7 +94,7 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
             {
                 Ok(r) => {
                     let val: &str = r.get("val");
-                    let node = convert_string_into_fp(val)?;
+                    let node = convert_string_into_fp(val);
                     node
                 }
                 Err(err) => {
@@ -107,7 +107,7 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
                 poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
                     .hash([l_node, r_node]);
 
-            let parent_node_val = convert_fp_to_string(parent_node).unwrap();
+            let parent_node_val = convert_fp_to_string(parent_node);
 
             let parent_pos = format!("{}_{}", height + 1, idx / 2);
 
