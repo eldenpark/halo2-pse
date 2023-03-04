@@ -54,9 +54,9 @@ async fn main() -> Result<(), TreeMakerError> {
     //     println!("parent: {:?}, parent val: {}", hash, parent_val);
     // }
 
-    leaves::make_leaves().await?;
+    // leaves::make_leaves().await?;
 
-    // grow::grow_tree().await?;
+    grow::grow_tree().await?;
     //
     // climb::climb_up().await?;
 

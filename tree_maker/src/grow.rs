@@ -54,7 +54,7 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
 
     println!("total row count: {}", total_row_count);
 
-    for height in 1..31 {
+    for height in 0..31 {
         println!("processing height {}", height);
 
         let mut idx = 0;
@@ -132,114 +132,9 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
             idx += 2;
         }
 
-        // for idx in (0..=curr_cardinality - 1).step_by(2) {
-        //     println!("idx: {}", idx);
-        //     let pg_client = pg_client.clone();
-
-        //     let l_pos = format!("{}_{}", height, idx);
-        //     let r_pos = format!("{}_{}", height, idx + 1);
-
-        //     let rows = match pg_client
-        //         .query(
-        //             "SELECT pos, table_id, val FROM nodes WHERE pos in ($1, $2)",
-        //             &[&l_pos, &r_pos],
-        //         )
-        //         .await
-        //     {
-        //         Ok(r) => r,
-        //         Err(err) => {
-        //             println!(
-        //                 "error fetching the rows, l_pos: {}, r_pos: {}, err: {}",
-        //                 l_pos, r_pos, err,
-        //             );
-        //             panic!();
-        //         }
-        //     };
-
-        //     let parent_pos = format!("{}_{}", height + 1, idx / 2);
-
-        //     match rows.len() {
-        //         0 => {
-        //             // we are done looping
-        //         }
-        //         1 => {
-        //             let left = rows.get(0).expect("left node (last node)");
-        //             let l_val: &str = left.get("val");
-
-        //             let l_node =
-        //                 convert_string_into_fp(l_val).expect("val needs to be converte to fp");
-
-        //             let r_node = Fp::from(0);
-
-        //             let hash =
-        //                 poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
-        //                     .hash([l_node, r_node]);
-
-        //             let val = convert_fp_to_string(hash).unwrap();
-
-        //             match pg_client
-        //                 .execute(
-        //                     "INSERT INTO nodes (pos, table_id, val) VALUES ($1, $2, $3)",
-        //                     &[&parent_pos, &"0", &val],
-        //                 )
-        //                 .await
-        //             {
-        //                 Ok(_) => (),
-        //                 Err(err) => {
-        //                     println!("error executing stmt, {}", err);
-        //                 }
-        //             };
-
-        //             println!("val: {:?}, parent_pos: {}", val, parent_pos);
-        //         }
-        //         2 => {
-        //             let left = rows.get(0).expect("left node");
-        //             let right = rows.get(1).expect("right node");
-
-        //             let l_val: &str = left.get("val");
-        //             let r_val: &str = right.get("val");
-
-        //             let l_node =
-        //                 convert_string_into_fp(l_val).expect("val needs to be converte to fp");
-        //             let r_node =
-        //                 convert_string_into_fp(r_val).expect("val needs to be converte to fp");
-
-        //             let hash =
-        //                 poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init()
-        //                     .hash([l_node, r_node]);
-
-        //             let val = convert_fp_to_string(hash).unwrap();
-
-        //             match pg_client
-        //                 .execute(
-        //                     "INSERT INTO nodes (pos, table_id, val) VALUES ($1, $2, $3)",
-        //                     &[&parent_pos, &"0", &val],
-        //                 )
-        //                 .await
-        //             {
-        //                 Ok(_) => (),
-        //                 Err(err) => {
-        //                     println!("error executing stmt, {}", err);
-        //                 }
-        //             };
-
-        //             println!("val: {:?}, parent_pos: {}", val, parent_pos);
-        //         }
-        //         _ => {
-        //             panic!("Error! row count is over 2");
-        //         }
-        //     }
-        // }
-
         println!("done!!!");
 
-        // curr_cardinality = if curr_cardinality % 2 == 1 {
-        //     (curr_cardinality + 1) / 2
-        // } else {
-        //     curr_cardinality / 2
-        // };
-
-        return Ok(());
+        // return Ok(());
     }
 
     Ok(())
