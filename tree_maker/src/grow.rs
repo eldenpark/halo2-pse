@@ -54,7 +54,7 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
 
     println!("total row count: {}", total_row_count);
 
-    for height in 0..31 {
+    for height in 1..31 {
         println!("processing height {}", height);
 
         let mut idx = 0;
@@ -77,10 +77,11 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
                 }
                 Err(err) => {
                     println!(
-                        "error fetching the rows, l_pos: {}, r_pos: {}, err: {}",
-                        l_pos, r_pos, err,
+                        "error fetching the rows, we might be done for this height, pos: {}",
+                        l_pos,
                     );
-                    panic!();
+                    break;
+                    // panic!();
                 }
             };
 
