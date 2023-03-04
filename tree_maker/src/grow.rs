@@ -162,25 +162,9 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
                     panic!("Error! row count is over 2");
                 }
             }
-
-            // Ok::<_, TreeMakerError>(())
-            // });
-
-            // tasks.push(task);
         }
 
-        // let mut result = vec![];
-        // for t in tasks {
-        //     result.push(t.await.unwrap());
-        // }
-
         println!("done!!!");
-
-        curr_cardinality = if curr_cardinality % 2 == 1 {
-            (curr_cardinality + 1) / 2
-        } else {
-            curr_cardinality / 2
-        };
 
         return Ok(());
     }
