@@ -20,11 +20,11 @@ pub type TreeMakerError = Box<dyn std::error::Error + Send + Sync>;
 async fn main() -> Result<(), TreeMakerError> {
     println!("Tree maker starts");
 
-    // leaves::make_leaves().await?;
+    leaves::make_leaves().await?;
 
     // grow::grow_tree().await?;
     //
-    climb::climb_up().await?;
+    // climb::climb_up().await?;
 
     Ok(())
 }
