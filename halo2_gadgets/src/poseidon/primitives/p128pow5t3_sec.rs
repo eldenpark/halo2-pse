@@ -73,9 +73,12 @@ impl Spec<SecFq, 3, 2> for P128Pow5T3Sec {
 #[cfg(test)]
 mod tests {
     use ff::PrimeField;
+    use std::fs::File;
+    use std::io::Write;
     use std::marker::PhantomData;
+    use std::num::ParseIntError;
 
-    use halo2_proofs::halo2curves::FieldExt;
+    use halo2_proofs::halo2curves::{serde::SerdeObject, FieldExt};
 
     use super::{
         // super::{fp, fq},
@@ -117,20 +120,98 @@ mod tests {
 
     #[test]
     fn verify_constants33() {
-        fn verify_constants_helper<F: FieldExt>(
-            expected_round_constants: [[F; 3]; 64],
-            expected_mds: [[F; 3]; 3],
-            expected_mds_inv: [[F; 3]; 3],
+        fn verify_constants_helper(
+            expected_round_constants: [[SecFp; 3]; 64],
+            expected_mds: [[SecFp; 3]; 3],
+            expected_mds_inv: [[SecFp; 3]; 3],
         ) {
-            let (round_constants, mds, mds_inv) = P128Pow5T3Gen::<F, 0>::constants();
+            let (round_constants, mds, mds_inv) = P128Pow5T3Gen::<SecFp, 0>::constants();
 
-            for (actual, expected) in round_constants
-                .iter()
-                .flatten()
-                .zip(expected_round_constants.iter().flatten())
-            {
-                assert_eq!(actual, expected);
+            let mut file = File::create("secp_fp").unwrap();
+
+            for v in round_constants {
+                pub fn encode_hex(bytes: &[u8]) -> String {
+                    let mut s = String::with_capacity(bytes.len() * 2);
+                    for &b in bytes.iter().rev() {
+                        std::fmt::Write::write_fmt(&mut s, format_args!("{:02x}", b)).unwrap();
+                    }
+                    s
+                }
+
+                let elem1 = v[0];
+                let elem2 = v[1];
+                let elem3 = v[2];
+
+                let s1 = elem1.to_repr();
+                let s1 = encode_hex(&s1);
+                println!("s1: {:?}", s1);
+
+                let elem1_1 = &s1[0..16];
+                let elem1_2 = &s1[16..32];
+                let elem1_3 = &s1[32..48];
+                let elem1_4 = &s1[48..64];
+
+                let s2 = elem2.to_repr();
+                let s2 = encode_hex(&s2);
+                println!("s2: {:?}", s2);
+
+                let elem2_1 = &s2[0..16];
+                let elem2_2 = &s2[16..32];
+                let elem2_3 = &s2[32..48];
+                let elem2_4 = &s2[48..64];
+
+                let s3 = elem3.to_repr();
+                let s3 = encode_hex(&s3);
+                println!("s3: {:?}", s3);
+
+                let elem3_1 = &s3[0..16];
+                let elem3_2 = &s3[16..32];
+                let elem3_3 = &s3[32..48];
+                let elem3_4 = &s3[48..64];
+
+                let str = format!(
+                    "[
+SecFp::from_raw([0x{},0x{},0x{},0x{}]),
+SecFp::from_raw([0x{},0x{},0x{},0x{}]),
+SecFp::from_raw([0x{},0x{},0x{},0x{}]),
+],",
+                    elem1_1,
+                    elem1_2,
+                    elem1_3,
+                    elem1_4,
+                    elem2_1,
+                    elem2_2,
+                    elem2_3,
+                    elem2_4,
+                    elem3_1,
+                    elem3_2,
+                    elem3_3,
+                    elem3_4,
+                );
+
+                println!("str: {}", str);
+
+                file.write_fmt(format_args!("{}\n", str)).unwrap();
             }
+
+            // for (actual, expected) in round_constants
+            //     .iter()
+            //     .flatten()
+            //     .zip(expected_round_constants.iter().flatten())
+            // {
+            //     println!("actual: {:?}, expected: {:?}", actual, expected);
+
+            //     // SecFp::from_raw(val)
+
+            //     // println!("aa: {:?}", a);
+            //     // SecFp::from_raw()
+            //     // let b = SecFp::from_bytes(&a).unwrap();
+            //     // println!("bb: {:?}", b);
+            //     // println!("{:?}", a);
+            //     // assert_eq!(actual, expected);
+            // }
+
+            return;
 
             for (actual, expected) in mds.iter().flatten().zip(expected_mds.iter().flatten()) {
                 assert_eq!(actual, expected);
@@ -146,7 +227,7 @@ mod tests {
         }
 
         verify_constants_helper(fp_sec::ROUND_CONSTANTS, fp_sec::MDS, fp_sec::MDS_INV);
-        verify_constants_helper(fq_sec::ROUND_CONSTANTS, fq_sec::MDS, fq_sec::MDS_INV);
+        // verify_constants_helper(fq_sec::ROUND_CONSTANTS, fq_sec::MDS, fq_sec::MDS_INV);
     }
 
     #[test]

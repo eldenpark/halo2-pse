@@ -59,17 +59,24 @@ pub trait Spec<F: FieldExt, const T: usize, const RATE: usize>: fmt::Debug {
         let r_f = Self::full_rounds();
         let r_p = Self::partial_rounds();
 
+        println!("T: {}, r_f: {}, r_p: {}", T, r_f, r_p);
+
         let mut grain = grain::Grain::new(SboxType::Pow, T as u16, r_f as u16, r_p as u16);
 
         let round_constants = (0..(r_f + r_p))
-            .map(|_| {
+            .map(|i| {
+                // println!("idx: {}", i);
+
                 let mut rc_row = [F::zero(); T];
                 for (rc, value) in rc_row
                     .iter_mut()
                     .zip((0..T).map(|_| grain.next_field_element()))
                 {
+                    // println!("rc: {:?}, value: {:?}", rc, value);
                     *rc = value;
                 }
+
+                // println!("rc_row: {:?}", rc_row,);
                 rc_row
             })
             .collect();
