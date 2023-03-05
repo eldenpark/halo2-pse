@@ -234,10 +234,11 @@ async fn gen_proof(
         assert_eq!(r, r_candidate);
     }
 
-    let proof =
-        pos_merkle::gen_id_proof(auth_paths, msg_hash, leaf, root, pos, public_key, r, s).unwrap();
+    // let proof =
+    //     pos_merkle::gen_id_proof(auth_paths, msg_hash, leaf, root, pos, public_key, r, s).unwrap();
 
-    Ok(proof)
+    Ok(vec![])
+    // Ok(proof)
 }
 
 #[derive(Debug, Clone)]

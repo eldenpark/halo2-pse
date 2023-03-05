@@ -1,5 +1,6 @@
 mod chip;
 mod merkle_path;
+mod secp;
 mod test1;
 
 use self::chip::{MerkleChip, MerkleConfig};
@@ -443,9 +444,9 @@ pub fn gen_id_proof(
     leaf: Fp,
     root: Fp,
     leaf_idx: u32,
-    public_key: Secp256k1,
-    // r: Fq,
-    // s: Fq,
+    public_key: EpAffine,
+    r: Fq,
+    s: Fq,
 ) -> Result<Vec<u8>, ProofError> {
     println!("\n>>>>>>> GEN ID PROOF\n");
     println!("root: {:?}, pos: {}, leaf: {:?}", root, leaf_idx, leaf);
@@ -456,7 +457,7 @@ pub fn gen_id_proof(
 
     let aux_generator = <EpAffine as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
-    let circuit = HashCircuit::<Secp256k1, OrchardNullifier, Fp, 3, 2, 2> {
+    let circuit = HashCircuit::<EpAffine, OrchardNullifier, Fp, 3, 2, 2> {
         leaf: Value::known(leaf),
         leaf_idx: Value::known(leaf_idx),
         path: Value::known(path),

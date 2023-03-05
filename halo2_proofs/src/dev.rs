@@ -696,6 +696,7 @@ impl<F: FieldExt> MockProver<F> {
                 panic!("invalid lookup row id {}", row_id)
             }
         }
+        println!("3333");
 
         // Check that within each region, all cells used in instantiated gates have been
         // assigned to.
@@ -740,6 +741,8 @@ impl<F: FieldExt> MockProver<F> {
                     })
             })
         });
+
+        println!("4444, {:?}", selector_errors);
 
         // Check that all gates are satisfied for all rows.
         let gate_errors =
@@ -814,6 +817,8 @@ impl<F: FieldExt> MockProver<F> {
                         )
                     })
                 });
+
+        println!("5555, ");
 
         let mut cached_table = Vec::new();
         let mut cached_table_identifier = Vec::new();
@@ -955,6 +960,8 @@ impl<F: FieldExt> MockProver<F> {
                         .collect::<Vec<_>>()
                 });
 
+        println!("6666, {:?}", lookup_errors);
+
         // Check that permutations preserve the original values of the cells.
         let perm_errors = {
             // Original values of columns involved in the permutation.
@@ -999,6 +1006,8 @@ impl<F: FieldExt> MockProver<F> {
                     })
                 })
         };
+
+        println!("7777, {:?}", perm_errors);
 
         let mut errors: Vec<_> = iter::empty()
             .chain(selector_errors)

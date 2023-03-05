@@ -107,7 +107,7 @@ mod tests {
     }
 
     #[test]
-    fn verify_constants() {
+    fn verify_constants00() {
         fn verify_constants_helper<F: FieldExt>(
             expected_round_constants: [[F; 3]; 64],
             expected_mds: [[F; 3]; 3],
