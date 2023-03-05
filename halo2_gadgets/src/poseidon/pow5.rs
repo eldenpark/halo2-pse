@@ -941,6 +941,7 @@ mod tests {
         let message = [Fp::random(rng), Fp::random(rng)];
         let output =
             poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(message);
+
         println!("output: {:?}", output);
 
         let k = 6;
@@ -949,6 +950,7 @@ mod tests {
             output: Value::known(output),
             _spec: PhantomData,
         };
+
         let prover = MockProver::run(k, &circuit, vec![]).unwrap();
         assert_eq!(prover.verify(), Ok(()))
     }

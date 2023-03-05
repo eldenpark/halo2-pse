@@ -64,6 +64,7 @@ fn router(pg_client: Arc<Client>) -> Router<Body, Infallible> {
         .build()
         .unwrap()
 }
+
 #[tokio::main]
 async fn main() {
     let (pg_client, connection) = tokio_postgres::connect(

@@ -12,7 +12,6 @@ use halo2_proofs::halo2curves::{
     secp256k1,
     // secp256k1
     secp256k1::Fp as SecFp,
-    secp256k1::Fq as SecFq,
     // secp256k1::Fp as SecFp,
 };
 
@@ -34,7 +33,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x464f891edd725401,
-            0x4420d11efd62db69,
+            0xfdabd3fda8703fa6,
             0x14c839c75ec06c41,
             0x480abcea775cf581,
         ]),
@@ -54,7 +53,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xea3b4a59f1857a10,
-            0x134ced2d07f50024,
+            0x16bb05cd654a1ff7,
             0xead599da6dfe7994,
             0x8eb4ec86a61fc535,
         ]),
@@ -74,7 +73,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x4a2f32bcd3251e7b,
-            0x6d4e30e1fa8cd7e0,
+            0x89787366af5da641,
             0xdbc2b1ddb6b4d243,
             0x467f4558ebfeb775,
         ]),
@@ -94,7 +93,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xe5587ec04028b2f8,
-            0x47bfd0704f539d9b,
+            0x66fe1b861e4cd1a4,
             0x57abd467fd91d342,
             0x2183cc13652e8cb7,
         ]),
@@ -114,7 +113,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x1bed2c1525133850,
-            0x09faa67b6b633661,
+            0xcac7163822a0b5a8,
             0x5af2c0f07b9c2d92,
             0x15d215160cf2e0a5,
         ]),
@@ -134,7 +133,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xcf4255f15ee2b168,
-            0xa1e9e33183ee6938,
+            0x91efb71942f25895,
             0xa9ac30acb8c6c6fe,
             0xd5902ae9cb153c61,
         ]),
@@ -154,7 +153,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x57060969c8af8019,
-            0xf2a8a45d169afd7a,
+            0x0717f0a1b6d75acb,
             0xc55f0ea59885b5e1,
             0xe1563b41aca1f869,
         ]),
@@ -174,7 +173,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x87cb1d6eeb697ef1,
-            0x9eedca077e241eae,
+            0x640005dd11e96bfd,
             0x5c03245051afba12,
             0x2abc4951c596b4ac,
         ]),
@@ -194,7 +193,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x2dfb8d2074945023,
-            0xb2091278ef77d84d,
+            0x221a2e0967fd58a9,
             0x6583eaf5fa849b18,
             0x6388feb7e34bcfae,
         ]),
@@ -214,7 +213,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xd71c36e80e285d30,
-            0x9b652b435d85d96f,
+            0x2d93c45ad766b27a,
             0x296cce918222ae49,
             0x345ca1eaf0ac3bac,
         ]),
@@ -234,7 +233,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x790b690f93045162,
-            0x435b1c6645ce0141,
+            0xd59c31257a2042f4,
             0xc10424ef5130cf02,
             0x5e153b1150b533ae,
         ]),
@@ -254,7 +253,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x095a9b19d3146409,
-            0x34ce00c0ff6dfaf9,
+            0x73070606dabb7bc1,
             0xf6cda3f41e023013,
             0xb4e64488e1224a78,
         ]),
@@ -274,7 +273,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x97a2b1fd505095d9,
-            0xe00d595c37aefa8c,
+            0x737a2e0288ebc58b,
             0x4736f6698f24d178,
             0x0fcf3bcba62e8ac7,
         ]),
@@ -294,7 +293,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x41799197aa332cc8,
-            0xc7e4320394a5d806,
+            0x8cb1e663bb31b615,
             0x977b1d8e991101fb,
             0x1763b7d1c7e4b4ab,
         ]),
@@ -314,7 +313,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xdab08b79ca670d9d,
-            0x0d220e2e4f1ab336,
+            0x415d97adf381caee,
             0xa9a14371a359eab4,
             0x8d694c20161f56bf,
         ]),
@@ -334,7 +333,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xca9f79fad59b8160,
-            0x0180e16ccf9cef4e,
+            0x18657c3291e6efed,
             0x7082f5d7ec16e244,
             0x71f5c70fb0ff4dd6,
         ]),
@@ -354,7 +353,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xaf0e8ef0951f6e81,
-            0x39024d93c82b8f96,
+            0x1f09849d89e74eb6,
             0x6c0b186d28c1c94e,
             0x432046e14ca352c2,
         ]),
@@ -374,7 +373,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x2cd5f65f9011e478,
-            0xc43eb836e55b79b4,
+            0x331471b5400caf4b,
             0x9f458e504334ae74,
             0x68cda42da84a391b,
         ]),
@@ -394,7 +393,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x76d2d4bacd47b66b,
-            0xdcfe116192c07b27,
+            0x9346cd421961a2af,
             0x7ce30db97a880f92,
             0x4085640721e80863,
         ]),
@@ -414,7 +413,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xd34918abc12efe20,
-            0x732691ffa2c20d55,
+            0xffb84642a81e81eb,
             0xda7adbb55831cde3,
             0xd293c68f70d58c18,
         ]),
@@ -434,7 +433,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x62a3b84a7b251619,
-            0x279d2c4d9cbbc764,
+            0x52ebea422494a070,
             0xb3cd901096f03d76,
             0x399cde4a3d4fed41,
         ]),
@@ -454,7 +453,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xdabc1ad1b188c250,
-            0x9403e4ded3350249,
+            0xf2fc465314afb8ff,
             0x342b555db47c2b42,
             0x73d198e49a5ba537,
         ]),
@@ -474,7 +473,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xcf760eb73656ae37,
-            0x4cab23799a5b1ab0,
+            0xbcc8bfb27e53ea35,
             0xb79ecdc7592b0809,
             0x257eed339cc8e1be,
         ]),
@@ -494,7 +493,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xf2f53a7864cd1974,
-            0x9307ae029ef2f81f,
+            0xc1deb40f1c5b31e8,
             0x9e9fbfa6a814dc24,
             0x61be08729aa65715,
         ]),
@@ -514,7 +513,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x115249fc32ddd87e,
-            0xb00194d5f9ccefd2,
+            0x3a979ce37f424254,
             0xb2cd6d9a4d861a03,
             0xdd2ada833d3ab9f5,
         ]),
@@ -534,7 +533,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x703627403f2bd298,
-            0xcaa5b152a372d6c5,
+            0x983f74d704ea43af,
             0xeb8f4dbbc2c0a414,
             0x1632df1f9f57382a,
         ]),
@@ -554,7 +553,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x657cea5b71c6885f,
-            0xa8ff845148fd6a79,
+            0x23c21184f23669bd,
             0x44da838746b9b90e,
             0xaa2cd4e6f5ea3cf8,
         ]),
@@ -574,7 +573,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x26760f6984fbeae7,
-            0x5724f74f2b61c22f,
+            0xb75b9a012b3d3658,
             0xef7ef7fd8048ea02,
             0x5fffafb75ae81f1b,
         ]),
@@ -594,7 +593,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x09b837b98c358b54,
-            0xafcda98256aebbc3,
+            0xc2418338c663b9e0,
             0x68d2b1efc9db6a77,
             0x83efab5492e67470,
         ]),
@@ -614,7 +613,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x429e6d2fa89922f3,
-            0xa9ec38876b22108e,
+            0xe16fa4f172e66334,
             0x529ef5ed25237fe8,
             0x9479ed819f2af2a1,
         ]),
@@ -634,7 +633,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x19a50b5989f7b7d4,
-            0x73ec8170639b6a12,
+            0x5bbec568268b713c,
             0x40ad0671545761c9,
             0x7f17a712ff1602a9,
         ]),
@@ -654,7 +653,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xe65fbcd1024dad19,
-            0x844aa6f19cfcce19,
+            0x6ab832b36a2ab783,
             0xd6c3ffd30a697182,
             0xb9a063aaf3e20768,
         ]),
@@ -674,7 +673,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x3f758d5b0545d3e9,
-            0x3e48ab13f4df2017,
+            0xbe3f9f93b7764482,
             0xe58ea700e1bb32e1,
             0x9fa1d1667272504f,
         ]),
@@ -694,7 +693,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x931f4499fc532729,
-            0xd5000f9ef105a183,
+            0x7e365b229f67db26,
             0x7c38295dd7ed80a5,
             0xa9e71885e72950d7,
         ]),
@@ -714,7 +713,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xb385d0f313275345,
-            0x5b8034069e331dd4,
+            0x734533da15fca713,
             0x033e379f1658c6e9,
             0x98d7b66399475fd6,
         ]),
@@ -734,7 +733,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x0979295a7b355f21,
-            0x495b1fc8db7587c4,
+            0x6af4297513d4b09d,
             0xe2a2942bf78ff78f,
             0xb916c1e39d644e78,
         ]),
@@ -754,7 +753,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x3ad44a701c6796a3,
-            0x0e40667b785542c7,
+            0x36f1717bcc7d0550,
             0x2c2cbabd2e16a46e,
             0x5c8ece775f9c331c,
         ]),
@@ -774,7 +773,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xf9461588446bbc49,
-            0x90c30767337ea912,
+            0x30d4766bb3481778,
             0xad5737f685ac30c5,
             0xd1e788d189864814,
         ]),
@@ -794,7 +793,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x10efb10ec12ddc98,
-            0x3614c73a09a9cbb3,
+            0xffcc3313ceb355f4,
             0x31f93becda9ef3b9,
             0x2758f1cedf6dc152,
         ]),
@@ -814,7 +813,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x27ae69b1afc0bd5a,
-            0x9e63835abd69879e,
+            0xbaf24d12dbdbc922,
             0xdb99a1ef9c679aa3,
             0xf4991e6461b363f0,
         ]),
@@ -834,7 +833,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xd04484e04551223f,
-            0x9fe1977b37d30f78,
+            0xdb75c605065a20e4,
             0xbb3c3bf8352a4749,
             0x663b14b9a4ad467c,
         ]),
@@ -854,7 +853,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x87b7afadedcdc521,
-            0xecb5800114911d7b,
+            0xb491be1162f18080,
             0xbce88c1b3505c3dd,
             0xaf383cb07bedecb9,
         ]),
@@ -874,7 +873,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xff34d1e6f96fe170,
-            0x767792139d03058d,
+            0xb623147d0f8031ff,
             0x2428de2734095eac,
             0x7f5c2dc6718e3073,
         ]),
@@ -894,7 +893,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xa337f5bf7e9fa954,
-            0xecc365603e4803b9,
+            0xbed58a4b851df9b9,
             0xcfecb0935ea3efea,
             0xd09bbbbcc7dbbade,
         ]),
@@ -914,7 +913,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x46966c2c2377a488,
-            0xac392033e588377c,
+            0x9ecc11f4da35f3d7,
             0x840f918057190301,
             0xcd9349a4436133f5,
         ]),
@@ -934,7 +933,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x11c8c5773e7420fa,
-            0x0eff145b1ea4fe31,
+            0x7ef846ea0c0f628a,
             0xa5107679894b11b2,
             0xaeb6e434f4ce8ea0,
         ]),
@@ -954,7 +953,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x7794b71d788b5c98,
-            0x5c242e7165f58408,
+            0xd66ee757434c7fdc,
             0x09780cacbd492ff2,
             0xdb0a28aa338f0943,
         ]),
@@ -974,7 +973,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xff0d2b3437dd9496,
-            0x081fe283d84f80db,
+            0x6e96fe8fb114a5b1,
             0xe6b06dde21817bdc,
             0xa3cbf907aa46e71f,
         ]),
@@ -994,7 +993,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xdd446fa9893d302b,
-            0x68f90b34ea9a2c68,
+            0x8c52edd77ea1103b,
             0x9da9e9a6b15e0de4,
             0xdadabad5b8e62e0c,
         ]),
@@ -1014,7 +1013,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x3cd54e56acca6231,
-            0xaddf05a6e7c7a5c2,
+            0x2c5fac8fe058ba70,
             0xc780eee97d1a4594,
             0x42a09538bac6ba33,
         ]),
@@ -1034,7 +1033,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xa79a054403220f4e,
-            0x1811b30f76261795,
+            0x472be0806b796b93,
             0x308b97add329b9ae,
             0xd4e390fb6fee7ebe,
         ]),
@@ -1054,7 +1053,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x07b4818440bb9242,
-            0x359d953ca4c14793,
+            0x83b0f079246b31c1,
             0xc4e1fcd03baff048,
             0xa8455ba40430f98e,
         ]),
@@ -1074,7 +1073,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xa14b3ae22fe97407,
-            0x77ac907b74406310,
+            0xec35b265433fc1da,
             0x28551d7cf83b0e20,
             0x7bca58f4c9d30dd8,
         ]),
@@ -1094,7 +1093,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x414a926a711e3762,
-            0x75069ce88b39714f,
+            0x6411b978e955578f,
             0x26dcd5ccb13b7d96,
             0x662c29da05dc3b95,
         ]),
@@ -1114,7 +1113,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xf0bc8d1030f775bd,
-            0x85abd6990be0a99c,
+            0x806ededb6144a131,
             0x597aebdfbd3d21c6,
             0x40940f8c1cd58ae6,
         ]),
@@ -1134,7 +1133,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x6348685206a487b7,
-            0x98d96ecc63ca139f,
+            0xcb8e0b62a0cfb58a,
             0x5a77b04f8bdaa9a3,
             0x5f1fa64cfd22bea7,
         ]),
@@ -1154,7 +1153,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x995b7fbac35ad5ef,
-            0x9e9b14e338c06855,
+            0xdef9b25871bbd318,
             0xb76bd44ec783ed82,
             0x5e056fc78c2aebde,
         ]),
@@ -1174,7 +1173,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xeb24722f1b8a5f22,
-            0x7466be6817ae67fb,
+            0x1f396dc0c56c9604,
             0x6a52f93cd305707a,
             0x971d78d355eac2a5,
         ]),
@@ -1194,7 +1193,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x9465acb3e1d3871b,
-            0x9c1e30cde524933b,
+            0x4398724036802ec7,
             0xd4b55777860810fb,
             0x4910d1d2c2872a5c,
         ]),
@@ -1214,7 +1213,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x353be238841a20f6,
-            0x307d64819009a045,
+            0x229ef2bb83b9ccbb,
             0xd711b354fa2404bc,
             0xdffdb7e489adf91d,
         ]),
@@ -1234,7 +1233,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xf0afcfccd85c4905,
-            0xd243b5ae2e3e7391,
+            0xd831c2b3f010b65d,
             0x272a8afa65cf64eb,
             0x93db57bc26e0644d,
         ]),
@@ -1254,7 +1253,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xcb49801730977315,
-            0x74f000c555f2f433,
+            0x14e01bf036d72da6,
             0x1d3200b73365af36,
             0x53bf4a2ba34ec788,
         ]),
@@ -1274,7 +1273,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0xb6ec49e6b0afd008,
-            0xbe9178726c0e3f1a,
+            0x183d12cff7e7ae47,
             0xdac092e4cc344409,
             0x237a5717c098fbf1,
         ]),
@@ -1294,7 +1293,7 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
         ]),
         SecFp::from_raw([
             0x3a1736f3e2d02f1b,
-            0x10241ec5550166b7,
+            0x569109a0d96aabc9,
             0x766f3e12d9a67d84,
             0x7bf46946a106bffc,
         ]),
@@ -1315,62 +1314,62 @@ pub(crate) const ROUND_CONSTANTS: [[SecFp; 3]; 64] = [
 pub(crate) const MDS: [[SecFp; 3]; 3] = [
     [
         SecFp::from_raw([
-            0x48f1df34f2861001,
-            0xfafaff8d8c26ed07,
-            0xfa348898bb4f6dfb,
-            0x5ffeefc27b17af70,
+            0xa543efb0e1799911,
+            0xc55a4df46446086c,
+            0x6673c86302474c5b,
+            0xcc6fcbf587ecb6f1,
         ]),
         SecFp::from_raw([
-            0xe0f763263098c9de,
-            0x450fd711ec77419e,
-            0x500d25b304a74ec8,
-            0xc43a210c45bce293,
+            0xcf28b24bc8e502d8,
+            0x5ffb05e5dd1fc518,
+            0x64d26da9bd8d8cd5,
+            0xdf28e644fc8af33c,
         ]),
         SecFp::from_raw([
-            0xfba753e3d7412b56,
-            0x450fd711ec77419e,
-            0x26cd5ee07a888435,
-            0x77155019b73b1bf1,
-        ]),
-    ],
-    [
-        SecFp::from_raw([
-            0xa29ef7aa7d1b4831,
-            0x12bdbef49a1ab8e1,
-            0x29b47f3cad13f066,
-            0xc3336cb20b4884fb,
-        ]),
-        SecFp::from_raw([
-            0x269f2de074301d24,
-            0x15381a5aed8f0e33,
-            0x17eb7131afe0f66d,
-            0x8148016b599973a2,
-        ]),
-        SecFp::from_raw([
-            0xd00a32ff4ff80ecf,
-            0x15381a5aed8f0e33,
-            0x52c3698c75ab850b,
-            0x5f15f5cf88f884dc,
+            0xe1951fb80771a4c5,
+            0x149f5e054a25e37d,
+            0x8ff6aed637aa8b9f,
+            0xab4fb2c1571b7760,
         ]),
     ],
     [
         SecFp::from_raw([
-            0x53a88d36b2643dce,
-            0x94659408adaa490d,
-            0x858decd16f8cd9f3,
-            0x9661531f738e1cac,
+            0xd118d0ff478b98a8,
+            0x79bd6cce69291c82,
+            0xa9b6d9adddedd086,
+            0xf3f92ace2f0cd33a,
         ]),
         SecFp::from_raw([
-            0x69267dc2b66a4e4b,
-            0x2c1fb2997efa9ecc,
-            0xf8cf878ef201ab85,
-            0x07fb4579eefc609b,
+            0x3e9ee772e9e46c85,
+            0xdd92fd55930714a1,
+            0x4b8e1ec666e67cd1,
+            0x3d0902d2cb9750cb,
         ]),
         SecFp::from_raw([
-            0xd71d281c90c56d0c,
-            0x2c1fb2997efa9ecc,
-            0x005d3789601645b2,
-            0x8cb4b6a908bbf668,
+            0x4a20d947dfc2b84d,
+            0x85963f7aa73c71e3,
+            0x9f4cfc4fb85f4083,
+            0x4199971f6a8fbf49,
+        ]),
+    ],
+    [
+        SecFp::from_raw([
+            0x94652b908ba7aa0f,
+            0xcc7c861c4e88ea9e,
+            0x2e1f0d5282a166a2,
+            0xabebca80eaf62558,
+        ]),
+        SecFp::from_raw([
+            0x491aed9185cdd3bf,
+            0xe334d5e5632fbbf3,
+            0xde3caa4b9e7f08b5,
+            0x03e02b6d5787023e,
+        ]),
+        SecFp::from_raw([
+            0xef31018a461f9aa3,
+            0xd666b907038a1af3,
+            0xa7865df9a499e299,
+            0x9b5df1d50f1881af,
         ]),
     ],
 ];
@@ -1378,62 +1377,62 @@ pub(crate) const MDS: [[SecFp; 3]; 3] = [
 pub(crate) const MDS_INV: [[SecFp; 3]; 3] = [
     [
         SecFp::from_raw([
-            0xd39186e8c0398777,
-            0xde9eccad954263fb,
-            0xa70ce4f2f48ec4f9,
-            0x57d4162cb5e23639,
+            0xd45c2beaa60011d6,
+            0x553a45c023462ab1,
+            0x6ab64e88db099a5a,
+            0x6e5c2d66486cff12,
         ]),
         SecFp::from_raw([
-            0x04fc29cd210f64e7,
-            0xd75456e37b7c27c6,
-            0x6f7f686ac9247a9f,
-            0x28aa17a1e958fab9,
+            0xb3fbf2974642c5d0,
+            0x3876c41f3b870d91,
+            0x07e7910374ffea62,
+            0xdf2c47c28a4d1d5b,
         ]),
         SecFp::from_raw([
-            0x05c58eef0bad000b,
-            0xd75456e37b7c27c6,
-            0x9546e1dc225eb9bc,
-            0xdf24d5bd4438f742,
-        ]),
-    ],
-    [
-        SecFp::from_raw([
-            0x3517386e101e35ac,
-            0xe86e72f9b111a1ef,
-            0x7110a21c7f4ea902,
-            0x807ad3b8eb103159,
-        ]),
-        SecFp::from_raw([
-            0xe1051be5e7e87b5d,
-            0x9539127e0120b041,
-            0x8989732fb524babb,
-            0x3905e360ac867d6b,
-        ]),
-        SecFp::from_raw([
-            0xf09c2ca7d7be5e8c,
-            0x9539127e0120b041,
-            0x3944db3b36aa583b,
-            0xf6397239ee90b820,
+            0xb7be97be516fae45,
+            0x87adaf08bf8e9059,
+            0x7f8ab66f6241d134,
+            0x1c2c17feaa10351a,
         ]),
     ],
     [
         SecFp::from_raw([
-            0x6955cfa76b26c1ed,
-            0xf14a5cde98254955,
-            0xba15df9a0a49763e,
-            0x78129348227a7cbd,
+            0x0ba3d2870fbc3780,
+            0x719bf9e2ffe26123,
+            0x6bd7fb48746623f6,
+            0x597ee92dfce0e1f5,
         ]),
         SecFp::from_raw([
-            0xa3b1b933b14ea55f,
-            0x119d0561166fb62b,
-            0xb4c6d8ce3cf13b9b,
-            0x827f0fcd5fd51672,
+            0xaea0056f0dc998ca,
+            0xda080ddc8e238589,
+            0x1aba57b86cc6e2e2,
+            0x526f1bc7e5b6d1d5,
         ]),
         SecFp::from_raw([
-            0x562727e8cf121dc4,
-            0x119d0561166fb62b,
-            0xab7e6cea7ec81c25,
-            0xad54b2fc8a52f487,
+            0x0ecfff24c0faf8bc,
+            0xb7cde4bffcbe2f21,
+            0x6b776b6952d60049,
+            0x14d45503ae43697b,
+        ]),
+    ],
+    [
+        SecFp::from_raw([
+            0x2a62b5ec47e60cdd,
+            0x401b8d8b8abf5cd4,
+            0xac52763545be9cf6,
+            0x489952f8bca58044,
+        ]),
+        SecFp::from_raw([
+            0xa4224cf3129bf972,
+            0x351f8513628fd6a0,
+            0x2efad9725c722c8f,
+            0x15de153b086d60bb,
+        ]),
+        SecFp::from_raw([
+            0x8378349e20b9d1dc,
+            0xc1ef6236be6d5abc,
+            0xeef092ea2f050003,
+            0x37320fc6b7206ad5,
         ]),
     ],
 ];

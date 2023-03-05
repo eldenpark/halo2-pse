@@ -385,6 +385,7 @@ pub fn test_poseidon2() {
 
     // Generate a key pair
     let sk = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
+
     let public_key = (g * sk).to_affine();
     // println!("public key: {:?}", public_key,);
 
