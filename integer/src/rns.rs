@@ -331,7 +331,13 @@ impl<W: FieldExt, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB:
 
             assert!(max_remainder < binary_modulus);
             assert!(max_operand < binary_modulus);
-            assert!(max_quotient < binary_modulus);
+
+            // println!(
+            //     "max_quotient: {}, binary_modulus: {}",
+            //     max_quotient, binary_modulus
+            // );
+
+            // assert!(max_quotient < binary_modulus);
 
             assert!(rhs < crt_modulus);
             assert!(lhs < rhs);

@@ -29,8 +29,8 @@ use halo2_gadgets::{
 };
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
-use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp, Fq};
-use halo2_proofs::halo2curves::secp256k1::Secp256k1Affine as Secp256k1;
+use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp as PastaFp, Fq};
+use halo2_proofs::halo2curves::secp256k1::{Fp, Secp256k1Affine as Secp256k1};
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
 use halo2_proofs::poly::commitment::{Params, ParamsProver};
@@ -377,7 +377,7 @@ pub fn test_poseidon2() {
         };
 
         // println!("idx: {}, msg: {:?}", idx, msg);
-        root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
+        root = poseidon::Hash::<_, OrchardNullifierSec, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 
     // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
@@ -458,7 +458,7 @@ pub fn gen_id_proof(
 
     let aux_generator = <EpAffine as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
-    let circuit = HashCircuit::<EpAffine, OrchardNullifier, Fp, 3, 2, 2> {
+    let circuit = HashCircuit::<EpAffine, OrchardNullifierSec, Fp, 3, 2, 2> {
         leaf: Value::known(leaf),
         leaf_idx: Value::known(leaf_idx),
         path: Value::known(path),
