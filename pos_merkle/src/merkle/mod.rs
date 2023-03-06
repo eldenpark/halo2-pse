@@ -235,6 +235,7 @@ impl<
             || "add",
             |mut region| {
                 let a = leaf.copy_advice(|| "lhs", &mut region, config.advices[0], 0)?;
+
                 // b.0.copy_advice(|| "rhs", &mut region, config.advice[1], 0)?;
                 let pk = self.public_key;
                 // let a = pk.map(|v| 1);
@@ -256,15 +257,6 @@ impl<
         println!("in_circuit: root: {:?}", calculated_root);
 
         layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
-
-        // layouter.assign_region(
-        //     || "load private",
-        //     |mut region| {
-        //         region
-        //             .assign_advice(|| "load private", column, 0, || value)
-        //             .map(Self::Var::from)
-        //     },
-        // )?;
 
         {
             let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
@@ -415,7 +407,8 @@ pub fn test_poseidon2() {
     //
     //
 
-    // let a = public_key.coordinates().unwrap();
+    let a = public_key.coordinates().unwrap();
+    let b = a.x().to_repr();
     // let cc = a.x().to_repr();
     // let b = a.x().to_le_bits();
     // println!("aaa: {:?}", b);
