@@ -351,27 +351,27 @@ pub fn test_poseidon2() {
     }
 
     // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
-    let g = Secp256k1Affine::generator();
+    let g = EpAffine::generator();
 
     // Generate a key pair
-    let sk = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let sk = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
 
     let public_key = (g * sk).to_affine();
     // println!("public key: {:?}", public_key,);
 
     // Generate a valid signature
     // Suppose `m_hash` is the message hash
-    let msg_hash = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let msg_hash = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
 
     // Draw arandomness
-    let k = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let k = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
     let k_inv = k.invert().unwrap();
 
     // Calculate `r`
     let big_r = g * k;
     let r_point = big_r.to_affine().coordinates().unwrap();
     let x = r_point.x();
-    let r = mod_n::<Secp256k1Affine>(*x);
+    let r = mod_n::<EpAffine>(*x);
 
     // Calculate `s`
     let s = k_inv * (msg_hash + (r * sk));
@@ -387,7 +387,7 @@ pub fn test_poseidon2() {
             .coordinates()
             .unwrap();
         let x_candidate = r_point.x();
-        let r_candidate = mod_n::<Secp256k1Affine>(*x_candidate);
+        let r_candidate = mod_n::<EpAffine>(*x_candidate);
 
         assert_eq!(r, r_candidate);
     }
@@ -417,40 +417,40 @@ pub fn test_poseidon2() {
     // let ca = Fp::from_repr(cc).unwrap();
 
     let path = [
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
-        SecFp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
     ];
 
-    let leaf = SecFp::from(2);
+    let leaf = Fp::from(2);
 
     let pos = 0;
 
@@ -465,22 +465,22 @@ pub fn test_poseidon2() {
         };
 
         // println!("idx: {}, msg: {:?}", idx, msg);
-        root = poseidon::Hash::<_, OrchardNullifierSec, ConstantLength<2>, 3, 2>::init().hash(msg);
+        root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 
     gen_id_proof(path, leaf, root, pos, public_key, msg_hash, r, s).unwrap();
 }
 
 pub fn gen_id_proof(
-    path: [SecFp; 31],
-    leaf: SecFp,
-    root: SecFp,
+    path: [Fp; 31],
+    leaf: Fp,
+    root: Fp,
     leaf_idx: u32,
 
-    public_key: Secp256k1Affine,
-    msg_hash: SecFq,
-    r: SecFq,
-    s: SecFq,
+    public_key: EpAffine,
+    msg_hash: Fq,
+    r: Fq,
+    s: Fq,
 ) -> Result<Vec<u8>, ProofError> {
     println!("\n>>>>>>> GEN ID PROOF\n");
     println!("root: {:?}, pos: {}, leaf: {:?}", root, leaf_idx, leaf);
@@ -489,9 +489,9 @@ pub fn gen_id_proof(
 
     let start = Instant::now();
 
-    let aux_generator = <Secp256k1Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
+    let aux_generator = <EpAffine as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
-    let circuit = HashCircuit::<Secp256k1Affine, OrchardNullifierSec, SecFp, 3, 2, 2> {
+    let circuit = HashCircuit::<EpAffine, OrchardNullifier, Fp, 3, 2, 2> {
         leaf: Value::known(leaf),
         leaf_idx: Value::known(leaf_idx),
         path: Value::known(path),
@@ -538,38 +538,38 @@ pub fn gen_id_proof(
     println!("11 vk loading, t: {:?}", start.elapsed());
 
     let circuit_name = "pos_merkle";
-    // let vk = {
-    //     let vk_path = project_root.join(format!("vk_{}.dat", circuit_name));
+    let vk = {
+        let vk_path = project_root.join(format!("vk_{}.dat", circuit_name));
 
-    //     match File::open(&vk_path) {
-    //         Ok(fd) => {
-    //             let mut reader = BufReader::new(fd);
-    //             let vk = VerifyingKey::<Secp256k1>::read::<
-    //                 _,
-    //                 HashCircuit<
-    //                     // pallas::Affine,
-    //                     Secp256k1,
-    //                     // OrchardNullifier,
-    //                     OrchardNullifierSec,
-    //                     Fp,
-    //                     3,
-    //                     2,
-    //                     2,
-    //                 >,
-    //             >(&mut reader, SerdeFormat::Processed)
-    //             .unwrap();
-    //             vk
-    //         }
-    //         Err(_) => {
-    //             let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
-    //             let fd = File::create(&vk_path).unwrap();
-    //             let mut writer = BufWriter::new(fd);
-    //             vk.write(&mut writer, SerdeFormat::Processed).unwrap();
-    //             writer.flush().unwrap();
-    //             vk
-    //         }
-    //     }
-    // };
+        match File::open(&vk_path) {
+            Ok(fd) => {
+                let mut reader = BufReader::new(fd);
+                let vk = VerifyingKey::<EpAffine>::read::<
+                    _,
+                    HashCircuit<
+                        pallas::Affine,
+                        // Secp256k1,
+                        OrchardNullifier,
+                        // OrchardNullifierSec,
+                        Fp,
+                        3,
+                        2,
+                        2,
+                    >,
+                >(&mut reader, SerdeFormat::Processed)
+                .unwrap();
+                vk
+            }
+            Err(_) => {
+                let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
+                let fd = File::create(&vk_path).unwrap();
+                let mut writer = BufWriter::new(fd);
+                vk.write(&mut writer, SerdeFormat::Processed).unwrap();
+                writer.flush().unwrap();
+                vk
+            }
+        }
+    };
 
     // println!("11 pk loading, t: {:?}", start.elapsed());
 
