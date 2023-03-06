@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt;
 use std::iter;
+use std::iter::FlatMap;
 use std::ops::{Add, Mul, Neg, Range};
 use std::time::{Duration, Instant};
 
@@ -741,7 +742,7 @@ impl<F: FieldExt> MockProver<F> {
             })
         });
 
-        // println!("4444, {:?}", selector_errors);
+        println!("4444, {:?}", selector_errors.size_hint());
 
         // Check that all gates are satisfied for all rows.
         let gate_errors =
@@ -817,7 +818,7 @@ impl<F: FieldExt> MockProver<F> {
                     })
                 });
 
-        // println!("5555, ");
+        println!("5555, {:?}", gate_errors.size_hint());
 
         let mut cached_table = Vec::new();
         let mut cached_table_identifier = Vec::new();
@@ -959,7 +960,7 @@ impl<F: FieldExt> MockProver<F> {
                         .collect::<Vec<_>>()
                 });
 
-        // println!("6666, {:?}", lookup_errors);
+        println!("6666, {:?}", lookup_errors.size_hint());
 
         // Check that permutations preserve the original values of the cells.
         let perm_errors = {
@@ -1006,7 +1007,7 @@ impl<F: FieldExt> MockProver<F> {
                 })
         };
 
-        // println!("7777, {:?}", perm_errors);
+        println!("7777, {:?}", perm_errors.size_hint());
 
         let mut errors: Vec<_> = iter::empty()
             .chain(selector_errors)
@@ -1014,7 +1015,9 @@ impl<F: FieldExt> MockProver<F> {
             .chain(lookup_errors)
             .chain(perm_errors)
             .collect();
+
         if errors.is_empty() {
+            println!("11111111");
             Ok(())
         } else {
             // Remove any duplicate `ConstraintPoisoned` errors (we check all unavailable

@@ -14,6 +14,7 @@ use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
 use group::Curve;
 use group::Group;
+use halo2_gadgets::ecc::chip::ScalarVar;
 use halo2_gadgets::ecc::NonIdentityPoint;
 use halo2_gadgets::poseidon::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use halo2_gadgets::utilities::{i2lebsp, Var};
@@ -416,40 +417,40 @@ pub fn test_poseidon2() {
     // let ca = Fp::from_repr(cc).unwrap();
 
     let path = [
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
-        Fp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
+        SecFp::from(1),
     ];
 
-    let leaf = Fp::from(2);
+    let leaf = SecFp::from(2);
 
     let pos = 0;
 
@@ -464,16 +465,16 @@ pub fn test_poseidon2() {
         };
 
         // println!("idx: {}, msg: {:?}", idx, msg);
-        root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
+        root = poseidon::Hash::<_, OrchardNullifierSec, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 
     gen_id_proof(path, leaf, root, pos, public_key, msg_hash, r, s).unwrap();
 }
 
 pub fn gen_id_proof(
-    path: [Fp; 31],
-    leaf: Fp,
-    root: Fp,
+    path: [SecFp; 31],
+    leaf: SecFp,
+    root: SecFp,
     leaf_idx: u32,
 
     public_key: Secp256k1Affine,
@@ -490,7 +491,7 @@ pub fn gen_id_proof(
 
     let aux_generator = <Secp256k1Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
-    let circuit = HashCircuit::<Secp256k1Affine, OrchardNullifier, Fp, 3, 2, 2> {
+    let circuit = HashCircuit::<Secp256k1Affine, OrchardNullifierSec, SecFp, 3, 2, 2> {
         leaf: Value::known(leaf),
         leaf_idx: Value::known(leaf_idx),
         path: Value::known(path),
