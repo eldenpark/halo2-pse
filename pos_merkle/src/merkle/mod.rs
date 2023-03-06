@@ -9,6 +9,7 @@ use super::ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMB
 use crate::merkle::merkle_path::MerklePath;
 use crate::ProofError;
 use ecc::{GeneralEccChip, Point};
+use ff::PrimeFieldBits;
 use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
 use group::Curve;
@@ -29,8 +30,8 @@ use halo2_gadgets::{
 };
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
-use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp as PastaFp, Fq};
-use halo2_proofs::halo2curves::secp256k1::{Fp, Secp256k1Affine as Secp256k1};
+use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp, Fq};
+use halo2_proofs::halo2curves::secp256k1::{Fp as SecFp, Fq as SecFq, Secp256k1Affine};
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
 use halo2_proofs::poly::commitment::{Params, ParamsProver};
@@ -230,88 +231,116 @@ impl<
             phantom: PhantomData,
         };
 
+        layouter.assign_region(
+            || "add",
+            |mut region| {
+                let a = leaf.copy_advice(|| "lhs", &mut region, config.advices[0], 0)?;
+                // b.0.copy_advice(|| "rhs", &mut region, config.advice[1], 0)?;
+                let pk = self.public_key;
+                // let a = pk.map(|v| 1);
+
+                let value = Value::known(F::from_bytes_wide(&[0u8; 64]));
+
+                region
+                    .assign_advice(|| "", config.advices[0], 1, || value)
+                    .map(AssignedCell::from)
+            },
+        )?;
+
         let calculated_root =
             merkle_inputs.calculate_root(layouter.namespace(|| "merkle root calculation"), leaf)?;
+
+        // layouter.assign_region()
+        // calculated_root.copy_advice(|| "lhs", &mut region, config.advice[0], 0)?;
 
         println!("in_circuit: root: {:?}", calculated_root);
 
         layouter.constrain_instance(calculated_root.cell(), config.instance, 0)?;
 
-        // {
-        //     let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
-        //         config.ecdsa_config.ecc_chip_config(),
-        //     );
+        // layouter.assign_region(
+        //     || "load private",
+        //     |mut region| {
+        //         region
+        //             .assign_advice(|| "load private", column, 0, || value)
+        //             .map(Self::Var::from)
+        //     },
+        // )?;
 
-        //     layouter.assign_region(
-        //         || "assign aux values",
-        //         |region| {
-        //             let offset = 0;
-        //             let ctx = &mut RegionCtx::new(region, offset);
+        {
+            let mut ecc_chip = GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
+                config.ecdsa_config.ecc_chip_config(),
+            );
 
-        //             ecc_chip.assign_aux_generator(ctx, Value::known(self.aux_generator))?;
-        //             ecc_chip.assign_aux(ctx, self.window_size, 1)?;
-        //             Ok(())
-        //         },
-        //     )?;
+            layouter.assign_region(
+                || "assign aux values",
+                |region| {
+                    let offset = 0;
+                    let ctx = &mut RegionCtx::new(region, offset);
 
-        //     let ecdsa_chip = EcdsaChip::new(ecc_chip.clone());
-        //     let scalar_chip = ecc_chip.scalar_field_chip();
+                    ecc_chip.assign_aux_generator(ctx, Value::known(self.aux_generator))?;
+                    ecc_chip.assign_aux(ctx, self.window_size, 1)?;
+                    Ok(())
+                },
+            )?;
 
-        //     layouter.assign_region(
-        //         || "region 0",
-        //         |region| {
-        //             let offset = 0;
-        //             let ctx = &mut RegionCtx::new(region, offset);
+            let ecdsa_chip = EcdsaChip::new(ecc_chip.clone());
+            let scalar_chip = ecc_chip.scalar_field_chip();
 
-        //             let r = self.signature.map(|signature| signature.0);
-        //             let s = self.signature.map(|signature| signature.1);
-        //             let integer_r = ecc_chip.new_unassigned_scalar(r);
-        //             let integer_s = ecc_chip.new_unassigned_scalar(s);
-        //             let msg_hash = ecc_chip.new_unassigned_scalar(self.msg_hash);
+            layouter.assign_region(
+                || "region 0",
+                |region| {
+                    let offset = 0;
+                    let ctx = &mut RegionCtx::new(region, offset);
 
-        //             let r_assigned =
-        //                 scalar_chip.assign_integer(ctx, integer_r, Range::Remainder)?;
+                    let r = self.signature.map(|signature| signature.0);
+                    let s = self.signature.map(|signature| signature.1);
+                    let integer_r = ecc_chip.new_unassigned_scalar(r);
+                    let integer_s = ecc_chip.new_unassigned_scalar(s);
+                    let msg_hash = ecc_chip.new_unassigned_scalar(self.msg_hash);
 
-        //             let s_assigned =
-        //                 scalar_chip.assign_integer(ctx, integer_s, Range::Remainder)?;
+                    let r_assigned =
+                        scalar_chip.assign_integer(ctx, integer_r, Range::Remainder)?;
 
-        //             let sig = AssignedEcdsaSig {
-        //                 r: r_assigned,
-        //                 s: s_assigned,
-        //             };
+                    let s_assigned =
+                        scalar_chip.assign_integer(ctx, integer_s, Range::Remainder)?;
 
-        //             // println!(
-        //             //     "synthesize(), got sig, t: {:?}",
-        //             //     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH),
-        //             // );
+                    let sig = AssignedEcdsaSig {
+                        r: r_assigned,
+                        s: s_assigned,
+                    };
 
-        //             let pk_in_circuit = ecc_chip.assign_point(ctx, self.public_key)?;
+                    // println!(
+                    //     "synthesize(), got sig, t: {:?}",
+                    //     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH),
+                    // );
 
-        //             let pk_assigned = AssignedPublicKey {
-        //                 point: pk_in_circuit,
-        //             };
+                    let pk_in_circuit = ecc_chip.assign_point(ctx, self.public_key)?;
 
-        //             let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Remainder)?;
+                    let pk_assigned = AssignedPublicKey {
+                        point: pk_in_circuit,
+                    };
 
-        //             // let t_in_circuit = ecc_chip.assign_point(ctx, self.t)?;
-        //             // let u_in_circuit = ecc_chip.assign_point(ctx, self.u)?;
+                    let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Remainder)?;
 
-        //             ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
-        //             // ecdsa_chip.verify2(
-        //             //     ctx,
-        //             //     &sig,
-        //             //     &pk_assigned,
-        //             //     &msg_hash,
-        //             //     &t_in_circuit,
-        //             //     &u_in_circuit,
-        //             // )
-        //         },
-        //     )?;
+                    // let t_in_circuit = ecc_chip.assign_point(ctx, self.t)?;
+                    // let u_in_circuit = ecc_chip.assign_point(ctx, self.u)?;
 
-        //     // println!("synthesize(): start range chip thing");
-        //     let range_chip = RangeChip::<F>::new(config.ecdsa_config.range_config);
-        //     range_chip.load_table(&mut layouter)?;
-        // }
+                    ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)
+                    // ecdsa_chip.verify2(
+                    //     ctx,
+                    //     &sig,
+                    //     &pk_assigned,
+                    //     &msg_hash,
+                    //     &t_in_circuit,
+                    //     &u_in_circuit,
+                    // )
+                },
+            )?;
+
+            // println!("synthesize(): start range chip thing");
+            let range_chip = RangeChip::<F>::new(config.ecdsa_config.range_config);
+            range_chip.load_table(&mut layouter)?;
+        }
 
         // println!("synthesize(): end");
 
@@ -327,6 +356,71 @@ pub fn test_poseidon2() {
         let x_big = fe_to_big(x);
         big_to_fe(x_big)
     }
+
+    // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
+    let g = Secp256k1Affine::generator();
+
+    // Generate a key pair
+    let sk = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
+
+    let public_key = (g * sk).to_affine();
+    // println!("public key: {:?}", public_key,);
+
+    // Generate a valid signature
+    // Suppose `m_hash` is the message hash
+    let msg_hash = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
+
+    // Draw arandomness
+    let k = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let k_inv = k.invert().unwrap();
+
+    // Calculate `r`
+    let big_r = g * k;
+    let r_point = big_r.to_affine().coordinates().unwrap();
+    let x = r_point.x();
+    let r = mod_n::<Secp256k1Affine>(*x);
+
+    // Calculate `s`
+    let s = k_inv * (msg_hash + (r * sk));
+    // println!("r: {:?}, s: {:?}", r, s);
+
+    // Sanity check. Ensure we construct a valid signature. So lets verify it
+    {
+        let s_inv = s.invert().unwrap();
+        let u_1 = msg_hash * s_inv;
+        let u_2 = r * s_inv;
+        let r_point = ((g * u_1) + (public_key * u_2))
+            .to_affine()
+            .coordinates()
+            .unwrap();
+        let x_candidate = r_point.x();
+        let r_candidate = mod_n::<Secp256k1Affine>(*x_candidate);
+
+        assert_eq!(r, r_candidate);
+    }
+
+    // let (t, u) = {
+    //     let r_inv = r.invert().unwrap();
+    //     let t = big_r * r_inv;
+    //     let u = -(g * (r_inv * msg_hash));
+
+    //     // let u_neg = u.neg();
+    //     // println!("444 u_neg: {:?}", u_neg);
+
+    //     let pk_candidate = (t * s + u).to_affine();
+    //     assert_eq!(public_key, pk_candidate);
+
+    //     (t.to_affine(), u.to_affine())
+    // };
+    //
+    //
+
+    // let a = public_key.coordinates().unwrap();
+    // let cc = a.x().to_repr();
+    // let b = a.x().to_le_bits();
+    // println!("aaa: {:?}", b);
+
+    // let ca = Fp::from_repr(cc).unwrap();
 
     let path = [
         Fp::from(1),
@@ -377,77 +471,22 @@ pub fn test_poseidon2() {
         };
 
         // println!("idx: {}, msg: {:?}", idx, msg);
-        root = poseidon::Hash::<_, OrchardNullifierSec, ConstantLength<2>, 3, 2>::init().hash(msg);
+        root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 
-    // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
-    let g = EpAffine::generator();
-
-    // Generate a key pair
-    let sk = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
-
-    let public_key = (g * sk).to_affine();
-    // println!("public key: {:?}", public_key,);
-
-    // Generate a valid signature
-    // Suppose `m_hash` is the message hash
-    let msg_hash = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
-
-    // Draw arandomness
-    let k = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
-    let k_inv = k.invert().unwrap();
-
-    // Calculate `r`
-    let big_r = g * k;
-    let r_point = big_r.to_affine().coordinates().unwrap();
-    let x = r_point.x();
-    let r = mod_n::<EpAffine>(*x);
-
-    // Calculate `s`
-    let s = k_inv * (msg_hash + (r * sk));
-    // println!("r: {:?}, s: {:?}", r, s);
-
-    // Sanity check. Ensure we construct a valid signature. So lets verify it
-    {
-        let s_inv = s.invert().unwrap();
-        let u_1 = msg_hash * s_inv;
-        let u_2 = r * s_inv;
-        let r_point = ((g * u_1) + (public_key * u_2))
-            .to_affine()
-            .coordinates()
-            .unwrap();
-        let x_candidate = r_point.x();
-        let r_candidate = mod_n::<EpAffine>(*x_candidate);
-
-        assert_eq!(r, r_candidate);
-    }
-
-    // let (t, u) = {
-    //     let r_inv = r.invert().unwrap();
-    //     let t = big_r * r_inv;
-    //     let u = -(g * (r_inv * msg_hash));
-
-    //     // let u_neg = u.neg();
-    //     // println!("444 u_neg: {:?}", u_neg);
-
-    //     let pk_candidate = (t * s + u).to_affine();
-    //     assert_eq!(public_key, pk_candidate);
-
-    //     (t.to_affine(), u.to_affine())
-    // };
-
-    gen_id_proof(path, msg_hash, leaf, root, pos, public_key, r, s).unwrap();
+    gen_id_proof(path, leaf, root, pos, public_key, msg_hash, r, s).unwrap();
 }
 
 pub fn gen_id_proof(
     path: [Fp; 31],
-    msg_hash: Fq,
     leaf: Fp,
     root: Fp,
     leaf_idx: u32,
-    public_key: EpAffine,
-    r: Fq,
-    s: Fq,
+
+    public_key: Secp256k1Affine,
+    msg_hash: SecFq,
+    r: SecFq,
+    s: SecFq,
 ) -> Result<Vec<u8>, ProofError> {
     println!("\n>>>>>>> GEN ID PROOF\n");
     println!("root: {:?}, pos: {}, leaf: {:?}", root, leaf_idx, leaf);
@@ -456,9 +495,9 @@ pub fn gen_id_proof(
 
     let start = Instant::now();
 
-    let aux_generator = <EpAffine as CurveAffine>::CurveExt::random(OsRng).to_affine();
+    let aux_generator = <Secp256k1Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
-    let circuit = HashCircuit::<EpAffine, OrchardNullifierSec, Fp, 3, 2, 2> {
+    let circuit = HashCircuit::<Secp256k1Affine, OrchardNullifier, Fp, 3, 2, 2> {
         leaf: Value::known(leaf),
         leaf_idx: Value::known(leaf_idx),
         path: Value::known(path),
