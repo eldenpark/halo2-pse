@@ -1068,31 +1068,26 @@ pub fn test_poseidon2() {
     //     (t.to_affine(), u.to_affine())
     // };
 
-    gen_id_proof(path, msg_hash, leaf, root, pos, public_key, r, s).unwrap();
+    gen_id_proof::<EpAffine, Fp>(path, leaf, root, pos, public_key, msg_hash, r, s).unwrap();
 }
 
-pub fn gen_id_proof(
+pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
     path: [Fp; 31],
-    msg_hash: Fq,
     leaf: Fp,
     root: Fp,
     idx: u32,
-    public_key: EpAffine,
-    r: Fq,
-    s: Fq,
+    public_key: C,
+    msg_hash: C::Scalar,
+    r: C::Scalar,
+    s: C::Scalar,
 ) -> Result<Vec<u8>, ProofError> {
-    fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
-        let x_big = fe_to_big(x);
-        big_to_fe(x_big)
-    }
-
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
     let start = Instant::now();
 
-    let aux_generator = <pallas::Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
+    let aux_generator = <C as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
-    let circuit = HashCircuit::<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2> {
+    let circuit = HashCircuit::<C, OrchardNullifier, Fp, 3, 2, 2> {
         leaf: Value::known(leaf),
         root: Value::known(root),
         leaf_idx: Value::known(idx),
