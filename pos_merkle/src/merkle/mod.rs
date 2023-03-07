@@ -723,7 +723,7 @@ struct HashCircuit<
 > {
     leaf: Value<F>,
     root: Value<F>,
-    leaf_pos: Value<u32>,
+    leaf_idx: Value<u32>,
     path: Value<[F; 31]>,
 
     // t: Value<N>,
@@ -755,7 +755,7 @@ impl<
         Self {
             leaf: Value::unknown(),
             root: Value::unknown(),
-            leaf_pos: Value::unknown(),
+            leaf_idx: Value::unknown(),
             path: Value::unknown(),
 
             public_key: Value::unknown(),
@@ -858,7 +858,7 @@ impl<
 
         let merkle_inputs = MerklePath::<S, _, _, WIDTH, RATE> {
             chip: merkle_chip,
-            leaf_idx: self.leaf_pos,
+            leaf_idx: self.leaf_idx,
             path: self.path,
             phantom: PhantomData,
         };
@@ -952,14 +952,14 @@ impl<
     }
 }
 
+pub fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
+    let x_big = fe_to_big(x);
+    big_to_fe(x_big)
+}
+
 #[test]
 pub fn test_poseidon2() {
     println!("111");
-
-    fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
-        let x_big = fe_to_big(x);
-        big_to_fe(x_big)
-    }
 
     let path = [
         Fp::from(1),
@@ -1010,20 +1010,20 @@ pub fn test_poseidon2() {
         };
 
         // println!("idx: {}, msg: {:?}", idx, msg);
-        root = poseidon::Hash::<_, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
+        root = poseidon::Hash::<Fp, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 
     // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
-    let g = pallas::Affine::generator();
+    let g = EpAffine::generator();
 
     // Generate a key pair
-    let sk = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let sk = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
     let public_key = (g * sk).to_affine();
     // println!("public key: {:?}", public_key,);
 
     // Generate a valid signature
     // Suppose `m_hash` is the message hash
-    let msg_hash = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let msg_hash = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
 
     // Draw arandomness
     let k = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
@@ -1076,7 +1076,7 @@ pub fn gen_id_proof(
     msg_hash: Fq,
     leaf: Fp,
     root: Fp,
-    pos: u32,
+    idx: u32,
     public_key: EpAffine,
     r: Fq,
     s: Fq,
@@ -1095,7 +1095,7 @@ pub fn gen_id_proof(
     let circuit = HashCircuit::<pallas::Affine, OrchardNullifier, Fp, 3, 2, 2> {
         leaf: Value::known(leaf),
         root: Value::known(root),
-        leaf_pos: Value::known(pos),
+        leaf_idx: Value::known(idx),
         path: Value::known(path),
 
         public_key: Value::known(public_key),
