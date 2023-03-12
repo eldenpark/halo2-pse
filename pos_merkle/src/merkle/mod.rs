@@ -520,10 +520,10 @@ pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
         match File::open(&vk_path) {
             Ok(fd) => {
                 let mut reader = BufReader::new(fd);
-                let vk = VerifyingKey::<EqAffine>::read::<
+                let vk = VerifyingKey::<_>::read::<
                     _,
                     HashCircuit<
-                        // pallas::Point,
+                        //
                         pallas::Affine,
                         OrchardNullifier,
                         Fp,
@@ -554,10 +554,10 @@ pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
         match File::open(&pk_path) {
             Ok(fd) => {
                 let mut reader = BufReader::new(fd);
-                let pk = ProvingKey::<EqAffine>::read::<
+                let pk = ProvingKey::<_>::read::<
                     _,
                     HashCircuit<
-                        // pallas::Point,
+                        //
                         pallas::Affine,
                         OrchardNullifier,
                         Fp,
@@ -582,7 +582,7 @@ pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
     };
 
     let mut rng = OsRng;
-    let mut transcript = Blake2bWrite::<_, EqAffine, Challenge255<_>>::init(vec![]);
+    let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
 
     println!("creating proof, t: {:?}", start.elapsed());
 
