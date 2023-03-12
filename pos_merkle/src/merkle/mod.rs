@@ -257,6 +257,14 @@ impl<
             let scalar_chip = ecc_chip.scalar_field_chip();
 
             layouter.assign_region(
+                || "temp",
+                |region| {
+                    // ecc_chip.new_unassigned_scalar(self.leaf);
+                    return Ok(());
+                },
+            )?;
+
+            layouter.assign_region(
                 || "region 0",
                 |region| {
                     let offset = 0;
@@ -336,6 +344,7 @@ pub fn test_poseidon2() {
     // println!("public key: {:?}", public_key,);
     //
     let a = public_key.to_bytes();
+
     println!("pk: {:?}, aaa: {:?}", public_key, a,);
     // EpAffine::from_bytes(bytes)
     let b = EpAffine::from_bytes(&a).unwrap();
