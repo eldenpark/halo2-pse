@@ -196,7 +196,7 @@ impl<
         };
 
         let my_config = MyConfig {
-            advices: advices.try_into().unwrap(),
+            advices,
             instance,
             poseidon_config,
             merkle_config,
@@ -484,7 +484,11 @@ pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
-    MockProver::run(k, &circuit, instance).unwrap();
+    let prover = MockProver::run(k, &circuit, instance).unwrap();
+    prover.verify().unwrap();
+    println!("\nMock prover susccess!!!");
+
+    return Ok(vec![]);
 
     println!("params generating, t: {:?}", start.elapsed());
 
