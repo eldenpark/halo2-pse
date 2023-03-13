@@ -493,11 +493,11 @@ pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
-    let prover = MockProver::run(k, &circuit, instance).unwrap();
-    prover.verify().unwrap();
-    println!("\nMock prover susccess!!!");
+    // let prover = MockProver::run(k, &circuit, instance).unwrap();
+    // prover.verify().unwrap();
+    // println!("\nMock prover susccess!!!");
 
-    return Ok(vec![]);
+    // return Ok(vec![]);
 
     println!("params generating, t: {:?}", start.elapsed());
 
@@ -613,5 +613,5 @@ pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
         start.elapsed()
     );
 
-    return Ok(vec![]);
+    return Ok(proof);
 }

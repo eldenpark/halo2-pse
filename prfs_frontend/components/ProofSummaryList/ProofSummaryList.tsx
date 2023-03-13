@@ -1,9 +1,8 @@
-import axios from 'axios';
-import React from 'react';
-import styles from './ProofSummary.module.css'
+import axios from "axios";
+import React from "react";
+import styles from "./ProofSummary.module.scss";
 
 const ProofSummary: React.FC<any> = () => {
-
   return (
     <div className={styles.proofSummary}>
       <div className={styles.entry}>
@@ -20,38 +19,34 @@ const ProofSummary: React.FC<any> = () => {
       </div>
       <div className={styles.entry}>
         <p>Description</p>
-        <p>This proof verifies Elden has an Ether of amount somewhere between 0.26 to 0.28</p>
+        <p>
+          This proof verifies Elden has an Ether of amount somewhere between
+          0.26 to 0.28
+        </p>
       </div>
       <div className={styles.entry}>
         <p>Proof algorithm</p>
         <p>Plonk - IPA </p>
       </div>
     </div>
-  )
+  );
 };
 
 const ProofSummaryList = () => {
   let [list, setList] = React.useState<any>([]);
 
   React.useEffect(() => {
-
     setList([1, 2, 3]);
   }, []);
 
   let contents = list.map((elem: any, idx: any) => {
-    return (
-      <ProofSummary key={idx}>
-        power
-      </ProofSummary>
-    )
+    return <ProofSummary key={idx}>power</ProofSummary>;
   });
 
   return (
     <div className={styles.proofSummaryList}>
       <div className={styles.proofsLabel}>Proofs</div>
-      <div>
-        {contents}
-      </div>
+      <div>{contents}</div>
     </div>
   );
 };

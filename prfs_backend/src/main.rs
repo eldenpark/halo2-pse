@@ -1,4 +1,9 @@
+use group::prime::PrimeCurveAffine;
+use group::GroupEncoding;
+use halo2_gadgets::utilities::i2lebsp;
+use halo2_proofs::halo2curves::CurveAffine;
 use hyper::{header, Body, Request, Response, Server, StatusCode};
+use rand::rngs::OsRng;
 // Import the routerify prelude traits.
 use routerify::prelude::*;
 use routerify::{Middleware, RequestInfo, Router, RouterService};
@@ -8,45 +13,201 @@ use std::sync::Arc;
 use std::{convert::Infallible, net::SocketAddr};
 use tokio_postgres::{Client, NoTls};
 
+use group::ff::{Field, PrimeField};
+use group::Curve;
+use group::Group;
+use halo2_gadgets::ecc::NonIdentityPoint;
+use halo2_gadgets::poseidon::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
+use halo2_gadgets::utilities::Var;
+use halo2_gadgets::{
+    poseidon::{
+        // merkle::merkle_path::MerklePath,
+        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
+        Hash,
+    },
+    utilities::UtilitiesInstructions,
+};
+use halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_proofs::halo2curves::pairing::Engine;
+use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp, Fq};
+use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
+use halo2_proofs::poly::commitment::{Params, ParamsProver};
+use halo2_proofs::poly::ipa::commitment::{IPACommitmentScheme, ParamsIPA};
+use halo2_proofs::poly::ipa::multiopen::ProverIPA;
+use halo2_proofs::poly::kzg::multiopen::ProverGWC;
+use halo2_proofs::transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer};
+use halo2_proofs::SerdeFormat;
+use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
+use halo2_proofs::{
+    circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
+    dev::MockProver,
+    plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Instance},
+};
+use std::convert::TryInto;
+use std::env;
+use std::fs::File;
+use std::io::{BufReader, BufWriter, Seek, Write};
+use std::marker::PhantomData;
+use std::ops::{Mul, Neg};
+use std::path::PathBuf;
+use std::time::Instant;
+
+pub type BackendError = Box<dyn std::error::Error + Send + Sync>;
+
 // Define an app state to share it across the route handlers and middlewares.
 struct State {
     pg_client: Arc<Client>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct Proof {
-    power: usize,
+struct ProofResponse {
+    proof: Vec<u8>,
+}
+
+async fn gen_proof() -> Result<Vec<u8>, BackendError> {
+    let g = EpAffine::generator();
+
+    // Generate a key pair
+    let sk = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
+    let public_key = (g * sk).to_affine();
+    // println!("public key: {:?}", public_key,);
+    //
+    let a = public_key.to_bytes();
+
+    println!("pk: {:?}, aaa: {:?}", public_key, a,);
+    // EpAffine::from_bytes(bytes)
+    let b = EpAffine::from_bytes(&a).unwrap();
+    println!("c: {:?}", b);
+    println!("re pk: {:?}", b);
+
+    // Generate a valid signature
+    // Suppose `m_hash` is the message hash
+    let msg_hash = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
+
+    // Draw arandomness
+    let k = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+    let k_inv = k.invert().unwrap();
+
+    // Calculate `r`
+    let big_r = g * k;
+    let r_point = big_r.to_affine().coordinates().unwrap();
+    let x = r_point.x();
+    let r = pos_merkle::mod_n::<pallas::Affine>(*x);
+
+    // Calculate `s`
+    let s = k_inv * (msg_hash + (r * sk));
+    // println!("r: {:?}, s: {:?}", r, s);
+
+    // Sanity check. Ensure we construct a valid signature. So lets verify it
+    {
+        let s_inv = s.invert().unwrap();
+        let u_1 = msg_hash * s_inv;
+        let u_2 = r * s_inv;
+        let r_point = ((g * u_1) + (public_key * u_2))
+            .to_affine()
+            .coordinates()
+            .unwrap();
+        let x_candidate = r_point.x();
+        let r_candidate = pos_merkle::mod_n::<pallas::Affine>(*x_candidate);
+
+        assert_eq!(r, r_candidate);
+    }
+
+    // let (t, u) = {
+    //     let r_inv = r.invert().unwrap();
+    //     let t = big_r * r_inv;
+    //     let u = -(g * (r_inv * msg_hash));
+
+    //     // let u_neg = u.neg();
+    //     // println!("444 u_neg: {:?}", u_neg);
+
+    //     let pk_candidate = (t * s + u).to_affine();
+    //     assert_eq!(public_key, pk_candidate);
+
+    //     (t.to_affine(), u.to_affine())
+    // };
+
+    ////////////////////////////////////////////////////////////
+    //// Merkle proof
+    ////////////////////////////////////////////////////////////
+    let path = [
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+        Fp::from(1),
+    ];
+
+    let leaf = Fp::from(2);
+
+    let pos = 0;
+
+    let pos_bits: [bool; 31] = i2lebsp(pos as u64);
+
+    let mut root = leaf;
+    for (idx, el) in path.iter().enumerate() {
+        let msg = if pos_bits[idx] {
+            [*el, root]
+        } else {
+            [root, *el]
+        };
+
+        // println!("idx: {}, msg: {:?}", idx, msg);
+        root = poseidon::Hash::<Fp, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
+    }
+
+    let proof =
+        pos_merkle::gen_id_proof::<EpAffine, Fp>(path, leaf, root, pos, public_key, msg_hash, r, s)
+            .unwrap();
+
+    println!("proof: {:?}", proof);
+
+    return Ok(proof);
 }
 
 // A handler for "/" page.
-async fn home_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+    println!("gen proof");
     // Access the app state.
     let state = req.data::<State>().unwrap();
-
-    let rows = state
-        .pg_client
-        .query("SELECT * from proofs", &[])
-        .await
-        .unwrap();
-
-    // let mut v =vec![];
-
-    // for row in rows {
-
-    // }
-
-    // println!("State value: {}", state.0);
-
-    let proof = Proof { power: 1 };
 
     // let region_provider = RegionProviderChain::default_provider();
     // let config = aws_config::from_env().region(region_provider).load().await;
 
     // aws rds call
+    //
 
-    let proofs = vec![proof];
+    let proof = gen_proof().await.unwrap();
 
-    let data = serde_json::to_string(&proofs).unwrap();
+    let proof_resp = ProofResponse { proof };
+
+    let data = serde_json::to_string(&proof_resp).unwrap();
 
     let res = Response::builder()
         .header(header::CONTENT_TYPE, "application/json")
@@ -96,12 +257,13 @@ fn router(pg_client: Arc<Client>) -> Router<Body, Infallible> {
         .data(state)
         .middleware(Middleware::pre(logger))
         .middleware(enable_cors_all())
-        .get("/proofs", home_handler)
+        .post("/gen_proof", gen_proof_handler)
         .get("/users/:userId", user_handler)
         .err_handler_with_info(error_handler)
         .build()
         .unwrap()
 }
+
 #[tokio::main]
 async fn main() {
     let (pg_client, connection) = tokio_postgres::connect(
