@@ -26,7 +26,9 @@ use halo2_gadgets::{
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
 use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp, Fq};
-use halo2_proofs::halo2curves::secp256k1::{Secp256k1, Secp256k1Affine, Secp256k1Uncompressed};
+use halo2_proofs::halo2curves::secp256k1::{
+    Fp as SecFp, Secp256k1, Secp256k1Affine, Secp256k1Uncompressed,
+};
 use halo2_proofs::halo2curves::serde::SerdeObject;
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
@@ -348,8 +350,11 @@ pub fn test_poseidon2() {
     let pk_1 = public_key.to_bytes();
     println!("pk_1: {:?}, ", pk_1);
 
+    let a = SecFp::size();
+    println!("fff: {}", a);
+
     let aaa = public_key.to_uncompressed();
-    println!("aaa: {:?}", aaa);
+    // println!("aaa: {:?}", aaa.to_byte);
 
     let pk = "04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
     let vv = hex::decode(pk).unwrap();
