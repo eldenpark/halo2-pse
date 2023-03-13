@@ -4,13 +4,6 @@ import styles from "./Main.module.scss";
 import ProofSummaryList from "@/components/ProofSummaryList/ProofSummaryList";
 import Left from "./Left";
 
-import { MetaMaskInpageProvider } from "@metamask/providers";
-
-declare global {
-  interface Window {
-    ethereum?: MetaMaskInpageProvider;
-  }
-}
 
 const TopNav = () => {
   return (
