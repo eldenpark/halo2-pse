@@ -294,6 +294,8 @@ impl<
 
                     let pk_in_circuit = ecc_chip.assign_point(ctx, self.public_key)?;
 
+                    println!(">>> pk: {:?}", pk_in_circuit);
+
                     let pk_assigned = AssignedPublicKey {
                         point: pk_in_circuit,
                     };
@@ -341,15 +343,15 @@ pub fn test_poseidon2() {
     // Generate a key pair
     let sk = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
     let public_key = (g * sk).to_affine();
-    // println!("public key: {:?}", public_key,);
-    //
-    let a = public_key.to_bytes();
 
-    println!("pk: {:?}, aaa: {:?}", public_key, a,);
+    println!(">>> out circuit public key: {:?}", public_key);
+
+    // let a = public_key.to_bytes();
+    // let b = EpAffine::from_bytes(&a).unwrap();
+    // println!("pk: {:?}, aaa: {:?}", public_key, a,);
     // EpAffine::from_bytes(bytes)
-    let b = EpAffine::from_bytes(&a).unwrap();
-    println!("c: {:?}", b);
-    println!("re pk: {:?}", b);
+    // println!("c: {:?}", b);
+    // println!("re pk: {:?}", b);
 
     // Generate a valid signature
     // Suppose `m_hash` is the message hash
@@ -493,11 +495,11 @@ pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
-    // let prover = MockProver::run(k, &circuit, instance).unwrap();
-    // prover.verify().unwrap();
-    // println!("\nMock prover susccess!!!");
+    let prover = MockProver::run(k, &circuit, instance).unwrap();
+    prover.verify().unwrap();
+    println!("\nMock prover susccess!!!");
 
-    // return Ok(vec![]);
+    return Ok(vec![]);
 
     println!("params generating, t: {:?}", start.elapsed());
 
