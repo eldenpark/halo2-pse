@@ -343,6 +343,7 @@ pub fn test_poseidon2() {
     // Generate a key pair
     let sk = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
     let public_key = (g * sk).to_affine();
+    let pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
 
     println!(">>> out circuit public key: {:?}", public_key);
 
