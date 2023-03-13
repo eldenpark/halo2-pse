@@ -10,8 +10,8 @@ use crate::ProofError;
 use ecc::{GeneralEccChip, Point};
 use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
-use group::Group;
 use group::{Curve, GroupEncoding};
+use group::{Group, UncompressedEncoding};
 use halo2_gadgets::ecc::NonIdentityPoint;
 use halo2_gadgets::poseidon::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use halo2_gadgets::utilities::{i2lebsp, Var};
@@ -26,6 +26,8 @@ use halo2_gadgets::{
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
 use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp, Fq};
+use halo2_proofs::halo2curves::secp256k1::{Secp256k1, Secp256k1Affine, Secp256k1Uncompressed};
+use halo2_proofs::halo2curves::serde::SerdeObject;
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
 use halo2_proofs::poly::commitment::{Params, ParamsProver};
@@ -338,12 +340,23 @@ pub fn test_poseidon2() {
     println!("111");
 
     // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
-    let g = EpAffine::generator();
+    let g = Secp256k1Affine::generator();
 
     // Generate a key pair
-    let sk = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
+    let sk = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
     let public_key = (g * sk).to_affine();
-    let pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
+    let pk_1 = public_key.to_bytes();
+    println!("pk_1: {:?}, ", pk_1);
+
+    let aaa = public_key.to_uncompressed();
+    println!("aaa: {:?}", aaa);
+
+    let pk = "04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
+    let vv = hex::decode(pk).unwrap();
+    println!("vv: {:?}, len: {}", vv, vv.len());
+
+    // Secp256k1Affine::from_bytes(&vv);
+    // let bb = Secp256k1Affine::from(&vv).unwrap();
 
     println!(">>> out circuit public key: {:?}", public_key);
 
@@ -356,17 +369,17 @@ pub fn test_poseidon2() {
 
     // Generate a valid signature
     // Suppose `m_hash` is the message hash
-    let msg_hash = <EpAffine as CurveAffine>::ScalarExt::random(OsRng);
+    let msg_hash = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
 
-    // Draw arandomness
-    let k = <pallas::Affine as CurveAffine>::ScalarExt::random(OsRng);
+    // Draw a randomness
+    let k = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
     let k_inv = k.invert().unwrap();
 
     // Calculate `r`
     let big_r = g * k;
     let r_point = big_r.to_affine().coordinates().unwrap();
     let x = r_point.x();
-    let r = mod_n::<pallas::Affine>(*x);
+    let r = mod_n::<Secp256k1Affine>(*x);
 
     // Calculate `s`
     let s = k_inv * (msg_hash + (r * sk));
@@ -382,7 +395,7 @@ pub fn test_poseidon2() {
             .coordinates()
             .unwrap();
         let x_candidate = r_point.x();
-        let r_candidate = mod_n::<pallas::Affine>(*x_candidate);
+        let r_candidate = mod_n::<Secp256k1Affine>(*x_candidate);
 
         assert_eq!(r, r_candidate);
     }
@@ -456,7 +469,7 @@ pub fn test_poseidon2() {
         root = poseidon::Hash::<Fp, OrchardNullifier, ConstantLength<2>, 3, 2>::init().hash(msg);
     }
 
-    gen_id_proof::<EpAffine, Fp>(path, leaf, root, pos, public_key, msg_hash, r, s).unwrap();
+    gen_id_proof::<Secp256k1Affine, Fp>(path, leaf, root, pos, public_key, msg_hash, r, s).unwrap();
 }
 
 pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(

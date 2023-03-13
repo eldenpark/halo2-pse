@@ -19,6 +19,7 @@ maingate = { path = "../maingate" }
 group = "0.12"
 rand = "0.8"
 ff = "0.12"
+hex = "0.4.3"
 
 # web-sys = { version = "0.3.61", features = ["console", "Window", "Performance", "PerformanceTiming"] }
 
