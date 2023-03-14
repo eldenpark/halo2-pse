@@ -27,7 +27,7 @@ use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
 use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp, Fq};
 use halo2_proofs::halo2curves::secp256k1::{
-    Fp as SecFp, Secp256k1, Secp256k1Affine, Secp256k1Uncompressed,
+    Fp as SecFp, Secp256k1, Secp256k1Affine, Secp256k1Compressed, Secp256k1Uncompressed,
 };
 use halo2_proofs::halo2curves::serde::SerdeObject;
 use halo2_proofs::halo2curves::CurveAffine;
@@ -353,12 +353,27 @@ pub fn test_poseidon2() {
     let a = SecFp::size();
     println!("fff: {}", a);
 
-    let aaa = public_key.to_uncompressed();
-    // println!("aaa: {:?}", aaa.to_byte);
-
-    let pk = "04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
+    let pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
+    let pk = pk.strip_prefix("0x04").unwrap();
     let vv = hex::decode(pk).unwrap();
-    println!("vv: {:?}, len: {}", vv, vv.len());
+    println!("vv len: {}", vv.len());
+    let b = &vv[..32];
+    let b2 = &vv[32..];
+    let sign = (b2[0] & 1) << 6;
+    let mut zzz = [0u8; 33];
+    zzz[..32].clone_from_slice(&b);
+    zzz[32] |= sign;
+    println!("sign: {}, zzz: {:?}", sign, zzz);
+    let bbb = Secp256k1Compressed(zzz);
+    let bbbb = Secp256k1::from_bytes(&bbb).unwrap();
+    println!("bbb: {:?}", bbbb);
+    //
+    // println!("vv: {:?}, len: {}", vv, vv.len());
+    // println!("b: {:?}, len: {}", b, b.len());
+    // println!("cc: {:?}", cc);
+
+    // Secp256k1Affine::from_bytes_unchecked(b);
+    Secp256k1::from_bytes(&pk_1);
 
     // Secp256k1Affine::from_bytes(&vv);
     // let bb = Secp256k1Affine::from(&vv).unwrap();

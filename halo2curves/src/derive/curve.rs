@@ -160,7 +160,7 @@ macro_rules! new_curve_impl {
                 #[allow(non_upper_case_globals)]
                 const [< $name _COMPRESSED_SIZE >]: usize = if $flags_extra_byte {$base::size() + 1} else {$base::size()};
                 #[derive(Copy, Clone)]
-                pub struct [<$name Compressed >]([u8; [< $name _COMPRESSED_SIZE >]]);
+                pub struct [<$name Compressed >](pub [u8; [< $name _COMPRESSED_SIZE >]]);
 
                 // Compressed
                 impl std::fmt::Debug for [< $name Compressed >] {
