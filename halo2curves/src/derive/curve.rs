@@ -898,6 +898,10 @@ macro_rules! new_curve_impl {
 
             fn is_on_curve(&self) -> Choice {
                 // y^2 - x^3 ?= b
+                let a = self.y.square() - self.x.square() * self.x;
+                let b = &$name::curve_constant_b();
+                println!(">> a: {:?}, b: {:?}", a, b);
+
                 (self.y.square() - self.x.square() * self.x).ct_eq(&$name::curve_constant_b())
                     | self.is_identity()
             }
@@ -910,6 +914,9 @@ macro_rules! new_curve_impl {
                 let p = $name_affine {
                     x, y
                 };
+
+                // println!("111 {:?}", p.is_on_curve());
+
                 CtOption::new(p, p.is_on_curve())
             }
 

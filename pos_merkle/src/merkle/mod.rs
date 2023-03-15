@@ -354,6 +354,9 @@ pub fn test_poseidon2() {
     let public_key = (g * sk).to_affine();
     println!("public_key: {:?}, ", public_key);
 
+    let public_key = (g * sk).to_affine();
+    println!("public_key is on curve: {:?}", public_key.is_on_curve());
+
     let pk_1 = public_key.to_bytes();
     println!("pk_1: {:?}, ", pk_1);
 
@@ -382,21 +385,37 @@ pub fn test_poseidon2() {
     println!("public_key_re: {:?}", public_key_re);
     // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be7900
     // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be79b8d410fb8fd0479c195485a648b417fda808110efcfba45d65c4a32677da3a48
-    // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be79b8d410fb8fd0479c195485a648b417fda808110efcfba45d65c4a32677da3a4800
 
     let pk_uncompressed = public_key.to_uncompressed();
-    println!("pk_uncompressed: {:?} ", pk_uncompressed);
-    // u8::conditional_select(&0u8, &(1u8 << 6), self.is_identity());
-    Secp256k1Affine::from_raw_bytes(&[]);
+    // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be79b8d410fb8fd0479c195485a648b417fda808110efcfba45d65c4a32677da3a4800
+    println!(
+        "pk_uncompressed: {:?} {}",
+        pk_uncompressed,
+        pk_uncompressed.0.len()
+    );
 
-    let pk_uncompressed_str = hex::encode(pk_uncompressed);
-    println!("pk_uncompressed_str: {:?} ", pk_uncompressed_str);
+    let pk_uncompressed = &pk_uncompressed.0[..64];
 
-    let pk_uncompressed_inner: [u8; 65] = pk_uncompressed.0.try_into().unwrap();
-    let cp = Secp256k1Uncompressed(pk_uncompressed_inner);
-    let af = Secp256k1Affine::from_uncompressed(&cp).unwrap();
-    println!("cp: {:?}", cp);
-    println!("af: {:?}", af);
+    // let pk_uncompressed_vec = hex::decode(pk_uncompressed).unwrap();
+
+    let pk_uncompressed_x_arr: [u8; 32] = pk_uncompressed[..32].try_into().unwrap();
+    let pk_x = SecFp::from_bytes(&pk_uncompressed_x_arr).unwrap();
+
+    let pk_uncompressed_y_arr: [u8; 32] = pk_uncompressed[32..64].try_into().unwrap();
+    let pk_y = SecFp::from_bytes(&pk_uncompressed_y_arr).unwrap();
+
+    println!("pk_x: {:?}, pk_y: {:?}", pk_x, pk_y);
+
+    Secp256k1Affine::from_xy(pk_x, pk_y).unwrap();
+
+    // let pk_uncompressed_str = hex::encode(pk_uncompressed);
+    // println!("pk_uncompressed_str: {:?} ", pk_uncompressed_str);
+
+    // let pk_uncompressed_inner: [u8; 65] = pk_uncompressed.try_into().unwrap();
+    // let cp = Secp256k1Uncompressed(pk_uncompressed_inner);
+    // let af = Secp256k1Affine::from_uncompressed(&cp).unwrap();
+    // println!("cp: {:?}", cp);
+    // println!("af: {:?}", af);
 
     let my_pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
     let my_pk = my_pk.strip_prefix("0x04").unwrap();
