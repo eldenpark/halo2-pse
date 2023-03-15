@@ -399,12 +399,18 @@ pub fn test_poseidon2() {
     // let pk_uncompressed_vec = hex::decode(pk_uncompressed).unwrap();
 
     let pk_uncompressed_x_arr: [u8; 32] = pk_uncompressed[..32].try_into().unwrap();
+    let pk_uncompressed_x_str = hex::encode(pk_uncompressed_x_arr);
+    println!("pk_uncompressed_x_xtr: {}", pk_uncompressed_x_str);
+
     let pk_x = SecFp::from_bytes(&pk_uncompressed_x_arr).unwrap();
 
     let pk_uncompressed_y_arr: [u8; 32] = pk_uncompressed[32..64].try_into().unwrap();
+    let pk_uncompressed_y_str = hex::encode(pk_uncompressed_y_arr);
+    println!("pk_uncompressed_y_xtr: {}", pk_uncompressed_y_str);
+
     let pk_y = SecFp::from_bytes(&pk_uncompressed_y_arr).unwrap();
 
-    println!("pk_x: {:?}, pk_y: {:?}", pk_x, pk_y);
+    println!("\npk_x: {:?}, pk_y: {:?}\n", pk_x, pk_y);
 
     Secp256k1Affine::from_xy(pk_x, pk_y).unwrap();
 
