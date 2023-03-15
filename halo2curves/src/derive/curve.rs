@@ -232,19 +232,11 @@ macro_rules! new_curve_impl {
                         } else {
                             let (x, y) = (self.x, self.y);
                             let sign = (y.to_bytes()[0] & 1) << 6;
-                            println!("sign: {}", sign);
 
                             let mut xbytes = [0u8; [< $name _COMPRESSED_SIZE >]];
-
-                            println!("xbytes1: {:?}, {}", xbytes, xbytes.len());
-
                             xbytes[..$base::size()].copy_from_slice(&x.to_bytes());
-
-                            println!("xbytes2: {:?}, {}", xbytes, xbytes.len());
-
                             xbytes[[< $name _COMPRESSED_SIZE >] - 1] |= sign;
 
-                            println!("xbytes3: {:?}, {}", xbytes, xbytes.len());
                             [< $name Compressed >](xbytes)
                         }
                     }
@@ -374,17 +366,11 @@ macro_rules! new_curve_impl {
                                 &$base::conditional_select(&self.x, &$base::zero(), self.is_identity()).to_bytes()[..],
                             );
 
-                            println!("res1: {:?}, {}", res, res.len());
-
                             res[$base::size().. 2*$base::size()].copy_from_slice(
                                 &$base::conditional_select(&self.y, &$base::zero(), self.is_identity()).to_bytes()[..],
                             );
 
-                            println!("res2: {:?}, ", res);
-
                             res[[< $name _UNCOMPRESSED_SIZE >] - 1] |= u8::conditional_select(&0u8, &(1u8 << 6), self.is_identity());
-
-                            println!("res3: {:?}, ", res);
 
                             [< $name Uncompressed >](res)
                         }

@@ -52,6 +52,7 @@ use maingate::{
 use rand::rngs::OsRng;
 use std::convert::TryInto;
 use std::env;
+use std::fmt::Debug;
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Seek, Write};
 use std::marker::PhantomData;
@@ -345,28 +346,92 @@ pub fn test_poseidon2() {
     let g = Secp256k1Affine::generator();
 
     // Generate a key pair
-    let sk = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
+    // let sk = <Secp256k1Affine as CurveAffine>::ScalarExt::radom(OsRng);
+    let sk = <Secp256k1Affine as CurveAffine>::ScalarExt::one();
+    // let sk = Fq::one();
+    println!("sk: {:?}", sk);
 
     let public_key = (g * sk).to_affine();
-
-    // let public_key.x.to_bytes();
+    println!("public_key: {:?}, ", public_key);
 
     let pk_1 = public_key.to_bytes();
-
     println!("pk_1: {:?}, ", pk_1);
 
-    // Secp256k1Affine::from_uncompressed(bytes)
-    // f.to_bytes
+    let pk_1_str = hex::encode(pk_1);
+    println!("pk_1_str: {:?}, ", pk_1_str);
 
-    // let a = public_key.to_raw_bytes();
-    // println!("a: {:?}, {}", a, a.len());
+    let pk_1_x_fp = public_key.x;
+    println!("pk_1_x_fp: {:?}", pk_1_x_fp);
 
-    let pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
+    let pk_1_x_bytes = pk_1_x_fp.to_bytes();
+    println!("pk_1_x_bytes: {:?}", pk_1_x_bytes);
+
+    let pk_1_x_str = hex::encode(pk_1_x_bytes);
+    println!("pk_1_x_str: {:?}", pk_1_x_str);
+
+    let pk_1_x_raw_bytes = pk_1_x_fp.to_raw_bytes();
+    println!("pk_1_x_raw_bytes: {:?}", pk_1_x_raw_bytes);
+
+    let pk_1_x_raw_str = hex::encode(pk_1_x_raw_bytes);
+    println!("pk_1_x_raw_str: {:?}", pk_1_x_raw_str);
+
+    let pk_1_y_fp = public_key.y;
+    println!("pk_1_y_fp: {:?}", pk_1_y_fp);
+
+    let public_key_re = Secp256k1Affine::from_xy(pk_1_x_fp, pk_1_y_fp).unwrap();
+    println!("public_key_re: {:?}", public_key_re);
+    // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be7900
+    // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be79b8d410fb8fd0479c195485a648b417fda808110efcfba45d65c4a32677da3a48
+    // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be79b8d410fb8fd0479c195485a648b417fda808110efcfba45d65c4a32677da3a4800
+
+    let pk_uncompressed = public_key.to_uncompressed();
+    println!("pk_uncompressed: {:?} ", pk_uncompressed);
+    // u8::conditional_select(&0u8, &(1u8 << 6), self.is_identity());
+    Secp256k1Affine::from_raw_bytes(&[]);
+
+    let pk_uncompressed_str = hex::encode(pk_uncompressed);
+    println!("pk_uncompressed_str: {:?} ", pk_uncompressed_str);
+
+    let pk_uncompressed_inner: [u8; 65] = pk_uncompressed.0.try_into().unwrap();
+    let cp = Secp256k1Uncompressed(pk_uncompressed_inner);
+    let af = Secp256k1Affine::from_uncompressed(&cp).unwrap();
+    println!("cp: {:?}", cp);
+    println!("af: {:?}", af);
+
+    let my_pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
+    let my_pk = my_pk.strip_prefix("0x04").unwrap();
+    println!("my_pk: {:?}, {}", my_pk, my_pk.len());
+
+    let my_pk_x_vec = hex::decode(my_pk).unwrap();
+    let my_pk_x_bytes: [u8; 32] = my_pk_x_vec[..32].try_into().unwrap();
+    println!("my_pk_x_bytes: {:?}", my_pk_x_bytes);
+
+    let my_pk_x_fp = SecFp::from_bytes(&my_pk_x_bytes).unwrap();
+    println!("my_pk_x_fp: {:?}", my_pk_x_fp);
+
+    let my_pk_y_bytes: [u8; 32] = my_pk_x_vec[32..64].try_into().unwrap();
+    println!("my_pk_y_bytes: {:?}", my_pk_y_bytes);
+
+    let my_pk_y_fp = SecFp::from_bytes(&my_pk_y_bytes).unwrap();
+    println!("my_pk_y_fp: {:?}", my_pk_y_fp);
+
+    // let mut fp_bytes = [0u8; 32 * 2];
+    // fp_bytes[..32].clone_from_slice(&my_pk_x_bytes);
+    // fp_bytes[32..64].clone_from_slice(&my_pk_y_bytes);
+    let my_secp_affine = Secp256k1Affine::from_xy(my_pk_x_fp, my_pk_y_fp).unwrap();
+    println!("my_secp_affine: {:?}", my_secp_affine);
+
+    let fp_size = SecFp::size();
+    println!("fp_size: {}", fp_size);
+
+    return;
+
+    // let pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
     // let pk = pk.strip_prefix("0x04").unwrap();
-    let vv = hex::decode(pk).unwrap();
-    let x: [u8; 32] = vv[..32].try_into().unwrap();
+    // let vv = hex::decode(pk).unwrap();
+    // let x: [u8; 32] = vv[..32].try_into().unwrap();
 
-    Fp::one();
+    // Fp::one();
     // let vv3: [u8; 32] = vv[32..64].try_into().unwrap();
 
     // println!("vv len: {}", vv.len());
