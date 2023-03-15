@@ -346,34 +346,65 @@ pub fn test_poseidon2() {
 
     // Generate a key pair
     let sk = <Secp256k1Affine as CurveAffine>::ScalarExt::random(OsRng);
+
     let public_key = (g * sk).to_affine();
+
+    // let public_key.x.to_bytes();
+
     let pk_1 = public_key.to_bytes();
+
     println!("pk_1: {:?}, ", pk_1);
 
-    let a = SecFp::size();
-    println!("fff: {}", a);
+    // Secp256k1Affine::from_uncompressed(bytes)
+    // f.to_bytes
+
+    // let a = public_key.to_raw_bytes();
+    // println!("a: {:?}, {}", a, a.len());
 
     let pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
-    let pk = pk.strip_prefix("0x04").unwrap();
+    // let pk = pk.strip_prefix("0x04").unwrap();
     let vv = hex::decode(pk).unwrap();
-    println!("vv len: {}", vv.len());
-    let b = &vv[..32];
-    let b2 = &vv[32..];
-    let sign = (b2[0] & 1) << 6;
-    let mut zzz = [0u8; 33];
-    zzz[..32].clone_from_slice(&b);
-    zzz[32] |= sign;
-    println!("sign: {}, zzz: {:?}", sign, zzz);
-    let bbb = Secp256k1Compressed(zzz);
-    let bbbb = Secp256k1::from_bytes(&bbb).unwrap();
-    println!("bbb: {:?}", bbbb);
+    let x: [u8; 32] = vv[..32].try_into().unwrap();
+
+    Fp::one();
+    // let vv3: [u8; 32] = vv[32..64].try_into().unwrap();
+
+    // println!("vv len: {}", vv.len());
+    // let x = SecFp::from_bytes(&vv2).unwrap();
+    // let y = SecFp::from_bytes(&vv3).unwrap();
+    // let x1 = x.to_raw_bytes();
+    // let y1 = y.to_raw_bytes();
+    // let mut zz = [0u8; 64];
+    // zz[..32].clone_from_slice(&x1);
+    // zz[32..64].clone_from_slice(&y1);
+    // println!("x: {:?}, y: {:?}", x, y);
+    // println!("z: {:?}", zz);
+    // let bb = Secp256k1::from_raw_bytes(&zz).unwrap();
+    // println!("bb: {:?}", bb);
+
+    // let mut arr = [0u8; 65];
+    // arr[..64].clone_from_slice(&vv);
+
+    // let uc = Secp256k1Uncompressed(arr);
+    // Secp256k1::from_bytes(uc);
+    // let b = &vv[..32];
+    // let b2 = &vv[32..];
+    // let sign = (b2[0] & 1) << 6;
+    // let mut zzz = [0u8; 33];
+    // zzz[..32].clone_from_slice(&b);
+    // zzz[32] |= sign;
+    // println!("sign: {}, zzz: {:?}", sign, zzz);
+    // // Secp256k1Uncompressed
+    // let bbb = Secp256k1Compressed(zzz);
+    // let bbbb = Secp256k1::from_bytes(&bbb).unwrap();
+    // println!("bbb: {:?}", bbbb);
     //
     // println!("vv: {:?}, len: {}", vv, vv.len());
     // println!("b: {:?}, len: {}", b, b.len());
     // println!("cc: {:?}", cc);
 
     // Secp256k1Affine::from_bytes_unchecked(b);
-    Secp256k1::from_bytes(&pk_1);
+    // Secp256k1::from_bytes(&pk_1);
 
     // Secp256k1Affine::from_bytes(&vv);
     // let bb = Secp256k1Affine::from(&vv).unwrap();
