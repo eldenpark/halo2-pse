@@ -711,7 +711,7 @@ fn pub_key_hash_to_address<F: Field>(pk_hash: &[u8]) -> F {
 #[cfg(test)]
 mod sign_verify_tests {
     use super::*;
-    use crate::util::Challenges;
+    use crate::zkevm_circuits::util::Challenges;
     use bus_mapping::circuit_input_builder::keccak_inputs_sign_verify;
     use eth_types::sign_types::sign;
     use halo2_proofs::arithmetic::Field as HaloField;

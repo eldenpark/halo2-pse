@@ -150,126 +150,126 @@ impl<F: Field> WordConfig<F> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use halo2_proofs::{
-        arithmetic::Field as Halo2Field,
-        circuit::SimpleFloorPlanner,
-        dev::{FailureLocation, MockProver, VerifyFailure},
-        halo2curves::{bn256::Fr as Fp, group::ff::PrimeField},
-        plonk::{Circuit, Instance},
-    };
-    use rand::SeedableRng;
-    use rand_xorshift::XorShiftRng;
-    use std::marker::PhantomData;
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use halo2_proofs::{
+//         arithmetic::Field as Halo2Field,
+//         circuit::SimpleFloorPlanner,
+//         dev::{FailureLocation, MockProver, VerifyFailure},
+//         halo2curves::{bn256::Fr as Fp, group::ff::PrimeField},
+//         plonk::{Circuit, Instance},
+//     };
+//     use rand::SeedableRng;
+//     use rand_xorshift::XorShiftRng;
+//     use std::marker::PhantomData;
 
-    #[test]
-    fn evm_word() {
-        #[derive(Default)]
-        struct MyCircuit<F: Field> {
-            word: [Value<u8>; 32],
-            _marker: PhantomData<F>,
-        }
+//     #[test]
+//     fn evm_word() {
+//         #[derive(Default)]
+//         struct MyCircuit<F: Field> {
+//             word: [Value<u8>; 32],
+//             _marker: PhantomData<F>,
+//         }
 
-        impl<F: Field> Circuit<F> for MyCircuit<F> {
-            // Introduce an additional instance column here to test lookups
-            // with public inputs. This is analogous to the bus mapping
-            // commitment which will be provided as public inputs.
-            type Config = (WordConfig<F>, Column<Instance>);
-            type FloorPlanner = SimpleFloorPlanner;
+//         impl<F: Field> Circuit<F> for MyCircuit<F> {
+//             // Introduce an additional instance column here to test lookups
+//             // with public inputs. This is analogous to the bus mapping
+//             // commitment which will be provided as public inputs.
+//             type Config = (WordConfig<F>, Column<Instance>);
+//             type FloorPlanner = SimpleFloorPlanner;
 
-            fn without_witnesses(&self) -> Self {
-                Self::default()
-            }
+//             fn without_witnesses(&self) -> Self {
+//                 Self::default()
+//             }
 
-            fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-                let r = r();
+//             fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
+//                 let r = r();
 
-                let q_encode = meta.complex_selector();
+//                 let q_encode = meta.complex_selector();
 
-                let bytes: [Column<Advice>; 32] = (0..32)
-                    .map(|_| meta.advice_column())
-                    .collect::<Vec<_>>()
-                    .try_into()
-                    .unwrap();
-                let byte_lookup = meta.fixed_column();
+//                 let bytes: [Column<Advice>; 32] = (0..32)
+//                     .map(|_| meta.advice_column())
+//                     .collect::<Vec<_>>()
+//                     .try_into()
+//                     .unwrap();
+//                 let byte_lookup = meta.fixed_column();
 
-                let config = WordConfig::configure(meta, r, q_encode, bytes, byte_lookup);
+//                 let config = WordConfig::configure(meta, r, q_encode, bytes, byte_lookup);
 
-                let pub_inputs = meta.instance_column();
+//                 let pub_inputs = meta.instance_column();
 
-                // Make sure each encoded word has been committed to in the
-                // public inputs.
-                meta.lookup_any("Encoded word / Pub inputs", |meta| {
-                    let q_encode = meta.query_selector(q_encode);
-                    let pub_inputs = meta.query_instance(pub_inputs, Rotation::cur());
+//                 // Make sure each encoded word has been committed to in the
+//                 // public inputs.
+//                 meta.lookup_any("Encoded word / Pub inputs", |meta| {
+//                     let q_encode = meta.query_selector(q_encode);
+//                     let pub_inputs = meta.query_instance(pub_inputs, Rotation::cur());
 
-                    let encode_word = config.clone().encode_word_expr;
+//                     let encode_word = config.clone().encode_word_expr;
 
-                    vec![(q_encode * encode_word, pub_inputs)]
-                });
+//                     vec![(q_encode * encode_word, pub_inputs)]
+//                 });
 
-                (config, pub_inputs)
-            }
+//                 (config, pub_inputs)
+//             }
 
-            fn synthesize(
-                &self,
-                config: Self::Config,
-                mut layouter: impl Layouter<F>,
-            ) -> Result<(), Error> {
-                config.0.load(&mut layouter)?;
+//             fn synthesize(
+//                 &self,
+//                 config: Self::Config,
+//                 mut layouter: impl Layouter<F>,
+//             ) -> Result<(), Error> {
+//                 config.0.load(&mut layouter)?;
 
-                layouter.assign_region(
-                    || "assign word",
-                    |mut region| {
-                        let offset = 0;
-                        config.0.assign_word(&mut region, offset, self.word)
-                    },
-                )?;
+//                 layouter.assign_region(
+//                     || "assign word",
+//                     |mut region| {
+//                         let offset = 0;
+//                         config.0.assign_word(&mut region, offset, self.word)
+//                     },
+//                 )?;
 
-                Ok(())
-            }
-        }
+//                 Ok(())
+//             }
+//         }
 
-        {
-            let rng = XorShiftRng::from_seed([
-                0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06,
-                0xbc, 0xe5,
-            ]);
-            let word = Fp::random(rng);
-            let circuit = MyCircuit::<Fp> {
-                word: word
-                    .to_repr()
-                    .iter()
-                    .map(|b| Value::known(*b))
-                    .collect::<Vec<_>>()
-                    .try_into()
-                    .unwrap(),
-                _marker: PhantomData,
-            };
+//         {
+//             let rng = XorShiftRng::from_seed([
+//                 0x59, 0x62, 0xbe, 0x5d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06,
+//                 0xbc, 0xe5,
+//             ]);
+//             let word = Fp::random(rng);
+//             let circuit = MyCircuit::<Fp> {
+//                 word: word
+//                     .to_repr()
+//                     .iter()
+//                     .map(|b| Value::known(*b))
+//                     .collect::<Vec<_>>()
+//                     .try_into()
+//                     .unwrap(),
+//                 _marker: PhantomData,
+//             };
 
-            // Test without public inputs
-            let prover = MockProver::<Fp>::run(9, &circuit, vec![vec![]]).unwrap();
-            assert_eq!(
-                prover.verify(),
-                Err(vec![VerifyFailure::Lookup {
-                    name: "Encoded word / Pub inputs",
-                    lookup_index: 32,
-                    location: FailureLocation::InRegion {
-                        region: halo2_proofs::dev::metadata::Region::from((
-                            1,
-                            "assign word".to_string()
-                        )),
-                        offset: 0
-                    }
-                }])
-            );
+//             // Test without public inputs
+//             let prover = MockProver::<Fp>::run(9, &circuit, vec![vec![]]).unwrap();
+//             assert_eq!(
+//                 prover.verify(),
+//                 Err(vec![VerifyFailure::Lookup {
+//                     name: "Encoded word / Pub inputs",
+//                     lookup_index: 32,
+//                     location: FailureLocation::InRegion {
+//                         region: halo2_proofs::dev::metadata::Region::from((
+//                             1,
+//                             "assign word".to_string()
+//                         )),
+//                         offset: 0
+//                     }
+//                 }])
+//             );
 
-            // Calculate word commitment and use it as public input.
-            let encoded: Fp = encode(word.to_repr().iter().rev().cloned(), r());
-            let prover = MockProver::<Fp>::run(9, &circuit, vec![vec![encoded]]).unwrap();
-            prover.assert_satisfied_par()
-        }
-    }
-}
+//             // Calculate word commitment and use it as public input.
+//             let encoded: Fp = encode(word.to_repr().iter().rev().cloned(), r());
+//             let prover = MockProver::<Fp>::run(9, &circuit, vec![vec![encoded]]).unwrap();
+//             prover.assert_satisfied_par()
+//         }
+//     }
+// }

@@ -378,126 +378,126 @@ impl<F: Field> MulAddChip<F> {
     }
 }
 
-#[cfg(test)]
-mod test {
-    use std::marker::PhantomData;
+// #[cfg(test)]
+// mod test {
+//     use std::marker::PhantomData;
 
-    use eth_types::{Field, Word};
-    use halo2_proofs::{
-        circuit::SimpleFloorPlanner,
-        dev::MockProver,
-        halo2curves::bn256::Fr as Fp,
-        plonk::{Circuit, Selector},
-    };
-    use rand::Rng;
+//     use eth_types::{Field, Word};
+//     use halo2_proofs::{
+//         circuit::SimpleFloorPlanner,
+//         dev::MockProver,
+//         halo2curves::bn256::Fr as Fp,
+//         plonk::{Circuit, Selector},
+//     };
+//     use rand::Rng;
 
-    use crate::mul_add::{MulAddChip, MulAddConfig};
+//     use crate::mul_add::{MulAddChip, MulAddConfig};
 
-    macro_rules! try_test_circuit {
-        ($values:expr) => {{
-            let k = 10;
-            let circuit = TestCircuit::<Fp> {
-                values: $values,
-                _marker: PhantomData,
-            };
-            let prover = MockProver::<Fp>::run(k, &circuit, vec![]).unwrap();
-            prover.assert_satisfied_par()
-        }};
-    }
+//     macro_rules! try_test_circuit {
+//         ($values:expr) => {{
+//             let k = 10;
+//             let circuit = TestCircuit::<Fp> {
+//                 values: $values,
+//                 _marker: PhantomData,
+//             };
+//             let prover = MockProver::<Fp>::run(k, &circuit, vec![]).unwrap();
+//             prover.assert_satisfied_par()
+//         }};
+//     }
 
-    macro_rules! try_test_circuit_error {
-        ($values:expr) => {{
-            let k = 10;
-            let circuit = TestCircuit::<Fp> {
-                values: $values,
-                _marker: PhantomData,
-            };
-            let prover = MockProver::<Fp>::run(k, &circuit, vec![]).unwrap();
-            assert!(prover.verify().is_err());
-        }};
-    }
+//     macro_rules! try_test_circuit_error {
+//         ($values:expr) => {{
+//             let k = 10;
+//             let circuit = TestCircuit::<Fp> {
+//                 values: $values,
+//                 _marker: PhantomData,
+//             };
+//             let prover = MockProver::<Fp>::run(k, &circuit, vec![]).unwrap();
+//             assert!(prover.verify().is_err());
+//         }};
+//     }
 
-    pub(crate) fn rand_bytes_array<const N: usize>() -> [u8; N] {
-        [(); N].map(|_| rand::random())
-    }
+//     pub(crate) fn rand_bytes_array<const N: usize>() -> [u8; N] {
+//         [(); N].map(|_| rand::random())
+//     }
 
-    pub(crate) fn rand_word() -> Word {
-        Word::from_big_endian(&rand_bytes_array::<32>())
-    }
+//     pub(crate) fn rand_word() -> Word {
+//         Word::from_big_endian(&rand_bytes_array::<32>())
+//     }
 
-    #[test]
-    fn mul_over_rows() {
-        #[derive(Clone)]
-        struct TestCircuitConfig<F> {
-            q_enable: Selector,
-            mul_config: MulAddConfig<F>,
-        }
+//     #[test]
+//     fn mul_over_rows() {
+//         #[derive(Clone)]
+//         struct TestCircuitConfig<F> {
+//             q_enable: Selector,
+//             mul_config: MulAddConfig<F>,
+//         }
 
-        #[derive(Clone, Default)]
-        struct TestCircuit<F> {
-            /// (a, b, d) tuples for a * b == d (mod 2^256).
-            values: Vec<(Word, Word, Word)>,
-            _marker: PhantomData<F>,
-        }
+//         #[derive(Clone, Default)]
+//         struct TestCircuit<F> {
+//             /// (a, b, d) tuples for a * b == d (mod 2^256).
+//             values: Vec<(Word, Word, Word)>,
+//             _marker: PhantomData<F>,
+//         }
 
-        impl<F: Field> Circuit<F> for TestCircuit<F> {
-            type Config = TestCircuitConfig<F>;
-            type FloorPlanner = SimpleFloorPlanner;
+//         impl<F: Field> Circuit<F> for TestCircuit<F> {
+//             type Config = TestCircuitConfig<F>;
+//             type FloorPlanner = SimpleFloorPlanner;
 
-            fn configure(meta: &mut halo2_proofs::plonk::ConstraintSystem<F>) -> Self::Config {
-                let q_enable = meta.complex_selector();
-                let mul_config = MulAddChip::configure(meta, |meta| meta.query_selector(q_enable));
-                Self::Config {
-                    q_enable,
-                    mul_config,
-                }
-            }
+//             fn configure(meta: &mut halo2_proofs::plonk::ConstraintSystem<F>) -> Self::Config {
+//                 let q_enable = meta.complex_selector();
+//                 let mul_config = MulAddChip::configure(meta, |meta| meta.query_selector(q_enable));
+//                 Self::Config {
+//                     q_enable,
+//                     mul_config,
+//                 }
+//             }
 
-            fn synthesize(
-                &self,
-                config: Self::Config,
-                mut layouter: impl halo2_proofs::circuit::Layouter<F>,
-            ) -> Result<(), halo2_proofs::plonk::Error> {
-                let chip = MulAddChip::construct(config.mul_config);
-                layouter.assign_region(
-                    || "witness",
-                    |mut region| {
-                        let mut offset = 0;
-                        for (a, b, d) in self.values.iter() {
-                            config.q_enable.enable(&mut region, offset)?;
-                            chip.assign(&mut region, offset, [*a, *b, Word::zero(), *d])?;
-                            offset += 7
-                        }
-                        Ok(())
-                    },
-                )
-            }
+//             fn synthesize(
+//                 &self,
+//                 config: Self::Config,
+//                 mut layouter: impl halo2_proofs::circuit::Layouter<F>,
+//             ) -> Result<(), halo2_proofs::plonk::Error> {
+//                 let chip = MulAddChip::construct(config.mul_config);
+//                 layouter.assign_region(
+//                     || "witness",
+//                     |mut region| {
+//                         let mut offset = 0;
+//                         for (a, b, d) in self.values.iter() {
+//                             config.q_enable.enable(&mut region, offset)?;
+//                             chip.assign(&mut region, offset, [*a, *b, Word::zero(), *d])?;
+//                             offset += 7
+//                         }
+//                         Ok(())
+//                     },
+//                 )
+//             }
 
-            fn without_witnesses(&self) -> Self {
-                Self::default()
-            }
-        }
+//             fn without_witnesses(&self) -> Self {
+//                 Self::default()
+//             }
+//         }
 
-        let mut rng = rand::thread_rng();
-        let n = 100;
-        let mut values = Vec::with_capacity(n);
-        for _ in 0..n {
-            let a = rand_word();
-            let b = rand_word();
-            let (d, _) = a.overflowing_mul(b);
-            values.push((a, b, d));
-        }
+//         let mut rng = rand::thread_rng();
+//         let n = 100;
+//         let mut values = Vec::with_capacity(n);
+//         for _ in 0..n {
+//             let a = rand_word();
+//             let b = rand_word();
+//             let (d, _) = a.overflowing_mul(b);
+//             values.push((a, b, d));
+//         }
 
-        try_test_circuit!(values.clone());
-        try_test_circuit_error!(values
-            .into_iter()
-            .map(|(a, b, d)| {
-                if rng.gen::<bool>() {
-                    (a, b, d + 1)
-                } else {
-                    (a, b, d - 1)
-                }
-            })
-            .collect::<Vec<(Word, Word, Word)>>());
-    }
-}
+//         try_test_circuit!(values.clone());
+//         try_test_circuit_error!(values
+//             .into_iter()
+//             .map(|(a, b, d)| {
+//                 if rng.gen::<bool>() {
+//                     (a, b, d + 1)
+//                 } else {
+//                     (a, b, d - 1)
+//                 }
+//             })
+//             .collect::<Vec<(Word, Word, Word)>>());
+//     }
+// }

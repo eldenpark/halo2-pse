@@ -17,11 +17,20 @@ ff = "0.12"
 hex = "0.4.3"
 log = "0.4"
 itertools = "0.10.3"
+strum = "0.24"
+strum_macros = "0.24"
+num = "0.4"
+rand_chacha = "0.3"
+ethers-core = "0.17.0"
+pretty_assertions = "1.0.0"
+rand_xorshift = "0.3"
 
 # web-sys = { version = "0.3.61", features = ["console", "Window", "Performance", "PerformanceTiming"] }
 
 halo2_proofs = { path = "../halo2_proofs" }
 halo2_gadgets = { path = "../halo2_gadgets" }
+keccak256 = { path = "../keccak256" }
+gadgets = { path = "../gadgets" }
 ecc = { path = "../ecc" }
 ecdsa = { path = "../ecdsa" }
 integer = { path = "../integer" }
