@@ -1,5 +1,5 @@
 use crate::merkle::merkle_path::MerklePath;
-use crate::{utils, ProofError};
+use crate::{mod_n, utils, ProofError};
 use ecc::{GeneralEccChip, Point};
 use ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
 use ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
@@ -388,11 +388,6 @@ impl<
 
         Ok(())
     }
-}
-
-pub fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
-    let x_big = fe_to_big(x);
-    big_to_fe(x_big)
 }
 
 #[test]
