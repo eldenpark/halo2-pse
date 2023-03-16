@@ -1,5 +1,5 @@
-use super::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use group::ff::{Field, PrimeField};
+use halo2_gadgets::poseidon::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use halo2_gadgets::utilities::cond_swap::{CondSwapConfig, CondSwapInstructions};
 use halo2_gadgets::utilities::{UtilitiesInstructions, Var};
 use halo2_gadgets::{

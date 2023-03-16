@@ -6,7 +6,9 @@
 
 use super::sign_verify::{AssignedSignatureVerify, SignVerifyChip, SignVerifyConfig};
 use crate::zkevm_circuits::util::{
-    random_linear_combine_word as rlc, Challenges, SubCircuit, SubCircuitConfig,
+    random_linear_combine_word as rlc,
+    Challenges,
+    // SubCircuit, SubCircuitConfig,
 };
 use crate::zkevm_circuits::witness;
 use eth_types::{
@@ -66,17 +68,46 @@ pub struct TxCircuitConfigArgs<F: Field> {
     pub challenges: Challenges<Expression<F>>,
 }
 
-impl<F: Field> SubCircuitConfig<F> for TxCircuitConfig<F> {
-    type ConfigArgs = TxCircuitConfigArgs<F>;
+// impl<F: Field> SubCircuitConfig<F> for TxCircuitConfig<F> {
+//     type ConfigArgs = TxCircuitConfigArgs<F>;
 
-    /// Return a new TxCircuitConfig
+//     /// Return a new TxCircuitConfig
+//     fn new(
+//         meta: &mut ConstraintSystem<F>,
+//         Self::ConfigArgs {
+//             tx_table,
+//             keccak_table,
+//             challenges,
+//         }: Self::ConfigArgs,
+//     ) -> Self {
+//         let tx_id = tx_table.tx_id;
+//         let tag = tx_table.tag;
+//         let index = tx_table.index;
+//         let value = tx_table.value;
+//         meta.enable_equality(value);
+
+//         let sign_verify = SignVerifyConfig::new(meta, keccak_table.clone(), challenges);
+
+//         Self {
+//             tx_id,
+//             tag,
+//             index,
+//             value,
+//             sign_verify,
+//             keccak_table,
+//             _marker: PhantomData,
+//         }
+//     }
+// }
+
+impl<F: Field> TxCircuitConfig<F> {
     fn new(
         meta: &mut ConstraintSystem<F>,
-        Self::ConfigArgs {
+        TxCircuitConfigArgs {
             tx_table,
             keccak_table,
             challenges,
-        }: Self::ConfigArgs,
+        }: TxCircuitConfigArgs<F>,
     ) -> Self {
         let tx_id = tx_table.tx_id;
         let tag = tx_table.tag;
@@ -96,9 +127,7 @@ impl<F: Field> SubCircuitConfig<F> for TxCircuitConfig<F> {
             _marker: PhantomData,
         }
     }
-}
 
-impl<F: Field> TxCircuitConfig<F> {
     /// Load ECDSA RangeChip table.
     pub fn load_aux_tables(&self, layouter: &mut impl Layouter<F>) -> Result<(), Error> {
         self.sign_verify.load_range(layouter)
@@ -177,6 +206,33 @@ impl<F: Field> TxCircuit<F> {
     pub fn min_num_rows(txs_len: usize, call_data_len: usize) -> usize {
         let tx_table_len = txs_len * TX_LEN + call_data_len;
         std::cmp::max(tx_table_len, SignVerifyChip::<F>::min_num_rows(txs_len))
+    }
+
+    /// Make the assignments to the TxCircuit
+    fn synthesize_sub(
+        &self,
+        config: &TxCircuitConfig<F>,
+        challenges: &Challenges<Value<F>>,
+        layouter: &mut impl Layouter<F>,
+    ) -> Result<(), Error> {
+        assert!(self.txs.len() <= self.max_txs);
+        let sign_datas: Vec<SignData> = self
+            .txs
+            .iter()
+            .map(|tx| {
+                tx.sign_data(self.chain_id).map_err(|e| {
+                    error!("tx_to_sign_data error for tx {:?}", e);
+                    Error::Synthesis
+                })
+            })
+            .try_collect()?;
+
+        config.load_aux_tables(layouter)?;
+        let assigned_sig_verifs =
+            self.sign_verify
+                .assign(&config.sign_verify, layouter, &sign_datas, challenges)?;
+        self.assign_tx_table(config, challenges, layouter, assigned_sig_verifs)?;
+        Ok(())
     }
 
     fn assign_tx_table(
@@ -321,70 +377,70 @@ impl<F: Field> TxCircuit<F> {
     }
 }
 
-impl<F: Field> SubCircuit<F> for TxCircuit<F> {
-    type Config = TxCircuitConfig<F>;
+// impl<F: Field> SubCircuit<F> for TxCircuit<F> {
+//     type Config = TxCircuitConfig<F>;
 
-    fn new_from_block(block: &witness::Block<F>) -> Self {
-        Self::new(
-            block.circuits_params.max_txs,
-            block.circuits_params.max_calldata,
-            block.context.chain_id.as_u64(),
-            block
-                .eth_block
-                .transactions
-                .iter()
-                .map(|tx| tx.into())
-                .collect(),
-        )
-    }
+//     // fn new_from_block(block: &witness::Block<F>) -> Self {
+//     //     Self::new(
+//     //         block.circuits_params.max_txs,
+//     //         block.circuits_params.max_calldata,
+//     //         block.context.chain_id.as_u64(),
+//     //         block
+//     //             .eth_block
+//     //             .transactions
+//     //             .iter()
+//     //             .map(|tx| tx.into())
+//     //             .collect(),
+//     //     )
+//     // }
 
-    /// Return the minimum number of rows required to prove the block
-    fn min_num_rows_block(block: &witness::Block<F>) -> (usize, usize) {
-        (
-            Self::min_num_rows(
-                block.txs.len(),
-                block.txs.iter().map(|tx| tx.call_data.len()).sum(),
-            ),
-            Self::min_num_rows(
-                block.circuits_params.max_txs,
-                block.circuits_params.max_calldata,
-            ),
-        )
-    }
+//     // /// Return the minimum number of rows required to prove the block
+//     // fn min_num_rows_block(block: &witness::Block<F>) -> (usize, usize) {
+//     //     (
+//     //         Self::min_num_rows(
+//     //             block.txs.len(),
+//     //             block.txs.iter().map(|tx| tx.call_data.len()).sum(),
+//     //         ),
+//     //         Self::min_num_rows(
+//     //             block.circuits_params.max_txs,
+//     //             block.circuits_params.max_calldata,
+//     //         ),
+//     //     )
+//     // }
 
-    /// Make the assignments to the TxCircuit
-    fn synthesize_sub(
-        &self,
-        config: &Self::Config,
-        challenges: &Challenges<Value<F>>,
-        layouter: &mut impl Layouter<F>,
-    ) -> Result<(), Error> {
-        assert!(self.txs.len() <= self.max_txs);
-        let sign_datas: Vec<SignData> = self
-            .txs
-            .iter()
-            .map(|tx| {
-                tx.sign_data(self.chain_id).map_err(|e| {
-                    error!("tx_to_sign_data error for tx {:?}", e);
-                    Error::Synthesis
-                })
-            })
-            .try_collect()?;
+//     /// Make the assignments to the TxCircuit
+//     fn synthesize_sub(
+//         &self,
+//         config: &Self::Config,
+//         challenges: &Challenges<Value<F>>,
+//         layouter: &mut impl Layouter<F>,
+//     ) -> Result<(), Error> {
+//         assert!(self.txs.len() <= self.max_txs);
+//         let sign_datas: Vec<SignData> = self
+//             .txs
+//             .iter()
+//             .map(|tx| {
+//                 tx.sign_data(self.chain_id).map_err(|e| {
+//                     error!("tx_to_sign_data error for tx {:?}", e);
+//                     Error::Synthesis
+//                 })
+//             })
+//             .try_collect()?;
 
-        config.load_aux_tables(layouter)?;
-        let assigned_sig_verifs =
-            self.sign_verify
-                .assign(&config.sign_verify, layouter, &sign_datas, challenges)?;
-        self.assign_tx_table(config, challenges, layouter, assigned_sig_verifs)?;
-        Ok(())
-    }
+//         config.load_aux_tables(layouter)?;
+//         let assigned_sig_verifs =
+//             self.sign_verify
+//                 .assign(&config.sign_verify, layouter, &sign_datas, challenges)?;
+//         self.assign_tx_table(config, challenges, layouter, assigned_sig_verifs)?;
+//         Ok(())
+//     }
 
-    fn instance(&self) -> Vec<Vec<F>> {
-        // The maingate expects an instance column, but we don't use it, so we return an
-        // "empty" instance column
-        vec![vec![]]
-    }
-}
+//     fn instance(&self) -> Vec<Vec<F>> {
+//         // The maingate expects an instance column, but we don't use it, so we return an
+//         // "empty" instance column
+//         vec![vec![]]
+//     }
+// }
 
 #[cfg(any(feature = "test", test, feature = "test-circuits"))]
 impl<F: Field> Circuit<F> for TxCircuit<F> {
@@ -430,118 +486,119 @@ impl<F: Field> Circuit<F> for TxCircuit<F> {
             })?,
             &challenges,
         )?;
+
         self.synthesize_sub(&config, &challenges, &mut layouter)
     }
 }
 
-// #[cfg(test)]
-// mod tx_circuit_tests {
-//     use super::*;
-//     use crate::util::log2_ceil;
-//     use eth_types::address;
-//     use halo2_proofs::{
-//         dev::{MockProver, VerifyFailure},
-//         halo2curves::bn256::Fr,
-//     };
-//     use mock::AddrOrWallet;
-//     use pretty_assertions::assert_eq;
+#[cfg(test)]
+mod tx_circuit_tests {
+    use super::*;
+    use crate::zkevm_circuits::util::log2_ceil;
+    use eth_types::address;
+    use halo2_proofs::{
+        dev::{MockProver, VerifyFailure},
+        halo2curves::bn256::Fr,
+    };
+    use mock::AddrOrWallet;
+    use pretty_assertions::assert_eq;
 
-//     const NUM_BLINDING_ROWS: usize = 64;
+    const NUM_BLINDING_ROWS: usize = 64;
 
-//     fn run<F: Field>(
-//         txs: Vec<Transaction>,
-//         chain_id: u64,
-//         max_txs: usize,
-//         max_calldata: usize,
-//     ) -> Result<(), Vec<VerifyFailure>> {
-//         let k = log2_ceil(NUM_BLINDING_ROWS + TxCircuit::<Fr>::min_num_rows(max_txs, max_calldata));
-//         // SignVerifyChip -> ECDSAChip -> MainGate instance column
-//         let circuit = TxCircuit::<F>::new(max_txs, max_calldata, chain_id, txs);
+    fn run<F: Field>(
+        txs: Vec<Transaction>,
+        chain_id: u64,
+        max_txs: usize,
+        max_calldata: usize,
+    ) -> Result<(), Vec<VerifyFailure>> {
+        let k = log2_ceil(NUM_BLINDING_ROWS + TxCircuit::<Fr>::min_num_rows(max_txs, max_calldata));
+        // SignVerifyChip -> ECDSAChip -> MainGate instance column
+        let circuit = TxCircuit::<F>::new(max_txs, max_calldata, chain_id, txs);
 
-//         let prover = match MockProver::run(k, &circuit, vec![vec![]]) {
-//             Ok(prover) => prover,
-//             Err(e) => panic!("{:#?}", e),
-//         };
-//         prover.verify()
-//     }
+        let prover = match MockProver::run(k, &circuit, vec![vec![]]) {
+            Ok(prover) => prover,
+            Err(e) => panic!("{:#?}", e),
+        };
+        prover.verify()
+    }
 
-//     #[test]
-//     fn tx_circuit_2tx_2max_tx() {
-//         const NUM_TXS: usize = 2;
-//         const MAX_TXS: usize = 2;
-//         const MAX_CALLDATA: usize = 32;
+    #[test]
+    fn tx_circuit_2tx_2max_tx() {
+        const NUM_TXS: usize = 2;
+        const MAX_TXS: usize = 2;
+        const MAX_CALLDATA: usize = 32;
 
-//         assert_eq!(
-//             run::<Fr>(
-//                 mock::CORRECT_MOCK_TXS[..NUM_TXS]
-//                     .iter()
-//                     .map(|tx| Transaction::from(tx.clone()))
-//                     .collect_vec(),
-//                 mock::MOCK_CHAIN_ID.as_u64(),
-//                 MAX_TXS,
-//                 MAX_CALLDATA
-//             ),
-//             Ok(())
-//         );
-//     }
+        assert_eq!(
+            run::<Fr>(
+                mock::CORRECT_MOCK_TXS[..NUM_TXS]
+                    .iter()
+                    .map(|tx| Transaction::from(tx.clone()))
+                    .collect_vec(),
+                mock::MOCK_CHAIN_ID.as_u64(),
+                MAX_TXS,
+                MAX_CALLDATA
+            ),
+            Ok(())
+        );
+    }
 
-//     #[test]
-//     fn tx_circuit_1tx_1max_tx() {
-//         const MAX_TXS: usize = 1;
-//         const MAX_CALLDATA: usize = 32;
+    #[test]
+    fn tx_circuit_1tx_1max_tx() {
+        const MAX_TXS: usize = 1;
+        const MAX_CALLDATA: usize = 32;
 
-//         let chain_id: u64 = mock::MOCK_CHAIN_ID.as_u64();
+        let chain_id: u64 = mock::MOCK_CHAIN_ID.as_u64();
 
-//         let tx: Transaction = mock::CORRECT_MOCK_TXS[0].clone().into();
+        let tx: Transaction = mock::CORRECT_MOCK_TXS[0].clone().into();
 
-//         assert_eq!(run::<Fr>(vec![tx], chain_id, MAX_TXS, MAX_CALLDATA), Ok(()));
-//     }
+        assert_eq!(run::<Fr>(vec![tx], chain_id, MAX_TXS, MAX_CALLDATA), Ok(()));
+    }
 
-//     #[test]
-//     fn tx_circuit_1tx_2max_tx() {
-//         const MAX_TXS: usize = 2;
-//         const MAX_CALLDATA: usize = 32;
+    #[test]
+    fn tx_circuit_1tx_2max_tx() {
+        const MAX_TXS: usize = 2;
+        const MAX_CALLDATA: usize = 32;
 
-//         let chain_id: u64 = mock::MOCK_CHAIN_ID.as_u64();
+        let chain_id: u64 = mock::MOCK_CHAIN_ID.as_u64();
 
-//         let tx: Transaction = mock::CORRECT_MOCK_TXS[0].clone().into();
+        let tx: Transaction = mock::CORRECT_MOCK_TXS[0].clone().into();
 
-//         assert_eq!(run::<Fr>(vec![tx], chain_id, MAX_TXS, MAX_CALLDATA), Ok(()));
-//     }
+        assert_eq!(run::<Fr>(vec![tx], chain_id, MAX_TXS, MAX_CALLDATA), Ok(()));
+    }
 
-//     #[test]
-//     fn tx_circuit_bad_address() {
-//         const MAX_TXS: usize = 1;
-//         const MAX_CALLDATA: usize = 32;
+    #[test]
+    fn tx_circuit_bad_address() {
+        const MAX_TXS: usize = 1;
+        const MAX_CALLDATA: usize = 32;
 
-//         let mut tx = mock::CORRECT_MOCK_TXS[0].clone();
-//         // This address doesn't correspond to the account that signed this tx.
-//         tx.from = AddrOrWallet::from(address!("0x1230000000000000000000000000000000000456"));
+        let mut tx = mock::CORRECT_MOCK_TXS[0].clone();
+        // This address doesn't correspond to the account that signed this tx.
+        tx.from = AddrOrWallet::from(address!("0x1230000000000000000000000000000000000456"));
 
-//         assert!(run::<Fr>(
-//             vec![tx.into()],
-//             mock::MOCK_CHAIN_ID.as_u64(),
-//             MAX_TXS,
-//             MAX_CALLDATA
-//         )
-//         .is_err(),);
-//     }
+        assert!(run::<Fr>(
+            vec![tx.into()],
+            mock::MOCK_CHAIN_ID.as_u64(),
+            MAX_TXS,
+            MAX_CALLDATA
+        )
+        .is_err(),);
+    }
 
-//     #[test]
-//     fn variadic_size_check() {
-//         const MAX_TXS: usize = 2;
-//         const MAX_CALLDATA: usize = 32;
+    #[test]
+    fn variadic_size_check() {
+        const MAX_TXS: usize = 2;
+        const MAX_CALLDATA: usize = 32;
 
-//         let chain_id: u64 = mock::MOCK_CHAIN_ID.as_u64();
-//         let tx1: Transaction = mock::CORRECT_MOCK_TXS[0].clone().into();
-//         let tx2: Transaction = mock::CORRECT_MOCK_TXS[1].clone().into();
-//         let circuit = TxCircuit::<Fr>::new(MAX_TXS, MAX_CALLDATA, chain_id, vec![tx1.clone()]);
-//         let prover1 = MockProver::<Fr>::run(20, &circuit, vec![vec![]]).unwrap();
+        let chain_id: u64 = mock::MOCK_CHAIN_ID.as_u64();
+        let tx1: Transaction = mock::CORRECT_MOCK_TXS[0].clone().into();
+        let tx2: Transaction = mock::CORRECT_MOCK_TXS[1].clone().into();
+        let circuit = TxCircuit::<Fr>::new(MAX_TXS, MAX_CALLDATA, chain_id, vec![tx1.clone()]);
+        let prover1 = MockProver::<Fr>::run(20, &circuit, vec![vec![]]).unwrap();
 
-//         let circuit = TxCircuit::<Fr>::new(MAX_TXS, MAX_CALLDATA, chain_id, vec![tx1, tx2]);
-//         let prover2 = MockProver::<Fr>::run(20, &circuit, vec![vec![]]).unwrap();
+        let circuit = TxCircuit::<Fr>::new(MAX_TXS, MAX_CALLDATA, chain_id, vec![tx1, tx2]);
+        let prover2 = MockProver::<Fr>::run(20, &circuit, vec![vec![]]).unwrap();
 
-//         assert_eq!(prover1.fixed(), prover2.fixed());
-//         assert_eq!(prover1.permutation(), prover2.permutation());
-//     }
-// }
+        assert_eq!(prover1.fixed(), prover2.fixed());
+        assert_eq!(prover1.permutation(), prover2.permutation());
+    }
+}

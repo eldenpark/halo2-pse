@@ -30,6 +30,11 @@ pub(crate) fn query_expression<F: FieldExt, T>(
     expr.unwrap()
 }
 
+/// Ceiling of log_2(n)
+pub fn log2_ceil(n: usize) -> u32 {
+    u32::BITS - (n as u32).leading_zeros() - (n & (n - 1) == 0) as u32
+}
+
 /// All challenges used in `SuperCircuit`.
 #[derive(Default, Clone, Copy, Debug)]
 pub struct Challenges<T = Challenge> {

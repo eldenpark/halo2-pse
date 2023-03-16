@@ -1,7 +1,4 @@
-use super::{
-    chip::{MerkleChip, MerkleInstructions},
-    PoseidonInstructions, Pow5Chip, Pow5Config, StateWord,
-};
+use super::chip::{MerkleChip, MerkleInstructions};
 use group::ff::{Field, PrimeField};
 use halo2_gadgets::utilities::{cond_swap::CondSwapInstructions, UtilitiesInstructions, Var};
 use halo2_gadgets::{
