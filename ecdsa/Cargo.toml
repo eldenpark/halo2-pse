@@ -1,0 +1,27 @@
+[package]
+name = "ecdsa"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# ecc = { path = "../ecc", default-features = false }
+num-bigint = { version = "0.4", features = ["rand"] }
+num-integer = "0.1"
+num-traits = "0.2"
+# rand = "0.8"
+# group = "0.12"
+subtle = { version = "2.3", default-features = false }
+
+halo2_proofs = { path = "../halo2_proofs" }
+halo2_gadgets = { path = "../halo2_gadgets" }
+ecc = { path = "../ecc" }
+integer = { path = "../integer" }
+maingate = { path = "../maingate" }
+group = "0.12"
+rand = "0.8"
+ff = "0.12"
+hex = "0.4.3"
+
+[dev-dependencies]
+rand_core = { version = "0.6", default-features = false }
+

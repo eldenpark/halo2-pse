@@ -40,6 +40,11 @@ snark-verifier = { git = "https://github.com/privacy-scaling-explorations/snark-
 halo2_proofs = { path = "../halo2_proofs" }
 halo2curves = { path = "../halo2curves" }
 halo2wrong = { path = "../halo2wrong" }
+ecc = { path = "../ecc" }
+ecdsa = { path = "../ecdsa" }
+maingate = { path = "../maingate" }
+integer = { path = "../integer" }
+
 bus-mapping = { git ="https://github.com/privacy-scaling-explorations/zkevm-circuits.git", rev = "56e097c" }
 eth-types = { git ="https://github.com/privacy-scaling-explorations/zkevm-circuits.git", rev = "56e097c" }
 gadgets = { git ="https://github.com/privacy-scaling-explorations/zkevm-circuits.git", rev = "56e097c" }

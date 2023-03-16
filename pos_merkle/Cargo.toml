@@ -14,6 +14,7 @@ rustdoc-args = ["--cfg", "docsrs", "--html-in-header", "katex-header.html"]
 halo2_proofs = { path = "../halo2_proofs" }
 halo2_gadgets = { path = "../halo2_gadgets" }
 ecc = { path = "../ecc" }
+ecdsa = { path = "../ecdsa" }
 integer = { path = "../integer" }
 maingate = { path = "../maingate" }
 group = "0.12"

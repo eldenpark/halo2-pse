@@ -3,11 +3,11 @@ mod merkle_path;
 mod test1;
 
 use self::chip::{MerkleChip, MerkleConfig};
-use super::ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
-use super::ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
 use crate::merkle::merkle_path::MerklePath;
 use crate::{utils, ProofError};
 use ecc::{GeneralEccChip, Point};
+use ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
+use ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
 use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
 use group::{Curve, GroupEncoding};

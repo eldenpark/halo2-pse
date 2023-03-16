@@ -6,6 +6,7 @@ members = [
 
     "halo2wrong",
     "ecc",
+    "ecdsa",
     "integer",
     "maingate",
     "pos_merkle",

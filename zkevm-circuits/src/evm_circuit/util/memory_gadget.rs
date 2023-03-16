@@ -337,60 +337,60 @@ impl<F: Field, const N: usize, const N_BYTES_MEMORY_WORD_SIZE: usize>
 /// If the memory needs to be expanded this will result in an extra gas cost.
 /// This gas cost is the difference between the next and current memory costs:
 /// `memory_cost = Gmem * memory_size + floor(memory_size * memory_size / 512)`
-#[derive(Clone, Debug)]
-pub(crate) struct MemoryCopierGasGadget<F, const GAS_COPY: GasCost> {
-    word_size: MemoryWordSizeGadget<F>,
-    gas_cost: Expression<F>,
-    gas_cost_range_check: RangeCheckGadget<F, N_BYTES_GAS>,
-}
+// #[derive(Clone, Debug)]
+// pub(crate) struct MemoryCopierGasGadget<F, const GAS_COPY: GasCost> {
+//     word_size: MemoryWordSizeGadget<F>,
+//     gas_cost: Expression<F>,
+//     gas_cost_range_check: RangeCheckGadget<F, N_BYTES_GAS>,
+// }
 
-impl<F: Field, const GAS_COPY: GasCost> MemoryCopierGasGadget<F, GAS_COPY> {
-    pub const WORD_SIZE: u64 = 32u64;
+// impl<F: Field, const GAS_COPY: GasCost> MemoryCopierGasGadget<F, GAS_COPY> {
+//     pub const WORD_SIZE: u64 = 32u64;
 
-    /// Input requirements:
-    /// - `curr_memory_size < 256**MAX_MEMORY_SIZE_IN_BYTES`
-    /// - `address < 32 * 256**MAX_MEMORY_SIZE_IN_BYTES`
-    /// Output ranges:
-    /// - `next_memory_size < 256**MAX_MEMORY_SIZE_IN_BYTES`
-    /// - `gas_cost <= GAS_MEM*256**MAX_MEMORY_SIZE_IN_BYTES +
-    ///   256**MAX_QUAD_COST_IN_BYTES`
-    pub(crate) fn construct(
-        cb: &mut ConstraintBuilder<F>,
-        num_bytes: Expression<F>,
-        memory_expansion_gas_cost: Expression<F>,
-    ) -> Self {
-        let word_size = MemoryWordSizeGadget::construct(cb, num_bytes);
+//     /// Input requirements:
+//     /// - `curr_memory_size < 256**MAX_MEMORY_SIZE_IN_BYTES`
+//     /// - `address < 32 * 256**MAX_MEMORY_SIZE_IN_BYTES`
+//     /// Output ranges:
+//     /// - `next_memory_size < 256**MAX_MEMORY_SIZE_IN_BYTES`
+//     /// - `gas_cost <= GAS_MEM*256**MAX_MEMORY_SIZE_IN_BYTES +
+//     ///   256**MAX_QUAD_COST_IN_BYTES`
+//     pub(crate) fn construct(
+//         cb: &mut ConstraintBuilder<F>,
+//         num_bytes: Expression<F>,
+//         memory_expansion_gas_cost: Expression<F>,
+//     ) -> Self {
+//         let word_size = MemoryWordSizeGadget::construct(cb, num_bytes);
 
-        let gas_cost = word_size.expr() * GAS_COPY.expr() + memory_expansion_gas_cost;
-        let gas_cost_range_check = RangeCheckGadget::construct(cb, gas_cost.clone());
+//         let gas_cost = word_size.expr() * GAS_COPY.expr() + memory_expansion_gas_cost;
+//         let gas_cost_range_check = RangeCheckGadget::construct(cb, gas_cost.clone());
 
-        Self {
-            word_size,
-            gas_cost,
-            gas_cost_range_check,
-        }
-    }
+//         Self {
+//             word_size,
+//             gas_cost,
+//             gas_cost_range_check,
+//         }
+//     }
 
-    pub(crate) fn gas_cost(&self) -> Expression<F> {
-        // Return the gas cost
-        self.gas_cost.clone()
-    }
+//     pub(crate) fn gas_cost(&self) -> Expression<F> {
+//         // Return the gas cost
+//         self.gas_cost.clone()
+//     }
 
-    pub(crate) fn assign(
-        &self,
-        region: &mut CachedRegion<'_, '_, F>,
-        offset: usize,
-        num_bytes: u64,
-        memory_expansion_gas_cost: u64,
-    ) -> Result<u64, Error> {
-        let word_size = self.word_size.assign(region, offset, num_bytes)?;
-        let gas_cost = word_size * GAS_COPY.as_u64() + memory_expansion_gas_cost;
-        self.gas_cost_range_check
-            .assign(region, offset, F::from(gas_cost))?;
-        // Return the memory copier gas cost
-        Ok(gas_cost)
-    }
-}
+//     pub(crate) fn assign(
+//         &self,
+//         region: &mut CachedRegion<'_, '_, F>,
+//         offset: usize,
+//         num_bytes: u64,
+//         memory_expansion_gas_cost: u64,
+//     ) -> Result<u64, Error> {
+//         let word_size = self.word_size.assign(region, offset, num_bytes)?;
+//         let gas_cost = word_size * GAS_COPY.as_u64() + memory_expansion_gas_cost;
+//         self.gas_cost_range_check
+//             .assign(region, offset, F::from(gas_cost))?;
+//         // Return the memory copier gas cost
+//         Ok(gas_cost)
+//     }
+// }
 
 /// Buffer reader gadget reads out bytes from a buffer given the start address
 /// and the end address. This gadget also pads 0 to the end of buffer if the
