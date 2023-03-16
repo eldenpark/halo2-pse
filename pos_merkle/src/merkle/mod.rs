@@ -408,35 +408,29 @@ pub fn test_poseidon2() {
 
     Secp256k1Affine::from_xy(pk_x, pk_y).unwrap();
 
-    // let pk_uncompressed_str = hex::encode(pk_uncompressed);
-    // println!("pk_uncompressed_str: {:?} ", pk_uncompressed_str);
-
-    // let pk_uncompressed_inner: [u8; 65] = pk_uncompressed.try_into().unwrap();
-    // let cp = Secp256k1Uncompressed(pk_uncompressed_inner);
-    // let af = Secp256k1Affine::from_uncompressed(&cp).unwrap();
-    // println!("cp: {:?}", cp);
-    // println!("af: {:?}", af);
-
     let my_pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
     let my_pk = my_pk.strip_prefix("0x04").unwrap();
     println!("my_pk: {:?}, {}", my_pk, my_pk.len());
 
     let my_pk_x_vec = hex::decode(my_pk).unwrap();
-    let my_pk_x_bytes: [u8; 32] = my_pk_x_vec[..32].try_into().unwrap();
+    let mut my_pk_x_bytes: [u8; 32] = my_pk_x_vec[..32].try_into().unwrap();
     println!("my_pk_x_bytes: {:?}", my_pk_x_bytes);
+
+    my_pk_x_bytes.reverse();
+    println!("my_pk_x_bytes rev: {:?}", my_pk_x_bytes);
 
     let my_pk_x_fp = SecFp::from_bytes(&my_pk_x_bytes).unwrap();
     println!("my_pk_x_fp: {:?}", my_pk_x_fp);
 
-    let my_pk_y_bytes: [u8; 32] = my_pk_x_vec[32..64].try_into().unwrap();
+    let mut my_pk_y_bytes: [u8; 32] = my_pk_x_vec[32..64].try_into().unwrap();
     println!("my_pk_y_bytes: {:?}", my_pk_y_bytes);
+
+    my_pk_y_bytes.reverse();
+    println!("my_pk_y_bytes rev: {:?}", my_pk_y_bytes);
 
     let my_pk_y_fp = SecFp::from_bytes(&my_pk_y_bytes).unwrap();
     println!("my_pk_y_fp: {:?}", my_pk_y_fp);
 
-    // let mut fp_bytes = [0u8; 32 * 2];
-    // fp_bytes[..32].clone_from_slice(&my_pk_x_bytes);
-    // fp_bytes[32..64].clone_from_slice(&my_pk_y_bytes);
     let my_secp_affine = Secp256k1Affine::from_xy(my_pk_x_fp, my_pk_y_fp).unwrap();
     println!("my_secp_affine: {:?}", my_secp_affine);
 
