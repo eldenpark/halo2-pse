@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 dev-graph = ["halo2_proofs/dev-graph", "plotters"]
 
 [dependencies]
-halo2_proofs = { version = "0.1.0-beta.1" }
+# halo2_proofs = { version = "0.1.0-beta.1" }
 itertools = "0.10.1"
 num-bigint = "0.4.2"
 num-traits = "0.2.14"
@@ -17,6 +17,8 @@ eth-types = { path = "../eth-types" }
 lazy_static = "1.4"
 log = "0.4.14"
 env_logger = "0.9"
+
+halo2_proofs = { path = "../halo2_proofs/" }
 
 [dev-dependencies]
 pretty_assertions = "1.0"

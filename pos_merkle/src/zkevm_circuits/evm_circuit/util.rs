@@ -1,5 +1,5 @@
 use eth_types::{Address, U256};
-use halo2_proofs::{circuit::Value, halo2curves::FieldExt};
+use halo2_proofs::{circuit::Value, halo2curves::FieldExt, plonk::Expression};
 
 pub use gadgets::util::{and, not, or, select, sum};
 
