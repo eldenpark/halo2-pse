@@ -85,6 +85,9 @@ impl<W: FieldExt, N: FieldExt, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB:
             .zip(self.rns.left_shifters.iter())
             .map(|(limb, sh)| Term::Assigned(limb.as_ref(), *sh))
             .collect();
+
+        // println!("limbs_to_compose len: {}", limbs_to_compose.len());
+
         let native = main_gate.compose(ctx, &limbs_to_compose, N::zero())?;
 
         Ok(self.new_assigned_integer(&limbs.try_into().unwrap(), native))

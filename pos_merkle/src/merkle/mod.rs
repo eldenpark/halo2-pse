@@ -6,7 +6,7 @@ use self::chip::{MerkleChip, MerkleConfig};
 use super::ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
 use super::ecdsa::{EcdsaConfig, TestCircuitEcdsaVerifyConfig, BIT_LEN_LIMB, NUMBER_OF_LIMBS};
 use crate::merkle::merkle_path::MerklePath;
-use crate::ProofError;
+use crate::{utils, ProofError};
 use ecc::{GeneralEccChip, Point};
 use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
@@ -297,9 +297,18 @@ impl<
                     //     SystemTime::now().duration_since(SystemTime::UNIX_EPOCH),
                     // );
 
+                    println!(">>> public_key: {:?}", self.public_key);
+
                     let pk_in_circuit = ecc_chip.assign_point(ctx, self.public_key)?;
 
-                    println!(">>> pk: {:?}", pk_in_circuit);
+                    println!(">>> pk_in_circuit: {:?}", pk_in_circuit);
+
+                    let pk_x = pk_in_circuit.x().native();
+                    let pk_x_val = pk_x.value();
+                    println!(">>> pk_in_circuit.x: {:?}", pk_x_val);
+
+                    // 0x39be667ef9dcbbac55a06295ce870b06e05563df24812fbdc0c5506e16f81797
+                    // 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
 
                     let pk_assigned = AssignedPublicKey {
                         point: pk_in_circuit,
@@ -319,6 +328,63 @@ impl<
                     //     &t_in_circuit,
                     //     &u_in_circuit,
                     // )
+                },
+            )?;
+
+            layouter.assign_region(
+                || "address verify",
+                |region| {
+                    // let main_gate = chips.main_gate;
+
+                    // let (padding, sign_data) = match self.signature {
+                    //     Some(sign_data) => (false, sign_data.clone()),
+                    //     None => (true, SignData::default()),
+                    // };
+
+                    let pk_le = utils::pk_bytes_le(&self.public_key);
+                    let pk_be = utils::pk_bytes_swap_endianness(&pk_le);
+                    let pk_hash = (!padding)
+                        .then(|| {
+                            let mut keccak = Keccak::default();
+                            keccak.update(&pk_be);
+                            let hash: [_; 32] =
+                                keccak.digest().try_into().expect("vec to array of size 32");
+                            hash
+                        })
+                        .unwrap_or_default()
+                        .map(|byte| Value::known(F::from(byte as u64)));
+                    println!("pk_hash: {:?}", pk_hash);
+
+                    let pk_hash_hi = pk_hash[..12].to_vec();
+                    // Ref. spec SignVerifyChip 2. Verify that the first 20 bytes of the
+                    // pub_key_hash equal the address
+                    let (address, pk_hash_lo) = {
+                        let powers_of_256 = std::iter::successors(Some(F::one()), |coeff| {
+                            Some(F::from(256) * coeff)
+                        })
+                        .take(20)
+                        .collect_vec();
+
+                        let terms = pk_hash[12..]
+                            .iter()
+                            .zip(powers_of_256.into_iter().rev())
+                            .map(|(byte, coeff)| maingate::Term::Unassigned(*byte, coeff))
+                            .collect_vec();
+
+                        let (address, _) =
+                            main_gate.decompose(ctx, &terms, F::zero(), |_, _| Ok(()))?;
+
+                        (
+                            address,
+                            // pk_hash_lo
+                            //     .into_iter()
+                            //     .zip(pk_hash[12..].iter())
+                            //     .map(|(assigned, byte)| Term::assigned(assigned.cell(), *byte))
+                            //     .collect_vec(),
+                        )
+                    };
+
+                    Ok(())
                 },
             )?;
 
@@ -342,6 +408,19 @@ pub fn mod_n<C: CurveAffine>(x: C::Base) -> C::Scalar {
 pub fn test_poseidon2() {
     println!("111");
 
+    // let mut vec = [0u8; 32];
+    // vec[0] = 1;
+    let n: u64 = u64::MAX;
+    let sec_1 = SecFp::from(n);
+    let sec_mod = SecFp::MODULUS;
+    println!("sec_mod: {}", sec_mod);
+
+    let fp_1 = Fp::from(n);
+    let fp_mod = Fp::MODULUS;
+    println!("fp_mod: {}", fp_mod);
+
+    println!("sec_1: {:?}, fp_1: {:?}", sec_1, fp_1);
+
     // println!("out-circuit: root: {:?}, t: {:?}", root, start.elapsed());
     let g = Secp256k1Affine::generator();
 
@@ -363,28 +442,33 @@ pub fn test_poseidon2() {
     let pk_1_str = hex::encode(pk_1);
     println!("pk_1_str: {:?}, ", pk_1_str);
 
-    let pk_1_x_fp = public_key.x;
-    println!("pk_1_x_fp: {:?}", pk_1_x_fp);
+    let pk_1_x_secfp = public_key.x;
+    println!("pk_1_x_secfp: {:?}", pk_1_x_secfp);
 
-    let pk_1_x_bytes = pk_1_x_fp.to_bytes();
+    let pk_1_x_bytes = pk_1_x_secfp.to_bytes();
     println!("pk_1_x_bytes: {:?}", pk_1_x_bytes);
 
     let pk_1_x_str = hex::encode(pk_1_x_bytes);
     println!("pk_1_x_str: {:?}", pk_1_x_str);
 
-    let pk_1_x_raw_bytes = pk_1_x_fp.to_raw_bytes();
+    let pk_1_x_raw_bytes = pk_1_x_secfp.to_raw_bytes();
     println!("pk_1_x_raw_bytes: {:?}", pk_1_x_raw_bytes);
 
     let pk_1_x_raw_str = hex::encode(pk_1_x_raw_bytes);
     println!("pk_1_x_raw_str: {:?}", pk_1_x_raw_str);
 
-    let pk_1_y_fp = public_key.y;
-    println!("pk_1_y_fp: {:?}", pk_1_y_fp);
+    let pk_1_y_secfp = public_key.y;
+    println!("pk_1_y_fp: {:?}", pk_1_y_secfp);
 
-    let public_key_re = Secp256k1Affine::from_xy(pk_1_x_fp, pk_1_y_fp).unwrap();
+    let public_key_re = Secp256k1Affine::from_xy(pk_1_x_secfp, pk_1_y_secfp).unwrap();
     println!("public_key_re: {:?}", public_key_re);
     // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be7900
     // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be79b8d410fb8fd0479c195485a648b417fda808110efcfba45d65c4a32677da3a48
+    //
+
+    // 0x79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+    // 0x40000000000000000000000000000000224698fc094cf91b992d30ed00000001
+    // 0x39be667ef9dcbbac55a06295ce870b06e05563df24812fbdc0c5506e16f81797
 
     let pk_uncompressed = public_key.to_uncompressed();
     // 9817f8165b81f259d928ce2ddbfc9b02070b87ce9562a055acbbdcf97e66be79b8d410fb8fd0479c195485a648b417fda808110efcfba45d65c4a32677da3a4800
@@ -395,8 +479,8 @@ pub fn test_poseidon2() {
     );
 
     let pk_uncompressed = &pk_uncompressed.0[..64];
-
-    // let pk_uncompressed_vec = hex::decode(pk_uncompressed).unwrap();
+    let pk_uncompressed_str = hex::encode(pk_uncompressed);
+    println!("pk_uncompressed_str: {}", pk_uncompressed_str);
 
     let pk_uncompressed_x_arr: [u8; 32] = pk_uncompressed[..32].try_into().unwrap();
     let pk_x = SecFp::from_bytes(&pk_uncompressed_x_arr).unwrap();
@@ -406,95 +490,54 @@ pub fn test_poseidon2() {
 
     println!("pk_x: {:?}, pk_y: {:?}", pk_x, pk_y);
 
+    let pk_x_fp_str = "0x39be667ef9dcbbac55a06295ce870b06e05563df24812fbdc0c5506e16f81797";
+    println!("pk_x_fp_str: {:?}", pk_x_fp_str);
+
+    let pk_x_fp_bytes = hex::decode(pk_x_fp_str.strip_prefix("0x").unwrap()).unwrap();
+    println!(
+        "pk_x_fp_bytes: {:?}, {}",
+        pk_x_fp_bytes,
+        pk_x_fp_bytes.len()
+    );
+
+    // let pk_x_fp_arr: [u8; 32] = pk_x_fp_bytes.try_into().unwrap();
+
+    // let pk_x_fp = Fp::from_repr(pk_uncompressed_x_arr).unwrap();
+    // println!("pk_x_fp: {:?}", pk_x_fp);
+
     Secp256k1Affine::from_xy(pk_x, pk_y).unwrap();
 
-    let my_pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
-    let my_pk = my_pk.strip_prefix("0x04").unwrap();
-    println!("my_pk: {:?}, {}", my_pk, my_pk.len());
+    // let my_pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
+    // let my_pk = my_pk.strip_prefix("0x04").unwrap();
+    // println!("my_pk: {:?}, {}", my_pk, my_pk.len());
 
-    let my_pk_x_vec = hex::decode(my_pk).unwrap();
-    let mut my_pk_x_bytes: [u8; 32] = my_pk_x_vec[..32].try_into().unwrap();
-    println!("my_pk_x_bytes: {:?}", my_pk_x_bytes);
+    // let my_pk_x_vec = hex::decode(my_pk).unwrap();
+    // let mut my_pk_x_bytes: [u8; 32] = my_pk_x_vec[..32].try_into().unwrap();
+    // println!("my_pk_x_bytes: {:?}", my_pk_x_bytes);
 
-    my_pk_x_bytes.reverse();
-    println!("my_pk_x_bytes rev: {:?}", my_pk_x_bytes);
+    // my_pk_x_bytes.reverse();
+    // println!("my_pk_x_bytes rev: {:?}", my_pk_x_bytes);
 
-    let my_pk_x_fp = SecFp::from_bytes(&my_pk_x_bytes).unwrap();
-    println!("my_pk_x_fp: {:?}", my_pk_x_fp);
+    // let my_pk_x_fp = SecFp::from_bytes(&my_pk_x_bytes).unwrap();
+    // println!("my_pk_x_fp: {:?}", my_pk_x_fp);
 
-    let mut my_pk_y_bytes: [u8; 32] = my_pk_x_vec[32..64].try_into().unwrap();
-    println!("my_pk_y_bytes: {:?}", my_pk_y_bytes);
+    // let mut my_pk_y_bytes: [u8; 32] = my_pk_x_vec[32..64].try_into().unwrap();
+    // println!("my_pk_y_bytes: {:?}", my_pk_y_bytes);
 
-    my_pk_y_bytes.reverse();
-    println!("my_pk_y_bytes rev: {:?}", my_pk_y_bytes);
+    // my_pk_y_bytes.reverse();
+    // println!("my_pk_y_bytes rev: {:?}", my_pk_y_bytes);
 
-    let my_pk_y_fp = SecFp::from_bytes(&my_pk_y_bytes).unwrap();
-    println!("my_pk_y_fp: {:?}", my_pk_y_fp);
+    // let my_pk_y_fp = SecFp::from_bytes(&my_pk_y_bytes).unwrap();
+    // println!("my_pk_y_fp: {:?}", my_pk_y_fp);
 
-    let my_secp_affine = Secp256k1Affine::from_xy(my_pk_x_fp, my_pk_y_fp).unwrap();
-    println!("my_secp_affine: {:?}", my_secp_affine);
+    // let my_secp_affine = Secp256k1Affine::from_xy(my_pk_x_fp, my_pk_y_fp).unwrap();
+    // println!("my_secp_affine: {:?}", my_secp_affine);
 
-    let fp_size = SecFp::size();
-    println!("fp_size: {}", fp_size);
+    // let fp_size = SecFp::size();
+    // println!("fp_size: {}", fp_size);
 
-    return;
-
-    // let pk = "0x04d116ed27a37326d9679d52ddd511f0c671e2d0ff68d30fb78c1fc64eb8fe0ec2e0b260e5c453f856a3297588931aca98d4b2bd14ff1fff6d9b95ed9cd2e5cad8";
-    // let pk = pk.strip_prefix("0x04").unwrap();
-    // let vv = hex::decode(pk).unwrap();
-    // let x: [u8; 32] = vv[..32].try_into().unwrap();
-
-    // Fp::one();
-    // let vv3: [u8; 32] = vv[32..64].try_into().unwrap();
-
-    // println!("vv len: {}", vv.len());
-    // let x = SecFp::from_bytes(&vv2).unwrap();
-    // let y = SecFp::from_bytes(&vv3).unwrap();
-    // let x1 = x.to_raw_bytes();
-    // let y1 = y.to_raw_bytes();
-    // let mut zz = [0u8; 64];
-    // zz[..32].clone_from_slice(&x1);
-    // zz[32..64].clone_from_slice(&y1);
-    // println!("x: {:?}, y: {:?}", x, y);
-    // println!("z: {:?}", zz);
-    // let bb = Secp256k1::from_raw_bytes(&zz).unwrap();
-    // println!("bb: {:?}", bb);
-
-    // let mut arr = [0u8; 65];
-    // arr[..64].clone_from_slice(&vv);
-
-    // let uc = Secp256k1Uncompressed(arr);
-    // Secp256k1::from_bytes(uc);
-    // let b = &vv[..32];
-    // let b2 = &vv[32..];
-    // let sign = (b2[0] & 1) << 6;
-    // let mut zzz = [0u8; 33];
-    // zzz[..32].clone_from_slice(&b);
-    // zzz[32] |= sign;
-    // println!("sign: {}, zzz: {:?}", sign, zzz);
-    // // Secp256k1Uncompressed
-    // let bbb = Secp256k1Compressed(zzz);
-    // let bbbb = Secp256k1::from_bytes(&bbb).unwrap();
-    // println!("bbb: {:?}", bbbb);
-    //
-    // println!("vv: {:?}, len: {}", vv, vv.len());
-    // println!("b: {:?}, len: {}", b, b.len());
-    // println!("cc: {:?}", cc);
-
-    // Secp256k1Affine::from_bytes_unchecked(b);
-    // Secp256k1::from_bytes(&pk_1);
-
-    // Secp256k1Affine::from_bytes(&vv);
-    // let bb = Secp256k1Affine::from(&vv).unwrap();
-
+    // let public_key = my_secp_affine;
     println!(">>> out circuit public key: {:?}", public_key);
-
-    // let a = public_key.to_bytes();
-    // let b = EpAffine::from_bytes(&a).unwrap();
-    // println!("pk: {:?}, aaa: {:?}", public_key, a,);
-    // EpAffine::from_bytes(bytes)
-    // println!("c: {:?}", b);
-    // println!("re pk: {:?}", b);
 
     // Generate a valid signature
     // Suppose `m_hash` is the message hash
@@ -638,6 +681,7 @@ pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
     let k = dimension.k();
 
+    println!("\nRunning mock prover");
     let prover = MockProver::run(k, &circuit, instance).unwrap();
     prover.verify().unwrap();
     println!("\nMock prover susccess!!!");

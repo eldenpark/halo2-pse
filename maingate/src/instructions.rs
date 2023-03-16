@@ -1026,7 +1026,10 @@ pub trait MainGateInstructions<F: FieldExt, const WIDTH: usize>: Chip<F> {
 
         // Last cell will be allocated for result or intermediate sums.
         let chunk_width: usize = WIDTH - 1;
+        // println!("chunk_width: {}", chunk_width);
+
         let number_of_chunks = (terms.len() - 1) / chunk_width + 1;
+        // println!("number_of_chunks: {}", number_of_chunks);
 
         // `remaining` at first set to the sum of terms.
         let mut remaining = Term::compose(&terms[..], constant);
@@ -1042,6 +1045,7 @@ pub trait MainGateInstructions<F: FieldExt, const WIDTH: usize>: Chip<F> {
             let mut chunk = chunk.to_vec();
 
             let composed = Term::compose(&chunk[..], constant);
+            // println!("composed: {:?}", composed);
 
             remaining = composed
                 .zip(remaining)
