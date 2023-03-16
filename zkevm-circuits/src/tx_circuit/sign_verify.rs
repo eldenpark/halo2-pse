@@ -10,7 +10,7 @@ use crate::{
     util::{Challenges, Expr},
 };
 use ecc::{maingate, EccConfig, GeneralEccChip};
-use ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
+use ecdsa::ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
 use eth_types::sign_types::{pk_bytes_le, pk_bytes_swap_endianness, SignData};
 use eth_types::{self, Field};
 use halo2_proofs::{

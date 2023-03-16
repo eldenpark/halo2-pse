@@ -1,6 +1,8 @@
 mod chip;
 mod merkle_path;
+mod sign_verify;
 mod test1;
+mod zkevm;
 
 use self::chip::{MerkleChip, MerkleConfig};
 use crate::merkle::merkle_path::MerklePath;

@@ -8,7 +8,7 @@ use halo2_proofs::{
 };
 use itertools::Itertools;
 use maingate::MainGateInstructions;
-use snark_verifier::verifier::plonk::PlonkProtocol;
+use snark_verifier::{util::arithmetic::MultiMillerLoop, verifier::plonk::PlonkProtocol};
 use std::iter;
 
 mod aggregation;
@@ -21,8 +21,6 @@ pub use snark_verifier::system::halo2::{compile, Config};
 
 #[cfg(any(feature = "test", test))]
 pub use aggregation::TestAggregationCircuit;
-
-use crate::snark_verifier2::MultiMillerLoop;
 
 /// RootCircuit for aggregating SuperCircuit into a much smaller proof.
 #[derive(Clone)]

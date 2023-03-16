@@ -15,7 +15,12 @@ members = [
     "tree_maker",
     "prf_gen",
     "prfs_backend",
-    "zkevm-circuits",
+    "bus-mapping",
+    "keccak256",
+    "gadgets",
+    "mock",
+    "external-tracer",
+    "geth-utils",
 
     "web_demo",
 ]

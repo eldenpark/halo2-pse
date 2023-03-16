@@ -11,18 +11,24 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs", "--html-in-header", "katex-header.html"]
 
 [dependencies]
+group = "0.12"
+rand = "0.8"
+ff = "0.12"
+hex = "0.4.3"
+log = "0.4"
+itertools = "0.10.3"
+
+# web-sys = { version = "0.3.61", features = ["console", "Window", "Performance", "PerformanceTiming"] }
+
 halo2_proofs = { path = "../halo2_proofs" }
 halo2_gadgets = { path = "../halo2_gadgets" }
 ecc = { path = "../ecc" }
 ecdsa = { path = "../ecdsa" }
 integer = { path = "../integer" }
 maingate = { path = "../maingate" }
-group = "0.12"
-rand = "0.8"
-ff = "0.12"
-hex = "0.4.3"
+eth-types = { path = "../eth-types" }
+bus-mapping = { path = "../bus-mapping", features = ["test"] }
 
-# web-sys = { version = "0.3.61", features = ["console", "Window", "Performance", "PerformanceTiming"] }
 
 [lib]
 bench = false

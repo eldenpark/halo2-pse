@@ -676,19 +676,19 @@ mod tests {
         fn new<W: FieldExt, N: FieldExt, const BIT_LEN_LIMB: usize>(
             meta: &mut ConstraintSystem<N>,
         ) -> Self {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<N>::configure(meta, advices);
+            let main_gate_config = MainGate::<N>::configure(meta);
 
             let overflow_bit_lens = rns::<W, N, BIT_LEN_LIMB>().overflow_lengths();
             let composition_bit_len =

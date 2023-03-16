@@ -250,20 +250,20 @@ pub struct TestCircuitEcdsaVerifyConfig {
 
 impl TestCircuitEcdsaVerifyConfig {
     pub fn new<C: CurveAffine, N: FieldExt>(meta: &mut ConstraintSystem<N>) -> Self {
-        let advices = [
-            meta.advice_column(),
-            meta.advice_column(),
-            meta.advice_column(),
-            meta.advice_column(),
-            meta.advice_column(),
-        ];
+        // let advices = [
+        //     meta.advice_column(),
+        //     meta.advice_column(),
+        //     meta.advice_column(),
+        //     meta.advice_column(),
+        //     meta.advice_column(),
+        // ];
 
-        for advice in advices {
-            meta.enable_equality(advice);
-        }
+        // for advice in advices {
+        //     meta.enable_equality(advice);
+        // }
 
         let (rns_base, rns_scalar) = GeneralEccChip::<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::rns();
-        let main_gate_config = MainGate::<N>::configure(meta, advices);
+        let main_gate_config = MainGate::<N>::configure(meta);
         let mut overflow_bit_lens: Vec<usize> = vec![];
         overflow_bit_lens.extend(rns_base.overflow_lengths());
         overflow_bit_lens.extend(rns_scalar.overflow_lengths());
@@ -351,21 +351,21 @@ mod tests {
 
     impl TestCircuitEcdsaVerifyConfig {
         pub fn new<C: CurveAffine, N: FieldExt>(meta: &mut ConstraintSystem<N>) -> Self {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
             let (rns_base, rns_scalar) =
                 GeneralEccChip::<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::rns();
-            let main_gate_config = MainGate::<N>::configure(meta, advices);
+            let main_gate_config = MainGate::<N>::configure(meta);
             let mut overflow_bit_lens: Vec<usize> = vec![];
             overflow_bit_lens.extend(rns_base.overflow_lengths());
             overflow_bit_lens.extend(rns_scalar.overflow_lengths());

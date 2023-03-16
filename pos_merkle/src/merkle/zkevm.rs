@@ -4,24 +4,15 @@
 // - *_be: Big-Endian bytes
 // - *_le: Little-Endian bytes
 
-pub mod sign_verify;
-
-use crate::table::{KeccakTable, TxFieldTag, TxTable};
-use crate::util::{random_linear_combine_word as rlc, Challenges, SubCircuit, SubCircuitConfig};
+use super::sign_verify::{AssignedSignatureVerify, SignVerifyChip, SignVerifyConfig};
 use crate::witness;
+use crate::zkevm_circuits::util::{
+    random_linear_combine_word as rlc, Challenges, SubCircuit, SubCircuitConfig,
+};
 use eth_types::{
     sign_types::SignData,
     {geth_types::Transaction, Address, Field, ToLittleEndian, ToScalar},
 };
-use halo2_proofs::{
-    circuit::{AssignedCell, Layouter, Region, Value},
-    plonk::{Advice, Column, ConstraintSystem, Error, Expression, Fixed},
-};
-use itertools::Itertools;
-use log::error;
-use sign_verify::{AssignedSignatureVerify, SignVerifyChip, SignVerifyConfig};
-use std::marker::PhantomData;
-
 pub use halo2_proofs::halo2curves::{
     group::{
         ff::{Field as GroupField, PrimeField},
@@ -30,11 +21,20 @@ pub use halo2_proofs::halo2curves::{
     },
     secp256k1::{self, Secp256k1Affine, Secp256k1Compressed},
 };
+use halo2_proofs::{
+    circuit::{AssignedCell, Layouter, Region, Value},
+    plonk::{Advice, Column, ConstraintSystem, Error, Expression, Fixed},
+};
+use itertools::Itertools;
+use log::error;
+use std::marker::PhantomData;
 
 #[cfg(any(feature = "test", test, feature = "test-circuits"))]
 use bus_mapping::circuit_input_builder::keccak_inputs_tx_circuit;
 #[cfg(any(feature = "test", test, feature = "test-circuits"))]
 use halo2_proofs::{circuit::SimpleFloorPlanner, plonk::Circuit};
+
+use crate::zkevm_circuits::table::{KeccakTable, TxFieldTag, TxTable};
 
 /// Number of static fields per tx: [nonce, gas, gas_price,
 /// caller_address, callee_address, is_create, value, call_data_length,

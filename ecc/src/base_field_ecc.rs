@@ -402,19 +402,19 @@ mod tests {
         fn new<C: CurveAffine>(meta: &mut ConstraintSystem<C::Scalar>) -> Self {
             let rns = Rns::<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::construct();
 
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<C::Scalar>::configure(meta, advices);
+            let main_gate_config = MainGate::<C::Scalar>::configure(meta);
             let overflow_bit_lens = rns.overflow_lengths();
             let composition_bit_lens = vec![BIT_LEN_LIMB / NUMBER_OF_LIMBS];
 
