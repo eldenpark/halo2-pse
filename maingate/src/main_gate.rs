@@ -441,15 +441,15 @@ impl<F: FieldExt> MainGate<F> {
     /// Configures polynomial relationships and returns the resuiting config
     pub fn configure(
         meta: &mut ConstraintSystem<F>,
-        advices: [Column<Advice>; 5],
+        // advices: [Column<Advice>; 5],
     ) -> MainGateConfig {
-        // let a = meta.advice_column();
-        // let b = meta.advice_column();
-        // let c = meta.advice_column();
-        // let d = meta.advice_column();
-        // let e = meta.advice_column();
+        let a = meta.advice_column();
+        let b = meta.advice_column();
+        let c = meta.advice_column();
+        let d = meta.advice_column();
+        let e = meta.advice_column();
         //
-        let [a, b, c, d, e] = advices;
+        // let [a, b, c, d, e] = advices;
 
         let sa = meta.fixed_column();
         let sb = meta.fixed_column();
@@ -573,19 +573,19 @@ mod tests {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             TestCircuitConfig { main_gate_config }
         }
 
@@ -642,19 +642,19 @@ mod tests {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             TestCircuitConfig { main_gate_config }
         }
 
@@ -930,19 +930,19 @@ mod tests {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             TestCircuitConfig { main_gate_config }
         }
 
@@ -1022,19 +1022,19 @@ mod tests {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             TestCircuitConfig { main_gate_config }
         }
 
@@ -1152,19 +1152,19 @@ mod tests {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             TestCircuitConfig { main_gate_config }
         }
 
@@ -1312,19 +1312,19 @@ mod tests {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             TestCircuitConfig { main_gate_config }
         }
 
@@ -1439,19 +1439,19 @@ mod tests {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             TestCircuitConfig { main_gate_config }
         }
 
@@ -1543,19 +1543,19 @@ mod tests {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             TestCircuitConfig { main_gate_config }
         }
 
@@ -1624,19 +1624,19 @@ mod tests {
         }
 
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advices = [
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-                meta.advice_column(),
-            ];
+            // let advices = [
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            //     meta.advice_column(),
+            // ];
 
-            for advice in advices {
-                meta.enable_equality(advice);
-            }
+            // for advice in advices {
+            //     meta.enable_equality(advice);
+            // }
 
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             TestCircuitConfig { main_gate_config }
         }
 

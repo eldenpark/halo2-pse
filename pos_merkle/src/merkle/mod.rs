@@ -184,7 +184,7 @@ impl<
         let ecdsa_config = {
             let (rns_base, rns_scalar) =
                 GeneralEccChip::<N, F, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::rns();
-            let main_gate_config = MainGate::<F>::configure(meta, advices);
+            let main_gate_config = MainGate::<F>::configure(meta);
             let mut overflow_bit_lens: Vec<usize> = vec![];
             overflow_bit_lens.extend(rns_base.overflow_lengths());
             overflow_bit_lens.extend(rns_scalar.overflow_lengths());
