@@ -9,7 +9,10 @@ use ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
 use eth_types::sign_types::sign;
 use eth_types::sign_types::{pk_bytes_le, pk_bytes_swap_endianness, SignData};
 use eth_types::{self, Field};
-use halo2_gadgets::poseidon::{primitives::Spec, Pow5Chip};
+use halo2_gadgets::poseidon::{
+    primitives::{P128Pow5T3, Spec},
+    Pow5Chip, Pow5Config,
+};
 use halo2_proofs::arithmetic::Field as HaloField;
 use halo2_proofs::halo2curves::pasta::Fp as PastaFp;
 use halo2_proofs::{
@@ -41,13 +44,63 @@ use rand_chacha::ChaCha20Rng;
 use rand_xorshift::XorShiftRng;
 use std::{iter, marker::PhantomData};
 
-use super::chip::MerkleChip;
+use super::chip::{MerkleChip, MerkleConfig};
 
 const NUMBER_OF_LIMBS: usize = 4;
 const BIT_LEN_LIMB: usize = 72;
 const BIT_LEN_LAST_LIMB: usize = 256 - (NUMBER_OF_LIMBS - 1) * BIT_LEN_LIMB;
-const WIDTH: usize = 3;
-const RATE: usize = 2;
+const POS_WIDTH: usize = 3;
+const POS_RATE: usize = 2;
+
+struct PoseidonMerkleConfig;
+
+impl PoseidonMerkleConfig {
+    pub fn construct<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize>(
+        meta: &mut ConstraintSystem<F>,
+    ) -> (Pow5Config<F, WIDTH, RATE>, MerkleConfig<F, WIDTH, RATE>) {
+        // total 5 advice columns
+        let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>(); // 3
+        let partial_sbox = meta.advice_column(); // 1
+        let swap = meta.advice_column(); // 1
+                                         //
+
+        let rc_a = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
+        let rc_b = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
+
+        let instance = meta.instance_column();
+        meta.enable_equality(instance);
+
+        meta.enable_constant(rc_b[0]);
+
+        let poseidon_config = Pow5Chip::configure::<S>(
+            meta,
+            state.clone().try_into().unwrap(),
+            partial_sbox,
+            rc_a.try_into().unwrap(),
+            rc_b.try_into().unwrap(),
+        );
+
+        let advices = [
+            state[0].clone(),
+            state[1].clone(),
+            state[2].clone(),
+            partial_sbox.clone(),
+            swap.clone(),
+        ];
+
+        for advice in advices.iter() {
+            meta.enable_equality(*advice);
+        }
+
+        let merkle_config = MerkleChip::configure(
+            meta,
+            advices.clone().try_into().unwrap(),
+            poseidon_config.clone(),
+        );
+
+        (poseidon_config, merkle_config)
+    }
+}
 
 /// Auxiliary Gadget to verify a that a message hash is signed by the public
 /// key corresponding to an Ethereum Address.
@@ -247,9 +300,7 @@ impl SignVerifyConfig {
             vec![q_rlc * (rlc_next - rlc::expr(&inputs, challenge))]
         });
     }
-}
 
-impl SignVerifyConfig {
     pub(crate) fn load_range<F: Field>(
         &self,
         layouter: &mut impl Layouter<F>,
@@ -578,7 +629,6 @@ impl<F: Field> SignVerifyChip<F> {
                     .map(|(assigned, byte)| Term::assigned(assigned.cell(), byte)),
             )?
         };
-        println!("msg_hash_rlc {:?}", msg_hash_rlc);
 
         let pk_rlc = {
             let assigned_pk_le = iter::empty()
@@ -600,7 +650,6 @@ impl<F: Field> SignVerifyChip<F> {
                     .map(|(assigned, byte)| Term::assigned(assigned.cell(), byte)),
             )?
         };
-        println!("pk_rlc: {:?}", pk_rlc);
 
         let pk_hash_rlc = self.assign_rlc_le(
             config,
@@ -613,7 +662,6 @@ impl<F: Field> SignVerifyChip<F> {
                 .chain(pk_hash_lo.into_iter().rev())
                 .chain(pk_hash_hi.into_iter().rev().map(Term::unassigned)),
         )?;
-        println!("pk_hash_rlc: {:?}", pk_hash_rlc);
 
         self.enable_keccak_lookup(config, ctx, &is_address_zero, &pk_rlc, &pk_hash_rlc)?;
 
@@ -717,15 +765,19 @@ fn pub_key_hash_to_address<F: Field>(pk_hash: &[u8]) -> F {
 }
 
 #[derive(Clone, Debug)]
-struct TestCircuitSignVerifyConfig<F: Field, S: Spec<F, WIDTH, RATE>> {
+struct TestCircuitSignVerifyConfig {
     sign_verify: SignVerifyConfig,
     challenges: Challenges,
-    _marker: PhantomData<F>,
-    _marker2: PhantomData<S>,
+    // _marker: PhantomData<F>,
 }
 
-impl<S: Spec<F, WIDTH, RATE>, F: Field> TestCircuitSignVerifyConfig<F, S> {
-    pub(crate) fn new(meta: &mut ConstraintSystem<F>) -> Self {
+impl TestCircuitSignVerifyConfig {
+    pub(crate) fn new<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize>(
+        meta: &mut ConstraintSystem<F>,
+    ) -> Self {
+        let (poseidon_config, merkle_config) =
+            { PoseidonMerkleConfig::construct::<F, S, WIDTH, RATE>(meta) };
+
         let keccak_table = KeccakTable::construct(meta);
         let challenges = Challenges::construct(meta);
 
@@ -734,79 +786,43 @@ impl<S: Spec<F, WIDTH, RATE>, F: Field> TestCircuitSignVerifyConfig<F, S> {
             SignVerifyConfig::new(meta, keccak_table, challenges)
         };
 
-        {
-            // total 5 advice columns
-            let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>(); // 3
-            let partial_sbox = meta.advice_column(); // 1
-            let swap = meta.advice_column(); // 1
-                                             //
-
-            let rc_a = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
-            let rc_b = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
-
-            let instance = meta.instance_column();
-            meta.enable_equality(instance);
-
-            meta.enable_constant(rc_b[0]);
-
-            let poseidon_config = Pow5Chip::configure::<S>(
-                meta,
-                state.clone().try_into().unwrap(),
-                partial_sbox,
-                rc_a.try_into().unwrap(),
-                rc_b.try_into().unwrap(),
-            );
-
-            let advices = [
-                state[0].clone(),
-                state[1].clone(),
-                state[2].clone(),
-                partial_sbox.clone(),
-                swap.clone(),
-            ];
-
-            for advice in advices.iter() {
-                meta.enable_equality(*advice);
-            }
-
-            let merkle_config = MerkleChip::configure(
-                meta,
-                advices.clone().try_into().unwrap(),
-                poseidon_config.clone(),
-            );
-        }
-
         TestCircuitSignVerifyConfig {
             sign_verify,
             challenges,
-            _marker: PhantomData,
-            _marker2: PhantomData,
         }
     }
 }
 
 #[derive(Default)]
-struct TestCircuitSignVerify<F: Field, S: Spec<F, WIDTH, RATE>> {
+struct TestCircuitSignVerify<
+    F: Field,
+    S: Spec<F, WIDTH, RATE>,
+    const WIDTH: usize,
+    const RATE: usize,
+> {
     sign_verify: SignVerifyChip<F>,
     signatures: Vec<SignData>,
-    _marker: PhantomData<S>,
+    _marker: PhantomData<F>,
+    _marker2: PhantomData<S>,
 }
 
-impl<F: Field, S: Spec<F, WIDTH, RATE>> Circuit<F> for TestCircuitSignVerify<F, S> {
-    type Config = TestCircuitSignVerifyConfig<F, S>;
+impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> Circuit<F>
+    for TestCircuitSignVerify<F, S, WIDTH, RATE>
+{
+    type Config = TestCircuitSignVerifyConfig;
     type FloorPlanner = SimpleFloorPlanner;
 
     fn without_witnesses(&self) -> Self {
-        // Self::default()
         TestCircuitSignVerify {
             sign_verify: Default::default(),
             signatures: Default::default(),
             _marker: PhantomData,
+            _marker2: PhantomData,
         }
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        TestCircuitSignVerifyConfig::new(meta)
+        TestCircuitSignVerifyConfig::new::<F, S, WIDTH, RATE>(meta)
     }
 
     fn synthesize(
@@ -815,6 +831,7 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>> Circuit<F> for TestCircuitSignVerify<F, 
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
         println!("\nsynthesize()");
+
         let challenges = config.challenges.values(&mut layouter);
 
         self.sign_verify.assign(
@@ -823,11 +840,13 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>> Circuit<F> for TestCircuitSignVerify<F, 
             &self.signatures,
             &challenges,
         )?;
+
         config.sign_verify.keccak_table.dev_load(
             &mut layouter,
             &keccak_inputs_sign_verify(&self.signatures),
             &challenges,
         )?;
+
         config.sign_verify.load_range(&mut layouter)?;
         Ok(())
     }
@@ -838,59 +857,6 @@ mod sign_verify_tests {
     use super::*;
     use maingate::DimensionMeasurement;
     use pretty_assertions::assert_eq;
-
-    // fn run<F: Field>(max_verif: usize, signatures: Vec<SignData>) {
-    //     let mut rng = XorShiftRng::seed_from_u64(2);
-    //     let aux_generator =
-    //         <Secp256k1Affine as CurveAffine>::CurveExt::random(&mut rng).to_affine();
-
-    //     // SignVerifyChip -> ECDSAChip -> MainGate instance column
-    //     let circuit = TestCircuitSignVerify::<F> {
-    //         sign_verify: SignVerifyChip {
-    //             aux_generator,
-    //             window_size: 2,
-    //             max_verif,
-    //             _marker: PhantomData,
-    //         },
-    //         signatures,
-    //     };
-
-    //     let dimension = DimensionMeasurement::measure(&circuit).unwrap();
-    //     let k = dimension.k();
-
-    //     let prover = match MockProver::run(k, &circuit, vec![vec![]]) {
-    //         Ok(prover) => prover,
-    //         Err(e) => panic!("{:#?}", e),
-    //     };
-
-    //     assert_eq!(prover.verify(), Ok(()));
-    // }
-
-    // Generate a test key pair
-    fn gen_key_pair(rng: impl RngCore) -> (secp256k1::Fq, Secp256k1Affine) {
-        // generate a valid signature
-        let generator = Secp256k1Affine::generator();
-        let sk = secp256k1::Fq::random(rng);
-        let pk = generator * sk;
-        let pk = pk.to_affine();
-
-        (sk, pk)
-    }
-
-    // Generate a test message hash
-    fn gen_msg_hash(rng: impl RngCore) -> secp256k1::Fq {
-        secp256k1::Fq::random(rng)
-    }
-
-    // Returns (r, s)
-    fn sign_with_rng(
-        rng: impl RngCore,
-        sk: secp256k1::Fq,
-        msg_hash: secp256k1::Fq,
-    ) -> (secp256k1::Fq, secp256k1::Fq) {
-        let randomness = secp256k1::Fq::random(rng);
-        sign(randomness, sk, msg_hash)
-    }
 
     #[test]
     fn sign_verify1() {
@@ -944,7 +910,7 @@ mod sign_verify_tests {
             <Secp256k1Affine as CurveAffine>::CurveExt::random(&mut rng).to_affine();
 
         // SignVerifyChip -> ECDSAChip -> MainGate instance column
-        let circuit = TestCircuitSignVerify::<PastaFp> {
+        let circuit = TestCircuitSignVerify::<PastaFp, P128Pow5T3, POS_WIDTH, POS_RATE> {
             sign_verify: SignVerifyChip {
                 aux_generator,
                 window_size: 2,
@@ -953,16 +919,46 @@ mod sign_verify_tests {
             },
             signatures,
             _marker: PhantomData,
+            _marker2: PhantomData,
         };
 
         let dimension = DimensionMeasurement::measure(&circuit).unwrap();
         let k = dimension.k();
 
-        let prover = match MockProver::run(k, &circuit, vec![vec![]]) {
+        let instance = vec![vec![], vec![]];
+
+        println!("Running mock prover, k: {}", k);
+        let prover = match MockProver::run(k, &circuit, instance) {
             Ok(prover) => prover,
             Err(e) => panic!("{:#?}", e),
         };
 
-        assert_eq!(prover.verify(), Ok(()));
+        prover.verify().unwrap();
+    }
+
+    // Generate a test key pair
+    fn gen_key_pair(rng: impl RngCore) -> (secp256k1::Fq, Secp256k1Affine) {
+        // generate a valid signature
+        let generator = Secp256k1Affine::generator();
+        let sk = secp256k1::Fq::random(rng);
+        let pk = generator * sk;
+        let pk = pk.to_affine();
+
+        (sk, pk)
+    }
+
+    // Generate a test message hash
+    fn gen_msg_hash(rng: impl RngCore) -> secp256k1::Fq {
+        secp256k1::Fq::random(rng)
+    }
+
+    // Returns (r, s)
+    fn sign_with_rng(
+        rng: impl RngCore,
+        sk: secp256k1::Fq,
+        msg_hash: secp256k1::Fq,
+    ) -> (secp256k1::Fq, secp256k1::Fq) {
+        let randomness = secp256k1::Fq::random(rng);
+        sign(randomness, sk, msg_hash)
     }
 }
