@@ -320,63 +320,6 @@ impl<
                 },
             )?;
 
-            layouter.assign_region(
-                || "address verify",
-                |region| {
-                    // let main_gate = chips.main_gate;
-
-                    // let (padding, sign_data) = match self.signature {
-                    //     Some(sign_data) => (false, sign_data.clone()),
-                    //     None => (true, SignData::default()),
-                    // };
-
-                    // let pk_le = utils::pk_bytes_le(&self.public_key);
-                    // let pk_be = utils::pk_bytes_swap_endianness(&pk_le);
-                    // let pk_hash = (!padding)
-                    //     .then(|| {
-                    //         let mut keccak = Keccak::default();
-                    //         keccak.update(&pk_be);
-                    //         let hash: [_; 32] =
-                    //             keccak.digest().try_into().expect("vec to array of size 32");
-                    //         hash
-                    //     })
-                    //     .unwrap_or_default()
-                    //     .map(|byte| Value::known(F::from(byte as u64)));
-                    // println!("pk_hash: {:?}", pk_hash);
-
-                    // let pk_hash_hi = pk_hash[..12].to_vec();
-                    // // Ref. spec SignVerifyChip 2. Verify that the first 20 bytes of the
-                    // // pub_key_hash equal the address
-                    // let (address, pk_hash_lo) = {
-                    //     let powers_of_256 = std::iter::successors(Some(F::one()), |coeff| {
-                    //         Some(F::from(256) * coeff)
-                    //     })
-                    //     .take(20)
-                    //     .collect_vec();
-
-                    //     let terms = pk_hash[12..]
-                    //         .iter()
-                    //         .zip(powers_of_256.into_iter().rev())
-                    //         .map(|(byte, coeff)| maingate::Term::Unassigned(*byte, coeff))
-                    //         .collect_vec();
-
-                    //     let (address, _) =
-                    //         main_gate.decompose(ctx, &terms, F::zero(), |_, _| Ok(()))?;
-
-                    //     (
-                    //         address,
-                    //         // pk_hash_lo
-                    //         //     .into_iter()
-                    //         //     .zip(pk_hash[12..].iter())
-                    //         //     .map(|(assigned, byte)| Term::assigned(assigned.cell(), *byte))
-                    //         //     .collect_vec(),
-                    //     )
-                    // };
-
-                    Ok(())
-                },
-            )?;
-
             // println!("synthesize(): start range chip thing");
             let range_chip = RangeChip::<F>::new(config.ecdsa_config.range_config);
             range_chip.load_table(&mut layouter)?;

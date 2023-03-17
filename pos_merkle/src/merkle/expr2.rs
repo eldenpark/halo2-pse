@@ -105,6 +105,23 @@ impl PoseidonMerkleConfig {
 /// Auxiliary Gadget to verify a that a message hash is signed by the public
 /// key corresponding to an Ethereum Address.
 #[derive(Clone, Debug)]
+pub struct PoseidonMerkleChip<F: Field> {
+    // /// Aux generator for EccChip
+    // pub aux_generator: Secp256k1Affine,
+    // /// Window size for EccChip
+    // pub window_size: usize,
+    // /// Max number of verifications
+    // pub max_verif: usize,
+    pub _marker: PhantomData<F>,
+}
+
+impl<F: Field> PoseidonMerkleChip<F> {
+    // pub fn climb_up_tree(config:)
+}
+
+/// Auxiliary Gadget to verify a that a message hash is signed by the public
+/// key corresponding to an Ethereum Address.
+#[derive(Clone, Debug)]
 pub struct SignVerifyChip<F: Field> {
     /// Aux generator for EccChip
     pub aux_generator: Secp256k1Affine,
@@ -572,9 +589,9 @@ impl<F: Field> SignVerifyChip<F> {
             })
             .unwrap_or_default()
             .map(|byte| Value::known(F::from(byte as u64)));
-        println!("pk_hash: {:?}", pk_hash);
 
         let pk_hash_hi = pk_hash[..12].to_vec();
+
         // Ref. spec SignVerifyChip 2. Verify that the first 20 bytes of the
         // pub_key_hash equal the address
         let (address, pk_hash_lo) = {
@@ -766,7 +783,7 @@ fn pub_key_hash_to_address<F: Field>(pk_hash: &[u8]) -> F {
 
 #[derive(Clone, Debug)]
 struct TestCircuitSignVerifyConfig {
-    sign_verify: SignVerifyConfig,
+    sign_verify_config: SignVerifyConfig,
     challenges: Challenges,
     // _marker: PhantomData<F>,
 }
@@ -781,13 +798,13 @@ impl TestCircuitSignVerifyConfig {
         let keccak_table = KeccakTable::construct(meta);
         let challenges = Challenges::construct(meta);
 
-        let sign_verify = {
+        let sign_verify_config = {
             let challenges = challenges.exprs(meta);
             SignVerifyConfig::new(meta, keccak_table, challenges)
         };
 
         TestCircuitSignVerifyConfig {
-            sign_verify,
+            sign_verify_config,
             challenges,
         }
     }
@@ -802,6 +819,12 @@ struct TestCircuitSignVerify<
 > {
     sign_verify: SignVerifyChip<F>,
     signatures: Vec<SignData>,
+
+    leaf: Value<F>,
+    root: Value<F>,
+    leaf_idx: Value<u32>,
+    path: Value<[F; 31]>,
+
     _marker: PhantomData<F>,
     _marker2: PhantomData<S>,
 }
@@ -816,6 +839,12 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
         TestCircuitSignVerify {
             sign_verify: Default::default(),
             signatures: Default::default(),
+
+            leaf: Value::unknown(),
+            root: Value::unknown(),
+            leaf_idx: Value::unknown(),
+            path: Value::unknown(),
+
             _marker: PhantomData,
             _marker2: PhantomData,
         }
@@ -834,20 +863,32 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 
         let challenges = config.challenges.values(&mut layouter);
 
-        self.sign_verify.assign(
-            &config.sign_verify,
+        let sig_verifications = self.sign_verify.assign(
+            &config.sign_verify_config,
             &mut layouter,
             &self.signatures,
             &challenges,
         )?;
 
-        config.sign_verify.keccak_table.dev_load(
+        // self.climb_up_tree(config, layouter, sig_verifications)?;
+
+        let address = &sig_verifications[0].address;
+        println!("address: {:?}", address);
+
+        address.value().map(|v| {
+            let mut arr = v.to_repr();
+            arr.reverse();
+            let arr_str = hex::encode(arr);
+            println!("in-circuit: arr rev: {:?}", arr_str);
+        });
+
+        config.sign_verify_config.keccak_table.dev_load(
             &mut layouter,
             &keccak_inputs_sign_verify(&self.signatures),
             &challenges,
         )?;
 
-        config.sign_verify.load_range(&mut layouter)?;
+        config.sign_verify_config.load_range(&mut layouter)?;
         Ok(())
     }
 }
@@ -855,6 +896,11 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 #[cfg(test)]
 mod sign_verify_tests {
     use super::*;
+    use ff::PrimeField;
+    use halo2_gadgets::{
+        poseidon::{self, primitives::ConstantLength},
+        utilities::i2lebsp,
+    };
     use maingate::DimensionMeasurement;
     use pretty_assertions::assert_eq;
 
@@ -869,14 +915,8 @@ mod sign_verify_tests {
         // pk_hash: d90e2e9d267cbcfd94de06fa7adbe6857c2c733025c0b8938a76beeefc85d6c7
         // addr: 0x7adbe6857c2c733025c0b8938a76beeefc85d6c7
         let mut rng = XorShiftRng::seed_from_u64(1);
-        // const MAX_VERIF: usize = 3;
-        // const MAX_VERIF: usize = 1;
 
-        // const NUM_SIGS: usize = 2;
-        const NUM_SIGS: usize = 1;
-
-        let mut signatures = Vec::new();
-        for _ in 0..NUM_SIGS {
+        let (signature, address) = {
             let (sk, pk) = gen_key_pair(&mut rng);
             println!("pk: {:?}", pk);
 
@@ -892,18 +932,97 @@ mod sign_verify_tests {
                 })
                 .unwrap_or_default();
             // .map(|byte| Value::known(F::from(byte as u64)));
+
             let pk_hash_str = hex::encode(pk_hash);
             println!("pk_hash_str: {:?}", pk_hash_str);
+
+            let address = {
+                let mut a = [0u8; 32];
+                a[12..].clone_from_slice(&pk_hash[12..]);
+                a
+            };
+            let address_str = hex::encode(&address);
+            println!("address_str: {:?}", address_str);
 
             let msg_hash = gen_msg_hash(&mut rng);
             let sig = sign_with_rng(&mut rng, sk, msg_hash);
 
-            signatures.push(SignData {
+            let sign_data = SignData {
                 signature: sig,
                 pk,
                 msg_hash,
-            });
-        }
+            };
+
+            (sign_data, address)
+        };
+
+        let (leaf, root, leaf_idx, path) = {
+            let mut addr = address;
+            addr.reverse();
+
+            let leaf = PastaFp::from_repr(addr).unwrap();
+
+            let path = [
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+            ];
+
+            let leaf_idx = 0;
+
+            let pos_bits: [bool; 31] = i2lebsp(leaf_idx as u64);
+            let mut root = leaf;
+            for (idx, el) in path.iter().enumerate() {
+                let msg = if pos_bits[idx] {
+                    [*el, root]
+                } else {
+                    [root, *el]
+                };
+
+                root = poseidon::primitives::Hash::<
+                    PastaFp,
+                    P128Pow5T3,
+                    ConstantLength<2>,
+                    POS_WIDTH,
+                    POS_RATE,
+                >::init()
+                .hash(msg);
+            }
+
+            println!("leaf: {:?}", leaf);
+            println!("leaf_idx: {:?}", leaf_idx);
+            println!("root: {:?}", root);
+
+            (leaf, root, leaf_idx, path)
+        };
 
         let mut rng = XorShiftRng::seed_from_u64(2);
         let aux_generator =
@@ -917,7 +1036,13 @@ mod sign_verify_tests {
                 max_verif: 1,
                 _marker: PhantomData,
             },
-            signatures,
+            signatures: vec![signature],
+
+            leaf: Value::known(leaf),
+            root: Value::known(root),
+            leaf_idx: Value::known(leaf_idx),
+            path: Value::known(path),
+
             _marker: PhantomData,
             _marker2: PhantomData,
         };
