@@ -60,7 +60,6 @@ pub struct MyConfig<F: FieldExt, const WIDTH: usize, const RATE: usize> {
     merkle_config: MerkleConfig<F, WIDTH, RATE>,
     poseidon_config: Pow5Config<F, WIDTH, RATE>,
     ecdsa_config: EcdsaConfig,
-    // ecdsa_config: TestCircuitEcdsaVerifyConfig,
     _f: PhantomData<F>,
 }
 
@@ -75,7 +74,6 @@ impl<F: FieldExt, const WIDTH: usize, const RATE: usize> MyConfig<F, WIDTH, RATE
 }
 
 struct HashCircuit<
-    // C: Curve,
     N: CurveAffine,
     S: Spec<F, WIDTH, RATE>,
     F: FieldExt,
