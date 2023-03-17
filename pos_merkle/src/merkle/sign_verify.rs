@@ -715,6 +715,7 @@ mod sign_verify_tests {
     use bus_mapping::circuit_input_builder::keccak_inputs_sign_verify;
     use eth_types::sign_types::sign;
     use halo2_proofs::arithmetic::Field as HaloField;
+    use halo2_proofs::halo2curves::pasta::Fp;
     use halo2_proofs::{
         circuit::SimpleFloorPlanner,
         dev::MockProver,
@@ -891,6 +892,6 @@ mod sign_verify_tests {
         }
 
         let k = 19;
-        run::<Fr>(k, MAX_VERIF, signatures);
+        run::<Fp>(k, MAX_VERIF, signatures);
     }
 }

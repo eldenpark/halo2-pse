@@ -29,6 +29,10 @@ use halo2_proofs::{
     halo2curves::{
         bn256::{Fq, Fr},
         group::ff::PrimeField,
+        pasta::Fp as PastaFp,
+        pasta::Fq as PastaFq,
+        secp256k1::Fp as SecFp,
+        secp256k1::Fq as SecFq,
     },
 };
 
@@ -57,6 +61,14 @@ impl Field for Fr {}
 // Impl custom `Field` trait for BN256 Frq to be used and consistent with the
 // rest of the workspace.
 impl Field for Fq {}
+
+impl Field for PastaFp {}
+
+impl Field for PastaFq {}
+
+impl Field for SecFp {}
+
+impl Field for SecFq {}
 
 /// Trait used to define types that can be converted to a 256 bit scalar value.
 pub trait ToScalar<F> {
