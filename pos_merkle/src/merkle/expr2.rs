@@ -105,7 +105,7 @@ impl PoseidonMerkleConfig {
 /// Auxiliary Gadget to verify a that a message hash is signed by the public
 /// key corresponding to an Ethereum Address.
 #[derive(Clone, Debug)]
-pub struct PoseidonMerkleChip<F: Field> {
+pub struct PoseidonMerkleChip<F: Field, const WIDTH: usize, const RATE: usize> {
     // /// Aux generator for EccChip
     // pub aux_generator: Secp256k1Affine,
     // /// Window size for EccChip
@@ -115,8 +115,28 @@ pub struct PoseidonMerkleChip<F: Field> {
     pub _marker: PhantomData<F>,
 }
 
-impl<F: Field> PoseidonMerkleChip<F> {
-    // pub fn climb_up_tree(config:)
+impl<F: Field, const WIDTH: usize, const RATE: usize> PoseidonMerkleChip<F, WIDTH, RATE> {
+    pub fn construct_poseidon_chip(
+        poseidon_config: Pow5Config<F, WIDTH, RATE>,
+    ) -> Pow5Chip<F, WIDTH, RATE> {
+        Pow5Chip::construct(poseidon_config.clone())
+    }
+
+    pub fn construct_merkle_chip(
+        merkle_config: MerkleConfig<F, WIDTH, RATE>,
+    ) -> MerkleChip<F, WIDTH, RATE> {
+        MerkleChip::construct(merkle_config.clone())
+    }
+}
+
+impl<F: Field, const WIDTH: usize, const RATE: usize> Default
+    for PoseidonMerkleChip<F, WIDTH, RATE>
+{
+    fn default() -> Self {
+        Self {
+            _marker: PhantomData::default(),
+        }
+    }
 }
 
 /// Auxiliary Gadget to verify a that a message hash is signed by the public
@@ -817,7 +837,9 @@ struct TestCircuitSignVerify<
     const WIDTH: usize,
     const RATE: usize,
 > {
-    sign_verify: SignVerifyChip<F>,
+    sign_verify_chip: SignVerifyChip<F>,
+    poseidon_merkle_chip: PoseidonMerkleChip<F, WIDTH, RATE>,
+
     signatures: Vec<SignData>,
 
     leaf: Value<F>,
@@ -837,7 +859,9 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 
     fn without_witnesses(&self) -> Self {
         TestCircuitSignVerify {
-            sign_verify: Default::default(),
+            sign_verify_chip: Default::default(),
+            poseidon_merkle_chip: Default::default(),
+
             signatures: Default::default(),
 
             leaf: Value::unknown(),
@@ -863,7 +887,7 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 
         let challenges = config.challenges.values(&mut layouter);
 
-        let sig_verifications = self.sign_verify.assign(
+        let sig_verifications = self.sign_verify_chip.assign(
             &config.sign_verify_config,
             &mut layouter,
             &self.signatures,
@@ -1030,12 +1054,16 @@ mod sign_verify_tests {
 
         // SignVerifyChip -> ECDSAChip -> MainGate instance column
         let circuit = TestCircuitSignVerify::<PastaFp, P128Pow5T3, POS_WIDTH, POS_RATE> {
-            sign_verify: SignVerifyChip {
+            sign_verify_chip: SignVerifyChip {
                 aux_generator,
                 window_size: 2,
                 max_verif: 1,
                 _marker: PhantomData,
             },
+            poseidon_merkle_chip: PoseidonMerkleChip {
+                _marker: PhantomData,
+            },
+
             signatures: vec![signature],
 
             leaf: Value::known(leaf),
