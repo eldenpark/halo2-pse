@@ -11,6 +11,7 @@ use halo2_gadgets::{
 };
 use halo2_proofs::circuit::Region;
 use halo2_proofs::halo2curves::pasta::{pallas, Fp};
+use halo2_proofs::plonk::Instance;
 use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
 use halo2_proofs::{
     circuit::Chip,

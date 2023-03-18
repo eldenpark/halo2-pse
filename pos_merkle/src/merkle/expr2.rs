@@ -13,8 +13,8 @@ use halo2_gadgets::poseidon::{
     primitives::{P128Pow5T3, Spec},
     Pow5Chip, Pow5Config,
 };
-use halo2_proofs::arithmetic::Field as HaloField;
 use halo2_proofs::halo2curves::pasta::Fp as PastaFp;
+use halo2_proofs::{arithmetic::Field as HaloField, plonk::Instance};
 use halo2_proofs::{
     arithmetic::{CurveAffine, FieldExt},
     circuit::{AssignedCell, Cell, Layouter, Value},
@@ -44,7 +44,10 @@ use rand_chacha::ChaCha20Rng;
 use rand_xorshift::XorShiftRng;
 use std::{iter, marker::PhantomData};
 
-use super::chip::{MerkleChip, MerkleConfig};
+use super::{
+    chip::{MerkleChip, MerkleConfig},
+    merkle_path::MerklePath,
+};
 
 const NUMBER_OF_LIMBS: usize = 4;
 const BIT_LEN_LIMB: usize = 72;
@@ -52,17 +55,21 @@ const BIT_LEN_LAST_LIMB: usize = 256 - (NUMBER_OF_LIMBS - 1) * BIT_LEN_LIMB;
 const POS_WIDTH: usize = 3;
 const POS_RATE: usize = 2;
 
-struct PoseidonMerkleConfig;
+#[derive(Clone, Debug)]
+struct PoseidonMerkleConfig<F: Field, const WIDTH: usize, const RATE: usize> {
+    pub instance: Column<Instance>,
+    pub poseidon_config: Pow5Config<F, WIDTH, RATE>,
+    pub merkle_config: MerkleConfig<F, WIDTH, RATE>,
+}
 
-impl PoseidonMerkleConfig {
-    pub fn construct<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize>(
+impl<F: Field, const WIDTH: usize, const RATE: usize> PoseidonMerkleConfig<F, WIDTH, RATE> {
+    pub fn construct<S: Spec<F, WIDTH, RATE>>(
         meta: &mut ConstraintSystem<F>,
-    ) -> (Pow5Config<F, WIDTH, RATE>, MerkleConfig<F, WIDTH, RATE>) {
+    ) -> PoseidonMerkleConfig<F, WIDTH, RATE> {
         // total 5 advice columns
         let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>(); // 3
         let partial_sbox = meta.advice_column(); // 1
         let swap = meta.advice_column(); // 1
-                                         //
 
         let rc_a = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
         let rc_b = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
@@ -98,43 +105,86 @@ impl PoseidonMerkleConfig {
             poseidon_config.clone(),
         );
 
-        (poseidon_config, merkle_config)
+        PoseidonMerkleConfig {
+            instance,
+            poseidon_config,
+            merkle_config,
+        }
     }
 }
 
 /// Auxiliary Gadget to verify a that a message hash is signed by the public
 /// key corresponding to an Ethereum Address.
 #[derive(Clone, Debug)]
-pub struct PoseidonMerkleChip<F: Field, const WIDTH: usize, const RATE: usize> {
-    // /// Aux generator for EccChip
-    // pub aux_generator: Secp256k1Affine,
-    // /// Window size for EccChip
-    // pub window_size: usize,
-    // /// Max number of verifications
-    // pub max_verif: usize,
+pub struct PoseidonMerkleChip<
+    F: Field,
+    S: Spec<F, WIDTH, RATE>,
+    const WIDTH: usize,
+    const RATE: usize,
+> {
     pub _marker: PhantomData<F>,
+    pub _marker2: PhantomData<S>,
 }
 
-impl<F: Field, const WIDTH: usize, const RATE: usize> PoseidonMerkleChip<F, WIDTH, RATE> {
-    pub fn construct_poseidon_chip(
-        poseidon_config: Pow5Config<F, WIDTH, RATE>,
-    ) -> Pow5Chip<F, WIDTH, RATE> {
-        Pow5Chip::construct(poseidon_config.clone())
-    }
+impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize>
+    PoseidonMerkleChip<F, S, WIDTH, RATE>
+{
+    // pub fn construct_poseidon_chip(
+    //     poseidon_config: Pow5Config<F, WIDTH, RATE>,
+    // ) -> Pow5Chip<F, WIDTH, RATE> {
+    //     Pow5Chip::construct(poseidon_config.clone())
+    // }
 
-    pub fn construct_merkle_chip(
+    // pub fn construct_merkle_chip(
+    //     merkle_config: MerkleConfig<F, WIDTH, RATE>,
+    // ) -> MerkleChip<F, WIDTH, RATE> {
+    //     MerkleChip::construct(merkle_config.clone())
+    // }
+
+    pub fn climb_up_tree(
+        &self,
         merkle_config: MerkleConfig<F, WIDTH, RATE>,
-    ) -> MerkleChip<F, WIDTH, RATE> {
-        MerkleChip::construct(merkle_config.clone())
+        layouter: &mut impl Layouter<F>,
+        leaf: &AssignedCell<F, F>,
+        leaf_idx: Value<u32>,
+        path: Value<[F; 31]>,
+    ) -> Result<AssignedCell<F, F>, Error> {
+        let leaf = layouter.assign_region(
+            || "temp",
+            |mut region| {
+                let address = leaf.copy_advice(
+                    || "address as leaf",
+                    &mut region,
+                    merkle_config.advices[0],
+                    0,
+                );
+                return address;
+            },
+        )?;
+
+        let merkle_chip = MerkleChip::construct(merkle_config.clone());
+
+        let merkle_inputs = MerklePath::<S, _, _, WIDTH, RATE> {
+            chip: merkle_chip,
+            leaf_idx,
+            path,
+            phantom: PhantomData,
+        };
+
+        let calculated_root =
+            merkle_inputs.calculate_root(layouter.namespace(|| "merkle root calculation"), leaf)?;
+
+        Ok(calculated_root)
     }
 }
 
-impl<F: Field, const WIDTH: usize, const RATE: usize> Default
-    for PoseidonMerkleChip<F, WIDTH, RATE>
+impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> Default
+    for PoseidonMerkleChip<F, S, WIDTH, RATE>
 {
     fn default() -> Self {
         Self {
-            _marker: PhantomData::default(),
+            _marker: PhantomData,
+            _marker2: PhantomData,
         }
     }
 }
@@ -802,33 +852,30 @@ fn pub_key_hash_to_address<F: Field>(pk_hash: &[u8]) -> F {
 }
 
 #[derive(Clone, Debug)]
-struct TestCircuitSignVerifyConfig {
-    sign_verify_config: SignVerifyConfig,
-    challenges: Challenges,
-    // _marker: PhantomData<F>,
+struct TestCircuitSignVerifyConfig<F: Field, const WIDTH: usize, const RATE: usize> {
+    pub sign_verify_config: SignVerifyConfig,
+    pub poseidon_merkle_config: PoseidonMerkleConfig<F, WIDTH, RATE>,
+    // pub poseidon_config: Pow5Config<F, WIDTH, RATE>,
+    // pub merkle_config: MerkleConfig<F, WIDTH, RATE>,
+    pub challenges: Challenges,
 }
 
-impl TestCircuitSignVerifyConfig {
-    pub(crate) fn new<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize>(
-        meta: &mut ConstraintSystem<F>,
-    ) -> Self {
-        let (poseidon_config, merkle_config) =
-            { PoseidonMerkleConfig::construct::<F, S, WIDTH, RATE>(meta) };
-
-        let keccak_table = KeccakTable::construct(meta);
-        let challenges = Challenges::construct(meta);
-
-        let sign_verify_config = {
-            let challenges = challenges.exprs(meta);
-            SignVerifyConfig::new(meta, keccak_table, challenges)
-        };
-
-        TestCircuitSignVerifyConfig {
-            sign_verify_config,
-            challenges,
-        }
-    }
-}
+// impl<F: Field, const WIDTH: usize, const RATE: usize> TestCircuitSignVerifyConfig<F, WIDTH, RATE> {
+//     pub(crate) fn new(
+//         meta: &mut ConstraintSystem<F>,
+//         poseidong_config: Pow5Config<F, WIDTH, RATE>,
+//         merkle_config: MerkleConfig<F, WIDTH, RATE>,
+//         sign_verify_config:
+//         challenges: Challenges,
+//     ) -> Self {
+//         TestCircuitSignVerifyConfig {
+//             sign_verify_config,
+//             poseidon_config,
+//             merkle_config,
+//             challenges,
+//         }
+//     }
+// }
 
 #[derive(Default)]
 struct TestCircuitSignVerify<
@@ -838,7 +885,7 @@ struct TestCircuitSignVerify<
     const RATE: usize,
 > {
     sign_verify_chip: SignVerifyChip<F>,
-    poseidon_merkle_chip: PoseidonMerkleChip<F, WIDTH, RATE>,
+    poseidon_merkle_chip: PoseidonMerkleChip<F, S, WIDTH, RATE>,
 
     signatures: Vec<SignData>,
 
@@ -854,7 +901,7 @@ struct TestCircuitSignVerify<
 impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> Circuit<F>
     for TestCircuitSignVerify<F, S, WIDTH, RATE>
 {
-    type Config = TestCircuitSignVerifyConfig;
+    type Config = TestCircuitSignVerifyConfig<F, WIDTH, RATE>;
     type FloorPlanner = SimpleFloorPlanner;
 
     fn without_witnesses(&self) -> Self {
@@ -875,7 +922,21 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        TestCircuitSignVerifyConfig::new::<F, S, WIDTH, RATE>(meta)
+        let poseidon_merkle_config = PoseidonMerkleConfig::construct::<S>(meta);
+
+        let keccak_table = KeccakTable::construct(meta);
+        let challenges = Challenges::construct(meta);
+
+        let sign_verify_config = {
+            let challenges = challenges.exprs(meta);
+            SignVerifyConfig::new(meta, keccak_table, challenges)
+        };
+
+        TestCircuitSignVerifyConfig {
+            sign_verify_config,
+            poseidon_merkle_config,
+            challenges,
+        }
     }
 
     fn synthesize(
@@ -894,7 +955,21 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
             &challenges,
         )?;
 
-        // self.climb_up_tree(config, layouter, sig_verifications)?;
+        let calculated_root = self.poseidon_merkle_chip.climb_up_tree(
+            config.poseidon_merkle_config.merkle_config,
+            &mut layouter,
+            &sig_verifications.get(0).unwrap().address,
+            self.leaf_idx,
+            self.path,
+        )?;
+
+        layouter.constrain_instance(
+            calculated_root.cell(),
+            config.poseidon_merkle_config.instance,
+            0,
+        )?;
+
+        println!("calculated_root: {:?}", calculated_root);
 
         let address = &sig_verifications[0].address;
         println!("address: {:?}", address);
@@ -1062,6 +1137,7 @@ mod sign_verify_tests {
             },
             poseidon_merkle_chip: PoseidonMerkleChip {
                 _marker: PhantomData,
+                _marker2: PhantomData,
             },
 
             signatures: vec![signature],
@@ -1078,7 +1154,7 @@ mod sign_verify_tests {
         let dimension = DimensionMeasurement::measure(&circuit).unwrap();
         let k = dimension.k();
 
-        let instance = vec![vec![], vec![]];
+        let instance = vec![vec![root], vec![]];
 
         println!("Running mock prover, k: {}", k);
         let prover = match MockProver::run(k, &circuit, instance) {

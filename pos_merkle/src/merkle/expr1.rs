@@ -134,7 +134,6 @@ impl<
         let state = (0..WIDTH).map(|_| meta.advice_column()).collect::<Vec<_>>(); // 3
         let partial_sbox = meta.advice_column(); // 1
         let swap = meta.advice_column(); // 1
-                                         //
 
         let rc_a = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
         let rc_b = (0..WIDTH).map(|_| meta.fixed_column()).collect::<Vec<_>>();
