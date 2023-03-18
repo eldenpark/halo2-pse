@@ -843,54 +843,54 @@ mod sign_verify_tests {
         sign(randomness, sk, msg_hash)
     }
 
-    // #[test]
-    fn sign_verify1__() {
-        // Vectors using `XorShiftRng::seed_from_u64(1)`
-        // sk: 0x771bd7bf6c6414b9370bb8559d46e1cedb479b1836ea3c2e59a54c343b0d0495
-        // pk: (
-        //   0x8e31a3586d4c8de89d4e0131223ecfefa4eb76215f68a691ae607757d6256ede,
-        //   0xc76fdd462294a7eeb8ff3f0f698eb470f32085ba975801dbe446ed8e0b05400b
-        // )
-        // pk_hash: d90e2e9d267cbcfd94de06fa7adbe6857c2c733025c0b8938a76beeefc85d6c7
-        // addr: 0x7adbe6857c2c733025c0b8938a76beeefc85d6c7
-        let mut rng = XorShiftRng::seed_from_u64(1);
-        // const MAX_VERIF: usize = 3;
-        const MAX_VERIF: usize = 1;
+    // // #[test]
+    // fn sign_verify1__() {
+    //     // Vectors using `XorShiftRng::seed_from_u64(1)`
+    //     // sk: 0x771bd7bf6c6414b9370bb8559d46e1cedb479b1836ea3c2e59a54c343b0d0495
+    //     // pk: (
+    //     //   0x8e31a3586d4c8de89d4e0131223ecfefa4eb76215f68a691ae607757d6256ede,
+    //     //   0xc76fdd462294a7eeb8ff3f0f698eb470f32085ba975801dbe446ed8e0b05400b
+    //     // )
+    //     // pk_hash: d90e2e9d267cbcfd94de06fa7adbe6857c2c733025c0b8938a76beeefc85d6c7
+    //     // addr: 0x7adbe6857c2c733025c0b8938a76beeefc85d6c7
+    //     let mut rng = XorShiftRng::seed_from_u64(1);
+    //     // const MAX_VERIF: usize = 3;
+    //     const MAX_VERIF: usize = 1;
 
-        // const NUM_SIGS: usize = 2;
-        const NUM_SIGS: usize = 1;
+    //     // const NUM_SIGS: usize = 2;
+    //     const NUM_SIGS: usize = 1;
 
-        let mut signatures = Vec::new();
-        for _ in 0..NUM_SIGS {
-            let (sk, pk) = gen_key_pair(&mut rng);
-            println!("pk: {:?}", pk);
+    //     let mut signatures = Vec::new();
+    //     for _ in 0..NUM_SIGS {
+    //         let (sk, pk) = gen_key_pair(&mut rng);
+    //         println!("pk: {:?}", pk);
 
-            let pk_le = pk_bytes_le(&pk);
-            let pk_be = pk_bytes_swap_endianness(&pk_le);
-            let pk_hash = (!false)
-                .then(|| {
-                    let mut keccak = Keccak::default();
-                    keccak.update(&pk_be);
-                    let hash: [_; 32] =
-                        keccak.digest().try_into().expect("vec to array of size 32");
-                    hash
-                })
-                .unwrap_or_default();
-            // .map(|byte| Value::known(F::from(byte as u64)));
-            let pk_hash_str = hex::encode(pk_hash);
-            println!("pk_hash_str: {:?}", pk_hash_str);
+    //         let pk_le = pk_bytes_le(&pk);
+    //         let pk_be = pk_bytes_swap_endianness(&pk_le);
+    //         let pk_hash = (!false)
+    //             .then(|| {
+    //                 let mut keccak = Keccak::default();
+    //                 keccak.update(&pk_be);
+    //                 let hash: [_; 32] =
+    //                     keccak.digest().try_into().expect("vec to array of size 32");
+    //                 hash
+    //             })
+    //             .unwrap_or_default();
+    //         // .map(|byte| Value::known(F::from(byte as u64)));
+    //         let pk_hash_str = hex::encode(pk_hash);
+    //         println!("pk_hash_str: {:?}", pk_hash_str);
 
-            let msg_hash = gen_msg_hash(&mut rng);
-            let sig = sign_with_rng(&mut rng, sk, msg_hash);
+    //         let msg_hash = gen_msg_hash(&mut rng);
+    //         let sig = sign_with_rng(&mut rng, sk, msg_hash);
 
-            signatures.push(SignData {
-                signature: sig,
-                pk,
-                msg_hash,
-            });
-        }
+    //         signatures.push(SignData {
+    //             signature: sig,
+    //             pk,
+    //             msg_hash,
+    //         });
+    //     }
 
-        let k = 19;
-        run::<Fp>(k, MAX_VERIF, signatures);
-    }
+    //     let k = 19;
+    //     run::<Fp>(k, MAX_VERIF, signatures);
+    // }
 }

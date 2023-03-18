@@ -1,4 +1,4 @@
-use crate::merkle::merkle_path::MerklePath;
+use crate::merkle_path::MerklePath;
 use crate::{mod_n, utils, ProofError};
 use ecc::{GeneralEccChip, Point};
 use ecdsa::{AssignedEcdsaSig, AssignedPublicKey, EcdsaChip};
@@ -49,7 +49,7 @@ use std::marker::PhantomData;
 use std::path::PathBuf;
 use std::time::Instant;
 
-use super::chip::{MerkleChip, MerkleConfig};
+use crate::chip::{MerkleChip, MerkleConfig};
 // use web_sys::console;
 // use std::time::{Instant, SystemTime};
 
