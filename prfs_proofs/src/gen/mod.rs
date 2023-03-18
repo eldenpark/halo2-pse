@@ -855,27 +855,8 @@ fn pub_key_hash_to_address<F: Field>(pk_hash: &[u8]) -> F {
 struct TestCircuitSignVerifyConfig<F: Field, const WIDTH: usize, const RATE: usize> {
     pub sign_verify_config: SignVerifyConfig,
     pub poseidon_merkle_config: PoseidonMerkleConfig<F, WIDTH, RATE>,
-    // pub poseidon_config: Pow5Config<F, WIDTH, RATE>,
-    // pub merkle_config: MerkleConfig<F, WIDTH, RATE>,
     pub challenges: Challenges,
 }
-
-// impl<F: Field, const WIDTH: usize, const RATE: usize> TestCircuitSignVerifyConfig<F, WIDTH, RATE> {
-//     pub(crate) fn new(
-//         meta: &mut ConstraintSystem<F>,
-//         poseidong_config: Pow5Config<F, WIDTH, RATE>,
-//         merkle_config: MerkleConfig<F, WIDTH, RATE>,
-//         sign_verify_config:
-//         challenges: Challenges,
-//     ) -> Self {
-//         TestCircuitSignVerifyConfig {
-//             sign_verify_config,
-//             poseidon_config,
-//             merkle_config,
-//             challenges,
-//         }
-//     }
-// }
 
 #[derive(Default)]
 struct TestCircuitSignVerify<
@@ -994,14 +975,35 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 
 #[cfg(test)]
 mod sign_verify_tests {
+    use std::{
+        fs::File,
+        io::{BufReader, BufWriter, Write},
+        path::PathBuf,
+        time::Instant,
+    };
+
     use super::*;
     use ff::PrimeField;
     use halo2_gadgets::{
         poseidon::{self, primitives::ConstantLength},
         utilities::i2lebsp,
     };
+    use halo2_proofs::{
+        halo2curves::pasta::EqAffine,
+        plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey},
+        poly::{
+            commitment::{Params, ParamsProver},
+            ipa::{
+                commitment::{IPACommitmentScheme, ParamsIPA},
+                multiopen::ProverIPA,
+            },
+        },
+        transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer},
+        SerdeFormat,
+    };
     use maingate::DimensionMeasurement;
     use pretty_assertions::assert_eq;
+    use rand_core::OsRng;
 
     #[test]
     fn sign_verify1() {
@@ -1163,6 +1165,105 @@ mod sign_verify_tests {
         };
 
         prover.verify().unwrap();
+
+        let start = Instant::now();
+        let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+
+        let params = {
+            let params_path = project_root.join(format!("params_{}.dat", k));
+
+            match File::open(&params_path) {
+                Ok(fd) => {
+                    let mut reader = BufReader::new(fd);
+                    ParamsIPA::read(&mut reader).unwrap()
+                }
+                Err(_) => {
+                    let fd = File::create(&params_path).unwrap();
+                    let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
+                    let mut writer = BufWriter::new(fd);
+                    params.write(&mut writer).unwrap();
+                    writer.flush().unwrap();
+                    params
+                }
+            }
+        };
+
+        println!("11 vk loading, t: {:?}", start.elapsed());
+
+        let circuit_name = "asset_proof_1";
+        let vk = {
+            let vk_path = project_root.join(format!("vk_{}.dat", circuit_name));
+
+            match File::open(&vk_path) {
+                Ok(fd) => {
+                    let mut reader = BufReader::new(fd);
+                    let vk = VerifyingKey::<_>::read::<
+                        _,
+                        TestCircuitSignVerify<PastaFp, P128Pow5T3, POS_WIDTH, POS_RATE>,
+                    >(&mut reader, SerdeFormat::Processed)
+                    .unwrap();
+                    vk
+                }
+                Err(_) => {
+                    let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
+                    let fd = File::create(&vk_path).unwrap();
+                    let mut writer = BufWriter::new(fd);
+                    vk.write(&mut writer, SerdeFormat::Processed).unwrap();
+                    writer.flush().unwrap();
+                    vk
+                }
+            }
+        };
+
+        println!("11 pk loading, t: {:?}", start.elapsed());
+
+        let pk = {
+            let pk_path = project_root.join(format!("pk_{}.dat", circuit_name));
+
+            match File::open(&pk_path) {
+                Ok(fd) => {
+                    let mut reader = BufReader::new(fd);
+                    let pk = ProvingKey::<_>::read::<
+                        _,
+                        TestCircuitSignVerify<PastaFp, P128Pow5T3, POS_WIDTH, POS_RATE>,
+                    >(&mut reader, SerdeFormat::Processed)
+                    .unwrap();
+
+                    pk
+                }
+                Err(_) => {
+                    let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
+                    let fd = File::create(&pk_path).unwrap();
+                    let mut writer = BufWriter::new(fd);
+                    pk.write(&mut writer, SerdeFormat::Processed).unwrap();
+                    writer.flush().unwrap();
+                    pk
+                }
+            }
+        };
+
+        let mut rng = OsRng;
+        let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
+
+        println!("creating proof, t: {:?}", start.elapsed());
+
+        create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
+            &params,
+            &pk,
+            &[circuit],
+            &[&[&[root], &[]]],
+            &mut rng,
+            &mut transcript,
+        )
+        .unwrap();
+
+        let proof = transcript.finalize();
+
+        println!(
+            "proof generated, len: {}, t: {:?}",
+            proof.len(),
+            start.elapsed()
+        );
     }
 
     // Generate a test key pair
