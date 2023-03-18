@@ -20,8 +20,7 @@ getrandom = { version = "0.2.2", features = ["js"] }
 rand = "0.8.3"
 hsl = "0.1.1"
 
-pos_merkle = { path = "../pos_merkle" }
-# web-sys = { version = "0.3.4", features = ["Window", "Performance", "PerformanceTiming"] }
+prfs_proofs = { path = "../prfs_proofs" }
 humantime = "2"
 js-sys = "0.3.61"
 

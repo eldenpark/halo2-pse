@@ -26,7 +26,7 @@ routerify-cors = "3"
 halo2_proofs = { path = "../halo2_proofs" }
 halo2_gadgets = { path = "../halo2_gadgets" }
 halo2wrong = { path = "../halo2wrong" }
-pos_merkle = { path = "../pos_merkle" }
+prfs_proofs = { path = "../prfs_proofs" }
 group = "0.12"
 rand = "0.8"
 ff = "0.12"

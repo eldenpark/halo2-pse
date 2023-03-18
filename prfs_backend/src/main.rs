@@ -92,7 +92,7 @@ async fn gen_proof() -> Result<Vec<u8>, BackendError> {
     let big_r = g * k;
     let r_point = big_r.to_affine().coordinates().unwrap();
     let x = r_point.x();
-    let r = pos_merkle::mod_n::<pallas::Affine>(*x);
+    let r = prfs_proofs::mod_n::<pallas::Affine>(*x);
 
     // Calculate `s`
     let s = k_inv * (msg_hash + (r * sk));
@@ -108,7 +108,7 @@ async fn gen_proof() -> Result<Vec<u8>, BackendError> {
             .coordinates()
             .unwrap();
         let x_candidate = r_point.x();
-        let r_candidate = pos_merkle::mod_n::<pallas::Affine>(*x_candidate);
+        let r_candidate = prfs_proofs::mod_n::<pallas::Affine>(*x_candidate);
 
         assert_eq!(r, r_candidate);
     }
@@ -183,7 +183,7 @@ async fn gen_proof() -> Result<Vec<u8>, BackendError> {
     }
 
     let proof =
-        pos_merkle::gen_id_proof::<EpAffine, Fp>(path, leaf, root, pos, public_key, msg_hash, r, s)
+        prfs_proofs::gen_id_proof::<EpAffine, Fp>(path, leaf, root, pos, public_key, msg_hash, r, s)
             .unwrap();
 
     println!("proof: {:?}", proof);

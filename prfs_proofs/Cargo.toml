@@ -1,5 +1,5 @@
 [package]
-name = "pos_merkle"
+name = "prfs_proofs"
 version = "0.0.1"
 edition = "2021"
 rust-version = "1.56.1"
