@@ -88,8 +88,7 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
 
     // aws rds call
 
-    // let proof = gen_proof().await.unwrap();
-    let proof = vec![];
+    let proof = prfs_proofs::gen_id_proof(path, leaf, root, idx, public_key, msg_hash, r, s);
 
     let proof_resp = ProofResponse { proof };
 

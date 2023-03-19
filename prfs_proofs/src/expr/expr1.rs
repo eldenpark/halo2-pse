@@ -570,7 +570,7 @@ pub fn test_poseidon2() {
     gen_id_proof::<Secp256k1Affine, Fp>(path, leaf, root, pos, public_key, msg_hash, r, s).unwrap();
 }
 
-pub fn gen_id_proof<C: CurveAffine, F: FieldExt>(
+fn gen_id_proof<C: CurveAffine, F: FieldExt>(
     path: [Fp; 31],
     leaf: Fp,
     root: Fp,
