@@ -11,16 +11,18 @@ members = [
     "maingate",
     "halo2curves",
     "web",
-    "tree_maker",
-    "prfs_proofs",
-    "prf_gen",
-    "prfs_backend",
+
     "bus-mapping",
     "keccak256",
     "gadgets",
     "mock",
     "external-tracer",
     "geth-utils",
+
+    "tree_maker",
+    "prfs_proofs",
+    "prfs_client",
+    "prfs_backend",
 
     "web_demo",
 ]
