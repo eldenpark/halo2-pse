@@ -322,9 +322,7 @@ mod sign_verify_tests {
         };
     }
 
-    // Generate a test key pair
     fn gen_key_pair(rng: impl RngCore) -> (secp256k1::Fq, Secp256k1Affine) {
-        // generate a valid signature
         let generator = Secp256k1Affine::generator();
         let sk = secp256k1::Fq::random(rng);
         let pk = generator * sk;
@@ -333,12 +331,10 @@ mod sign_verify_tests {
         (sk, pk)
     }
 
-    // Generate a test message hash
     fn gen_msg_hash(rng: impl RngCore) -> secp256k1::Fq {
         secp256k1::Fq::random(rng)
     }
 
-    // Returns (r, s)
     fn sign_with_rng(
         rng: impl RngCore,
         sk: secp256k1::Fq,
