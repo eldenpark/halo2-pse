@@ -1,4 +1,4 @@
-mod constants;
+pub mod constants;
 mod poseidon_merkle;
 mod sign_verify;
 
@@ -6,6 +6,8 @@ use self::{
     poseidon_merkle::{PoseidonMerkleChip, PoseidonMerkleConfig},
     sign_verify::{SignVerifyChip, SignVerifyConfig},
 };
+use crate::gen_key_pair;
+use crate::{gen_msg_hash, sign_with_rng};
 use crate::{pk_bytes_le, pk_bytes_swap_endianness};
 use crate::{
     zkevm_circuits::{
@@ -15,6 +17,7 @@ use crate::{
     ProofError,
 };
 use bus_mapping::circuit_input_builder::keccak_inputs_sign_verify;
+pub use constants::*;
 use constants::{POS_RATE, POS_WIDTH};
 use eth_types::sign_types::sign;
 use eth_types::sign_types::SignData;
@@ -199,7 +202,6 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 #[cfg(test)]
 mod sign_verify_tests {
     use super::*;
-    use ff::Field;
 
     #[test]
     fn sign_verify1() {
@@ -320,28 +322,8 @@ mod sign_verify_tests {
 
             (leaf, root, leaf_idx, path)
         };
-    }
 
-    fn gen_key_pair(rng: impl RngCore) -> (secp256k1::Fq, Secp256k1Affine) {
-        let generator = Secp256k1Affine::generator();
-        let sk = secp256k1::Fq::random(rng);
-        let pk = generator * sk;
-        let pk = pk.to_affine();
-
-        (sk, pk)
-    }
-
-    fn gen_msg_hash(rng: impl RngCore) -> secp256k1::Fq {
-        secp256k1::Fq::random(rng)
-    }
-
-    fn sign_with_rng(
-        rng: impl RngCore,
-        sk: secp256k1::Fq,
-        msg_hash: secp256k1::Fq,
-    ) -> (secp256k1::Fq, secp256k1::Fq) {
-        let randomness = secp256k1::Fq::random(rng);
-        sign(randomness, sk, msg_hash)
+        gen_asset_proof::<Secp256k1Affine, PastaFp>(path, leaf, root, leaf_idx, sign_data).unwrap();
     }
 }
 
@@ -350,10 +332,10 @@ pub fn gen_asset_proof<C: CurveAffine, F: FieldExt>(
     leaf: PastaFp,
     root: PastaFp,
     leaf_idx: u32,
-    public_key: C,
-    msg_hash: C::Scalar,
-    r: C::Scalar,
-    s: C::Scalar,
+    // public_key: C,
+    // msg_hash: C::Scalar,
+    // r: C::Scalar,
+    // s: C::Scalar,
     sign_data: SignData,
 ) -> Result<Vec<u8>, ProofError> {
     let mut rng = XorShiftRng::seed_from_u64(2);

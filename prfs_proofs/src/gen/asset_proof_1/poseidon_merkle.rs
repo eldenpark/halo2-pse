@@ -85,18 +85,6 @@ pub struct PoseidonMerkleChip<
 impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize>
     PoseidonMerkleChip<F, S, WIDTH, RATE>
 {
-    // pub fn construct_poseidon_chip(
-    //     poseidon_config: Pow5Config<F, WIDTH, RATE>,
-    // ) -> Pow5Chip<F, WIDTH, RATE> {
-    //     Pow5Chip::construct(poseidon_config.clone())
-    // }
-
-    // pub fn construct_merkle_chip(
-    //     merkle_config: MerkleConfig<F, WIDTH, RATE>,
-    // ) -> MerkleChip<F, WIDTH, RATE> {
-    //     MerkleChip::construct(merkle_config.clone())
-    // }
-
     pub fn climb_up_tree(
         &self,
         merkle_config: MerkleConfig<F, WIDTH, RATE>,

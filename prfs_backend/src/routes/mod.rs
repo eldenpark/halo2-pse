@@ -1,10 +1,35 @@
+use crate::{middleware, State};
+use eth_types::sign_types::SignData;
+use group::ff::{Field, PrimeField};
 use group::prime::PrimeCurveAffine;
+use group::Curve;
+use group::Group;
 use group::GroupEncoding;
+use halo2_gadgets::poseidon::{self, PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
 use halo2_gadgets::utilities::i2lebsp;
+use halo2_gadgets::utilities::Var;
+use halo2_gadgets::{
+    poseidon::{
+        primitives::{ConstantLength, P128Pow5T3, Spec},
+        Hash,
+    },
+    utilities::UtilitiesInstructions,
+};
+use halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_proofs::halo2curves::pairing::Engine;
+use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp as PastaFp, Fq};
+use halo2_proofs::halo2curves::secp256k1::Secp256k1Affine;
 use halo2_proofs::halo2curves::CurveAffine;
+use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
+use halo2_proofs::poly::commitment::{Params, ParamsProver};
 use hyper::{header, Body, Request, Response, Server, StatusCode};
+use keccak256::plain::Keccak;
+use prfs_proofs::asset_proof_1::constants::{POS_RATE, POS_WIDTH};
+use prfs_proofs::{asset_proof_1, gen_key_pair};
+use prfs_proofs::{gen_msg_hash, pk_bytes_le, pk_bytes_swap_endianness, sign_with_rng};
 use rand::rngs::OsRng;
-// Import the routerify prelude traits.
+use rand::SeedableRng;
+use rand_xorshift::XorShiftRng;
 use routerify::prelude::*;
 use routerify::{Middleware, RequestInfo, Router, RouterService};
 use routerify_cors::enable_cors_all;
@@ -12,46 +37,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{convert::Infallible, net::SocketAddr};
 use tokio_postgres::{Client, NoTls};
-
-use crate::{middleware, State};
-use group::ff::{Field, PrimeField};
-use group::Curve;
-use group::Group;
-use halo2_gadgets::ecc::NonIdentityPoint;
-use halo2_gadgets::poseidon::{PoseidonInstructions, Pow5Chip, Pow5Config, StateWord};
-use halo2_gadgets::utilities::Var;
-use halo2_gadgets::{
-    poseidon::{
-        // merkle::merkle_path::MerklePath,
-        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
-        Hash,
-    },
-    utilities::UtilitiesInstructions,
-};
-use halo2_proofs::halo2curves::bn256::Bn256;
-use halo2_proofs::halo2curves::pairing::Engine;
-use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp, Fq};
-use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
-use halo2_proofs::poly::commitment::{Params, ParamsProver};
-use halo2_proofs::poly::ipa::commitment::{IPACommitmentScheme, ParamsIPA};
-use halo2_proofs::poly::ipa::multiopen::ProverIPA;
-use halo2_proofs::poly::kzg::multiopen::ProverGWC;
-use halo2_proofs::transcript::{Blake2bWrite, Challenge255, TranscriptWriterBuffer};
-use halo2_proofs::SerdeFormat;
-use halo2_proofs::{arithmetic::FieldExt, poly::Rotation};
-use halo2_proofs::{
-    circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
-    dev::MockProver,
-    plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Instance},
-};
-use std::convert::TryInto;
-use std::env;
-use std::fs::File;
-use std::io::{BufReader, BufWriter, Seek, Write};
-use std::marker::PhantomData;
-use std::ops::{Mul, Neg};
-use std::path::PathBuf;
-use std::time::Instant;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ProofResponse {
@@ -88,7 +73,122 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
 
     // aws rds call
 
-    let proof = prfs_proofs::gen_id_proof(path, leaf, root, idx, public_key, msg_hash, r, s);
+    // let proof = vec![];
+    let proof = {
+        let mut rng = XorShiftRng::seed_from_u64(1);
+        let (sign_data, address) = {
+            let (sk, pk) = gen_key_pair(&mut rng);
+            println!("pk: {:?}", pk);
+
+            let pk_le = pk_bytes_le(&pk);
+            let pk_be = pk_bytes_swap_endianness(&pk_le);
+            let pk_hash = (!false)
+                .then(|| {
+                    let mut keccak = Keccak::default();
+                    keccak.update(&pk_be);
+                    let hash: [_; 32] =
+                        keccak.digest().try_into().expect("vec to array of size 32");
+                    hash
+                })
+                .unwrap_or_default();
+            // .map(|byte| Value::known(F::from(byte as u64)));
+
+            let pk_hash_str = hex::encode(pk_hash);
+            println!("pk_hash_str: {:?}", pk_hash_str);
+
+            let address = {
+                let mut a = [0u8; 32];
+                a[12..].clone_from_slice(&pk_hash[12..]);
+                a
+            };
+            let address_str = hex::encode(&address);
+            println!("address_str: {:?}", address_str);
+
+            let msg_hash = gen_msg_hash(&mut rng);
+            let sig = sign_with_rng(&mut rng, sk, msg_hash);
+
+            let sign_data = SignData {
+                signature: sig,
+                pk,
+                msg_hash,
+            };
+
+            (sign_data, address)
+        };
+
+        let (leaf, root, leaf_idx, path) = {
+            let mut addr = address;
+            addr.reverse();
+
+            let leaf = PastaFp::from_repr(addr).unwrap();
+
+            let path = [
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+                PastaFp::from(1),
+            ];
+
+            let leaf_idx = 0;
+
+            let pos_bits: [bool; 31] = i2lebsp(leaf_idx as u64);
+            let mut root = leaf;
+            for (idx, el) in path.iter().enumerate() {
+                let msg = if pos_bits[idx] {
+                    [*el, root]
+                } else {
+                    [root, *el]
+                };
+
+                root = poseidon::primitives::Hash::<
+                    PastaFp,
+                    P128Pow5T3,
+                    ConstantLength<2>,
+                    POS_WIDTH,
+                    POS_RATE,
+                >::init()
+                .hash(msg);
+            }
+
+            println!("leaf: {:?}", leaf);
+            println!("leaf_idx: {:?}", leaf_idx);
+            println!("root: {:?}", root);
+
+            (leaf, root, leaf_idx, path)
+        };
+
+        asset_proof_1::gen_asset_proof::<Secp256k1Affine, PastaFp>(
+            path, leaf, root, leaf_idx, sign_data,
+        )
+        .unwrap()
+    };
 
     let proof_resp = ProofResponse { proof };
 

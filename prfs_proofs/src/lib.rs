@@ -1,4 +1,3 @@
-// mod ecdsa;
 mod chip;
 mod expr;
 mod gen;
