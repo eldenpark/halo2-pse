@@ -16,7 +16,7 @@ const Left = (props: any) => {
       if (accounts != null && Array.isArray(accounts)) {
         const account = accounts[0];
         let signer = window.ethers.getSigner();
-        let msg_hash = ethers.utils.hashMessage('temp');
+        let msg_hash = ethers.utils.hashMessage('msg_hash');
 
         const digest = ethers.utils.arrayify(msg_hash);
         let signature = await signer.signMessage(digest);
@@ -27,6 +27,7 @@ const Left = (props: any) => {
         console.log('account', account);
         console.log('public_key', public_key);
         console.log('signature', signature);
+        console.log('msg_hash', msg_hash);
 
         await axios.post("http://localhost:4000/gen_proof", {
           address: account,

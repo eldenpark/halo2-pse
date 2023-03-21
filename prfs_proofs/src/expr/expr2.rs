@@ -977,7 +977,7 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
             let mut arr = v.to_repr();
             arr.reverse();
             let arr_str = hex::encode(arr);
-            println!("in-circuit: arr rev: {:?}", arr_str);
+            println!("in-circuit: address: {:?}", arr_str);
         });
 
         config.sign_verify_config.keccak_table.dev_load(

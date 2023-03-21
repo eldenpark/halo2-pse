@@ -206,8 +206,6 @@ impl ff::PrimeField for Fp {
         // (a.R^0 * R^2) / R = a.R
         tmp *= &R2;
 
-        println!("borrow: {}, tmp: {:?}", borrow, tmp);
-
         CtOption::new(tmp, Choice::from(is_some))
     }
 

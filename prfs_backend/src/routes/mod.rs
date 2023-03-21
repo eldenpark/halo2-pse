@@ -70,7 +70,6 @@ pub fn router(pg_client: Arc<Client>) -> Router<Body, Infallible> {
         .middleware(Middleware::pre(middleware::logger))
         .middleware(enable_cors_all())
         .post("/gen_proof", gen_proof_handler)
-        .get("/users/:userId", user_handler)
         .err_handler_with_info(middleware::error_handler)
         .build()
         .unwrap()
@@ -92,7 +91,6 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
     // aws rds call
     //
 
-    // let proof = vec![];
     let proof = {
         let address = {
             let mut address_vec = hex::decode(&gen_proof_req.address[2..]).unwrap();
@@ -103,14 +101,13 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
         };
 
         let pk_be = hex::decode(&gen_proof_req.public_key[4..]).unwrap();
-        println!("pk_be: {:?}", pk_be.len());
-
         let pk_le = pk_bytes_swap_endianness(&pk_be);
         let pk_x_le: [u8; 32] = pk_le[..32].try_into().unwrap();
         let pk_y_le: [u8; 32] = pk_le[32..].try_into().unwrap();
         let pk_x = SecFp::from_bytes(&pk_x_le).unwrap();
         let pk_y = SecFp::from_bytes(&pk_y_le).unwrap();
         println!("x: {:?}", pk_x);
+        println!("y: {:?}", pk_y);
 
         let public_key = Secp256k1Affine::from_xy(pk_x, pk_y).unwrap();
 
@@ -224,10 +221,4 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
         .unwrap();
 
     Ok(res)
-}
-
-// A handler for "/users/:userId" page.
-async fn user_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    let user_id = req.param("userId").unwrap();
-    Ok(Response::new(Body::from(format!("Hello {}", user_id))))
 }

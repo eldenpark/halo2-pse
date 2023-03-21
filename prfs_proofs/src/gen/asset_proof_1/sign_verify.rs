@@ -330,7 +330,6 @@ impl<F: Field> SignVerifyChip<F> {
                     .collect_vec(),
             )
         };
-        println!("address: {:?}", address);
 
         let is_address_zero = main_gate.is_zero(ctx, &address)?;
 
@@ -482,6 +481,7 @@ impl<F: Field> SignVerifyChip<F> {
                     )?;
                     assigned_sig_verifs.push(assigned_sig_verif);
                 }
+
                 log::debug!("signature address verify: {} rows", ctx.offset());
                 Ok(assigned_sig_verifs)
             },

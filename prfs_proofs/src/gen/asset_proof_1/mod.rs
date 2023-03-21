@@ -96,8 +96,6 @@ struct TestCircuitSignVerify<
 
     signatures: Vec<SignData>,
 
-    leaf: Value<F>,
-    root: Value<F>,
     leaf_idx: Value<u32>,
     path: Value<[F; 31]>,
 
@@ -118,8 +116,8 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 
             signatures: Default::default(),
 
-            leaf: Value::unknown(),
-            root: Value::unknown(),
+            // leaf: Value::unknown(),
+            // root: Value::unknown(),
             leaf_idx: Value::unknown(),
             path: Value::unknown(),
 
@@ -169,6 +167,7 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
             self.leaf_idx,
             self.path,
         )?;
+        println!("in-circuit: calculated_root: {:?}", calculated_root);
 
         layouter.constrain_instance(
             calculated_root.cell(),
@@ -176,16 +175,14 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
             0,
         )?;
 
-        println!("calculated_root: {:?}", calculated_root);
-
         let address = &sig_verifications[0].address;
-        println!("address: {:?}", address);
+        println!("address: {:?}", address.value());
 
         address.value().map(|v| {
             let mut arr = v.to_repr();
             arr.reverse();
             let arr_str = hex::encode(arr);
-            println!("in-circuit: arr rev: {:?}", arr_str);
+            println!("in-circuit: address: {:?}", arr_str);
         });
 
         config.sign_verify_config.keccak_table.dev_load(
@@ -330,8 +327,9 @@ pub fn gen_asset_proof<C: CurveAffine, F: FieldExt>(
     leaf_idx: u32,
     sign_data: SignData,
 ) -> Result<Vec<u8>, ProofError> {
+    println!("\ngen_asset_proof()");
     println!(
-        "leaf: {:?}, root: {:?}, leaf_idx: {}, sign_data: {:?}",
+        "out-circuit: leaf: {:?}, root: {:?}, leaf_idx: {}, sign_data: {:?}",
         leaf, root, leaf_idx, sign_data
     );
 
@@ -353,8 +351,6 @@ pub fn gen_asset_proof<C: CurveAffine, F: FieldExt>(
 
         signatures: vec![sign_data],
 
-        leaf: Value::known(leaf),
-        root: Value::known(root),
         leaf_idx: Value::known(leaf_idx),
         path: Value::known(path),
 
@@ -368,110 +364,108 @@ pub fn gen_asset_proof<C: CurveAffine, F: FieldExt>(
     let instance = vec![vec![root], vec![]];
 
     println!("Running mock prover, k: {}", k);
-    let prover = match MockProver::run(k, &circuit, instance) {
-        Ok(prover) => prover,
-        Err(e) => panic!("{:#?}", e),
-    };
+    let prover = MockProver::run(k, &circuit, instance).unwrap();
 
-    prover.verify().unwrap();
+    // println!("verifying proof");
+    // prover.verify().unwrap();
 
-    let start = Instant::now();
-    let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    // let start = Instant::now();
+    // let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 
-    let params = {
-        let params_path = project_root.join(format!("params_{}.dat", k));
+    // let params = {
+    //     let params_path = project_root.join(format!("params_{}.dat", k));
 
-        match File::open(&params_path) {
-            Ok(fd) => {
-                let mut reader = BufReader::new(fd);
-                ParamsIPA::read(&mut reader).unwrap()
-            }
-            Err(_) => {
-                let fd = File::create(&params_path).unwrap();
-                let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
-                let mut writer = BufWriter::new(fd);
-                params.write(&mut writer).unwrap();
-                writer.flush().unwrap();
-                params
-            }
-        }
-    };
+    //     match File::open(&params_path) {
+    //         Ok(fd) => {
+    //             let mut reader = BufReader::new(fd);
+    //             ParamsIPA::read(&mut reader).unwrap()
+    //         }
+    //         Err(_) => {
+    //             let fd = File::create(&params_path).unwrap();
+    //             let params: ParamsIPA<EqAffine> = ParamsIPA::new(k);
+    //             let mut writer = BufWriter::new(fd);
+    //             params.write(&mut writer).unwrap();
+    //             writer.flush().unwrap();
+    //             params
+    //         }
+    //     }
+    // };
 
-    println!("11 vk loading, t: {:?}", start.elapsed());
+    // println!("11 vk loading, t: {:?}", start.elapsed());
 
-    let circuit_name = "asset_proof_1";
-    let vk = {
-        let vk_path = project_root.join(format!("vk_{}.dat", circuit_name));
+    // let circuit_name = "asset_proof_1";
+    // let vk = {
+    //     let vk_path = project_root.join(format!("vk_{}.dat", circuit_name));
 
-        match File::open(&vk_path) {
-            Ok(fd) => {
-                let mut reader = BufReader::new(fd);
-                let vk = VerifyingKey::<_>::read::<
-                    _,
-                    TestCircuitSignVerify<PastaFp, P128Pow5T3, POS_WIDTH, POS_RATE>,
-                >(&mut reader, SerdeFormat::Processed)
-                .unwrap();
-                vk
-            }
-            Err(_) => {
-                let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
-                let fd = File::create(&vk_path).unwrap();
-                let mut writer = BufWriter::new(fd);
-                vk.write(&mut writer, SerdeFormat::Processed).unwrap();
-                writer.flush().unwrap();
-                vk
-            }
-        }
-    };
+    //     match File::open(&vk_path) {
+    //         Ok(fd) => {
+    //             let mut reader = BufReader::new(fd);
+    //             let vk = VerifyingKey::<_>::read::<
+    //                 _,
+    //                 TestCircuitSignVerify<PastaFp, P128Pow5T3, POS_WIDTH, POS_RATE>,
+    //             >(&mut reader, SerdeFormat::Processed)
+    //             .unwrap();
+    //             vk
+    //         }
+    //         Err(_) => {
+    //             let vk = keygen_vk(&params, &circuit).expect("vk should not fail");
+    //             let fd = File::create(&vk_path).unwrap();
+    //             let mut writer = BufWriter::new(fd);
+    //             vk.write(&mut writer, SerdeFormat::Processed).unwrap();
+    //             writer.flush().unwrap();
+    //             vk
+    //         }
+    //     }
+    // };
 
-    println!("11 pk loading, t: {:?}", start.elapsed());
+    // println!("11 pk loading, t: {:?}", start.elapsed());
 
-    let pk = {
-        let pk_path = project_root.join(format!("pk_{}.dat", circuit_name));
+    // let pk = {
+    //     let pk_path = project_root.join(format!("pk_{}.dat", circuit_name));
 
-        match File::open(&pk_path) {
-            Ok(fd) => {
-                let mut reader = BufReader::new(fd);
-                let pk = ProvingKey::<_>::read::<
-                    _,
-                    TestCircuitSignVerify<PastaFp, P128Pow5T3, POS_WIDTH, POS_RATE>,
-                >(&mut reader, SerdeFormat::Processed)
-                .unwrap();
+    //     match File::open(&pk_path) {
+    //         Ok(fd) => {
+    //             let mut reader = BufReader::new(fd);
+    //             let pk = ProvingKey::<_>::read::<
+    //                 _,
+    //                 TestCircuitSignVerify<PastaFp, P128Pow5T3, POS_WIDTH, POS_RATE>,
+    //             >(&mut reader, SerdeFormat::Processed)
+    //             .unwrap();
 
-                pk
-            }
-            Err(_) => {
-                let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
-                let fd = File::create(&pk_path).unwrap();
-                let mut writer = BufWriter::new(fd);
-                pk.write(&mut writer, SerdeFormat::Processed).unwrap();
-                writer.flush().unwrap();
-                pk
-            }
-        }
-    };
+    //             pk
+    //         }
+    //         Err(_) => {
+    //             let pk = keygen_pk(&params, vk, &circuit).expect("pk should not fail");
+    //             let fd = File::create(&pk_path).unwrap();
+    //             let mut writer = BufWriter::new(fd);
+    //             pk.write(&mut writer, SerdeFormat::Processed).unwrap();
+    //             writer.flush().unwrap();
+    //             pk
+    //         }
+    //     }
+    // };
 
-    let mut rng = OsRng;
-    let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
+    // let mut rng = OsRng;
+    // let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
 
-    println!("creating proof, t: {:?}", start.elapsed());
+    // println!("creating proof, t: {:?}", start.elapsed());
 
-    create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
-        &params,
-        &pk,
-        &[circuit],
-        &[&[&[root], &[]]],
-        &mut rng,
-        &mut transcript,
-    )
-    .unwrap();
+    // create_proof::<IPACommitmentScheme<_>, ProverIPA<_>, _, _, _, _>(
+    //     &params,
+    //     &pk,
+    //     &[circuit],
+    //     &[&[&[root], &[]]],
+    //     &mut rng,
+    //     &mut transcript,
+    // )
+    // .unwrap();
 
-    let proof = transcript.finalize();
+    // let proof = transcript.finalize();
 
-    println!(
-        "proof generated, len: {}, t: {:?}",
-        proof.len(),
-        start.elapsed()
-    );
+    // println!(
+    //     "proof generated, len: {}, t: {:?}",
+    //     proof.len(),
+    //     start.elapsed()
+    // );
     Ok(vec![])
 }
