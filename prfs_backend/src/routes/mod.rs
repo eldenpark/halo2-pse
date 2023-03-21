@@ -77,7 +77,7 @@ pub fn router(pg_client: Arc<Client>) -> Router<Body, Infallible> {
 }
 
 async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-    println!("gen proof");
+    println!("gen proof request");
 
     let _state = req.data::<State>().unwrap();
 
@@ -94,47 +94,6 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
 
     // let proof = vec![];
     let proof = {
-        // let mut rng = XorShiftRng::seed_from_u64(1);
-        // let (sign_data, address) = {
-        //     let (sk, pk) = gen_key_pair(&mut rng);
-        //     println!("pk: {:?}", pk);
-
-        // let pk_le = pk_bytes_le(&pk);
-        //     let pk_be = pk_bytes_swap_endianness(&pk_le);
-        //     let pk_hash = (!false)
-        //         .then(|| {
-        //             let mut keccak = Keccak::default();
-        //             keccak.update(&pk_be);
-        //             let hash: [_; 32] =
-        //                 keccak.digest().try_into().expect("vec to array of size 32");
-        //             hash
-        //         })
-        //         .unwrap_or_default();
-        //     // .map(|byte| Value::known(F::from(byte as u64)));
-
-        //     let pk_hash_str = hex::encode(pk_hash);
-        //     println!("pk_hash_str: {:?}", pk_hash_str);
-
-        //     let address = {
-        //         let mut a = [0u8; 32];
-        //         a[12..].clone_from_slice(&pk_hash[12..]);
-        //         a
-        //     };
-        //     let address_str = hex::encode(&address);
-        //     println!("address_str: {:?}", address_str);
-
-        //     let msg_hash = gen_msg_hash(&mut rng);
-        //     let sig = sign_with_rng(&mut rng, sk, msg_hash);
-
-        //     let sign_data = SignData {
-        //         signature: sig,
-        //         pk,
-        //         msg_hash,
-        //     };
-
-        //     (sign_data, address)
-        // };
-
         let address = {
             let mut address_vec = hex::decode(&gen_proof_req.address[2..]).unwrap();
             address_vec.reverse();
@@ -143,7 +102,7 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
             address
         };
 
-        let pk_be = hex::decode(&gen_proof_req.public_key[2..]).unwrap();
+        let pk_be = hex::decode(&gen_proof_req.public_key[4..]).unwrap();
         println!("pk_be: {:?}", pk_be.len());
 
         let pk_le = pk_bytes_swap_endianness(&pk_be);
@@ -169,13 +128,15 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
 
             (r, s)
         };
+        println!("signature: {:?}", signature);
 
         let msg_hash = {
-            let mut msg_hash = hex::decode(&gen_proof_req.msg_hash[4..]).unwrap();
+            let mut msg_hash = hex::decode(&gen_proof_req.msg_hash[2..]).unwrap();
             msg_hash.reverse();
             let msg_hash_le: [u8; 32] = msg_hash.try_into().unwrap();
             SecFq::from_bytes(&msg_hash_le).unwrap()
         };
+        println!("msg_hash: {:?}", msg_hash);
 
         let sign_data = SignData {
             pk: public_key,

@@ -9,22 +9,23 @@ const Left = (props: any) => {
 
   const handleClickGenProof = React.useCallback(async () => {
     const fetchData = async () => {
+      console.log('fetch data');
+
       let accounts = await window.ethers.send('eth_requestAccounts', []);
 
       if (accounts != null && Array.isArray(accounts)) {
         const account = accounts[0];
         let signer = window.ethers.getSigner();
-        let msg = ethers.utils.hashMessage('temp');
-        const digest = ethers.utils.arrayify(msg);
+        let msg_hash = ethers.utils.hashMessage('temp');
 
+        const digest = ethers.utils.arrayify(msg_hash);
         let signature = await signer.signMessage(digest);
+
         let s = ethers.utils.arrayify(signature);
         let public_key = ethers.utils.recoverPublicKey(digest, s);
-        // console.log('account', account);
-        // console.log('digest', digest);
-        // console.log('s', s);
-        // console.log('pk', pk);
-        //
+
+        console.log('account', account);
+        console.log('public_key', public_key);
         console.log('signature', signature);
 
         await axios.post("http://localhost:4000/gen_proof", {
@@ -32,11 +33,10 @@ const Left = (props: any) => {
           public_key,
           proof_type: 'asset_proof_1',
           signature,
-          leaf: '',
           path: [],
           leaf_idx: 0,
           root: '',
-          msg_hash: '',
+          msg_hash,
         });
 
         // console.log(22, data);
