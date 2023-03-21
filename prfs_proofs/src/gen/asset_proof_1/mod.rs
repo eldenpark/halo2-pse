@@ -221,16 +221,12 @@ mod sign_verify_tests {
 
             let pk_le = pk_bytes_le(&pk);
             let pk_be = pk_bytes_swap_endianness(&pk_le);
-            let pk_hash = (!false)
-                .then(|| {
-                    let mut keccak = Keccak::default();
-                    keccak.update(&pk_be);
-                    let hash: [_; 32] =
-                        keccak.digest().try_into().expect("vec to array of size 32");
-                    hash
-                })
-                .unwrap_or_default();
-            // .map(|byte| Value::known(F::from(byte as u64)));
+            let pk_hash = {
+                let mut keccak = Keccak::default();
+                keccak.update(&pk_be);
+                let hash: [_; 32] = keccak.digest().try_into().expect("vec to array of size 32");
+                hash
+            };
 
             let pk_hash_str = hex::encode(pk_hash);
             println!("pk_hash_str: {:?}", pk_hash_str);
@@ -332,12 +328,13 @@ pub fn gen_asset_proof<C: CurveAffine, F: FieldExt>(
     leaf: PastaFp,
     root: PastaFp,
     leaf_idx: u32,
-    // public_key: C,
-    // msg_hash: C::Scalar,
-    // r: C::Scalar,
-    // s: C::Scalar,
     sign_data: SignData,
 ) -> Result<Vec<u8>, ProofError> {
+    println!(
+        "leaf: {:?}, root: {:?}, leaf_idx: {}, sign_data: {:?}",
+        leaf, root, leaf_idx, sign_data
+    );
+
     let mut rng = XorShiftRng::seed_from_u64(2);
     let aux_generator = <Secp256k1Affine as CurveAffine>::CurveExt::random(&mut rng).to_affine();
 

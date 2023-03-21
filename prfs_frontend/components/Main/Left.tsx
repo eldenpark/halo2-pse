@@ -17,58 +17,31 @@ const Left = (props: any) => {
         let msg = ethers.utils.hashMessage('temp');
         const digest = ethers.utils.arrayify(msg);
 
-        let sig = await signer.signMessage(digest);
-        let s = ethers.utils.arrayify(sig);
+        let signature = await signer.signMessage(digest);
+        let s = ethers.utils.arrayify(signature);
+        let public_key = ethers.utils.recoverPublicKey(digest, s);
+        // console.log('account', account);
+        // console.log('digest', digest);
+        // console.log('s', s);
+        // console.log('pk', pk);
+        //
+        console.log('signature', signature);
 
-        let pk = ethers.utils.recoverPublicKey(digest, s);
-        console.log('account', account);
-        console.log('digest', digest);
-        console.log('s', s);
-        console.log('pk', pk);
+        await axios.post("http://localhost:4000/gen_proof", {
+          address: account,
+          public_key,
+          proof_type: 'asset_proof_1',
+          signature,
+          leaf: '',
+          path: [],
+          leaf_idx: 0,
+          root: '',
+          msg_hash: '',
+        });
 
-        // let { data } = await axios.post("http://localhost:4000/gen_proof", {
-        //   addr: account,
-        //   sig,
-        // });
+        // console.log(22, data);
 
       }
-      //   if (window.ethereum !== undefined) {
-      //     const accounts = await window.ethereum.request({
-      //       method: "eth_requestAccounts",
-      //     });
-
-      //     if (accounts != null && Array.isArray(accounts)) {
-      //       let account = accounts[0];
-      //       const exampleMessage = "proof";
-
-      //       try {
-      //         console.log(11, sig);
-
-
-      //         // let { data } = await axios.post("http://localhost:4000/gen_proof", {
-      //         //   addr: account,
-      //         //   sig,
-      //         // });
-
-      //         // console.log(44, data);
-      //         // setProof(data.proof.join(", "));
-      //       } catch (err) {
-      //         console.error(err);
-      //         // personalSign.innerHTML = `Error: ${err.message}`;
-      //       }
-      //     }
-      //   }
-
-      //   // let data2 = web3.utils.keccak256("0");
-      //   // let sig = await web3.eth.sign(data2, account);
-      //   // console.log(11, sig);
-
-      //   // let { data } = await axios.post("http://localhost:4000/gen_proof", {
-      //   //   addr: account,
-      //   //   sig,
-      //   // });
-
-      //   // console.log(11, data);
     };
 
     fetchData().then((_res) => { });

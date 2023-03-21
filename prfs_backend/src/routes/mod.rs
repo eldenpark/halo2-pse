@@ -17,12 +17,14 @@ use halo2_gadgets::{
 };
 use halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_proofs::halo2curves::pairing::Engine;
-use halo2_proofs::halo2curves::pasta::{pallas, vesta, Ep, EpAffine, EqAffine, Fp as PastaFp, Fq};
-use halo2_proofs::halo2curves::secp256k1::Secp256k1Affine;
+use halo2_proofs::halo2curves::pasta::{
+    pallas, vesta, Ep, EpAffine, EqAffine, Fp as PastaFp, Fq as PastaFq,
+};
+use halo2_proofs::halo2curves::secp256k1::{Fp as SecFp, Fq as SecFq, Secp256k1Affine};
 use halo2_proofs::halo2curves::CurveAffine;
 use halo2_proofs::plonk::{create_proof, keygen_pk, keygen_vk, ProvingKey, VerifyingKey};
 use halo2_proofs::poly::commitment::{Params, ParamsProver};
-use hyper::{header, Body, Request, Response, Server, StatusCode};
+use hyper::{body, header, Body, Request, Response, Server, StatusCode};
 use keccak256::plain::Keccak;
 use prfs_proofs::asset_proof_1::constants::{POS_RATE, POS_WIDTH};
 use prfs_proofs::{asset_proof_1, gen_key_pair};
@@ -37,6 +39,18 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::{convert::Infallible, net::SocketAddr};
 use tokio_postgres::{Client, NoTls};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct GenProofRequest<'a> {
+    proof_type: &'a str,
+    address: &'a str,
+    signature: &'a str,
+    // leaf: &'a str,
+    leaf_idx: u32,
+    path: Vec<&'a str>,
+    public_key: &'a str,
+    msg_hash: &'a str,
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ProofResponse {
@@ -62,61 +76,116 @@ pub fn router(pg_client: Arc<Client>) -> Router<Body, Infallible> {
         .unwrap()
 }
 
-// A handler for "/" page.
 async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     println!("gen proof");
 
     let _state = req.data::<State>().unwrap();
 
+    let bytes = body::to_bytes(req.into_body()).await.unwrap();
+    let body_str = String::from_utf8(bytes.to_vec()).unwrap();
+    let gen_proof_req = serde_json::from_str::<GenProofRequest>(&body_str).unwrap();
+
+    println!("gen_proof_req: {:?}", gen_proof_req);
+
     // let region_provider = RegionProviderChain::default_provider();
     // let config = aws_config::from_env().region(region_provider).load().await;
-
     // aws rds call
+    //
 
     // let proof = vec![];
     let proof = {
-        let mut rng = XorShiftRng::seed_from_u64(1);
-        let (sign_data, address) = {
-            let (sk, pk) = gen_key_pair(&mut rng);
-            println!("pk: {:?}", pk);
+        // let mut rng = XorShiftRng::seed_from_u64(1);
+        // let (sign_data, address) = {
+        //     let (sk, pk) = gen_key_pair(&mut rng);
+        //     println!("pk: {:?}", pk);
 
-            let pk_le = pk_bytes_le(&pk);
-            let pk_be = pk_bytes_swap_endianness(&pk_le);
-            let pk_hash = (!false)
-                .then(|| {
-                    let mut keccak = Keccak::default();
-                    keccak.update(&pk_be);
-                    let hash: [_; 32] =
-                        keccak.digest().try_into().expect("vec to array of size 32");
-                    hash
-                })
-                .unwrap_or_default();
-            // .map(|byte| Value::known(F::from(byte as u64)));
+        // let pk_le = pk_bytes_le(&pk);
+        //     let pk_be = pk_bytes_swap_endianness(&pk_le);
+        //     let pk_hash = (!false)
+        //         .then(|| {
+        //             let mut keccak = Keccak::default();
+        //             keccak.update(&pk_be);
+        //             let hash: [_; 32] =
+        //                 keccak.digest().try_into().expect("vec to array of size 32");
+        //             hash
+        //         })
+        //         .unwrap_or_default();
+        //     // .map(|byte| Value::known(F::from(byte as u64)));
 
-            let pk_hash_str = hex::encode(pk_hash);
-            println!("pk_hash_str: {:?}", pk_hash_str);
+        //     let pk_hash_str = hex::encode(pk_hash);
+        //     println!("pk_hash_str: {:?}", pk_hash_str);
 
-            let address = {
-                let mut a = [0u8; 32];
-                a[12..].clone_from_slice(&pk_hash[12..]);
-                a
-            };
-            let address_str = hex::encode(&address);
-            println!("address_str: {:?}", address_str);
+        //     let address = {
+        //         let mut a = [0u8; 32];
+        //         a[12..].clone_from_slice(&pk_hash[12..]);
+        //         a
+        //     };
+        //     let address_str = hex::encode(&address);
+        //     println!("address_str: {:?}", address_str);
 
-            let msg_hash = gen_msg_hash(&mut rng);
-            let sig = sign_with_rng(&mut rng, sk, msg_hash);
+        //     let msg_hash = gen_msg_hash(&mut rng);
+        //     let sig = sign_with_rng(&mut rng, sk, msg_hash);
 
-            let sign_data = SignData {
-                signature: sig,
-                pk,
-                msg_hash,
-            };
+        //     let sign_data = SignData {
+        //         signature: sig,
+        //         pk,
+        //         msg_hash,
+        //     };
 
-            (sign_data, address)
+        //     (sign_data, address)
+        // };
+
+        let address = {
+            let mut address_vec = hex::decode(&gen_proof_req.address[2..]).unwrap();
+            address_vec.reverse();
+            let mut address = [0u8; 32];
+            address[12..].clone_from_slice(&address_vec);
+            address
         };
 
-        let (leaf, root, leaf_idx, path) = {
+        let pk_be = hex::decode(&gen_proof_req.public_key[2..]).unwrap();
+        println!("pk_be: {:?}", pk_be.len());
+
+        let pk_le = pk_bytes_swap_endianness(&pk_be);
+        let pk_x_le: [u8; 32] = pk_le[..32].try_into().unwrap();
+        let pk_y_le: [u8; 32] = pk_le[32..].try_into().unwrap();
+        let pk_x = SecFp::from_bytes(&pk_x_le).unwrap();
+        let pk_y = SecFp::from_bytes(&pk_y_le).unwrap();
+        println!("x: {:?}", pk_x);
+
+        let public_key = Secp256k1Affine::from_xy(pk_x, pk_y).unwrap();
+
+        let signature = {
+            let mut sig = hex::decode(&gen_proof_req.signature[4..]).unwrap();
+            let r = &mut sig[..32];
+            r.reverse();
+            let r_le: [u8; 32] = r.try_into().unwrap();
+            let r = SecFq::from_bytes(&r_le).unwrap();
+
+            let s = &mut sig[32..];
+            s.reverse();
+            let s_le: [u8; 32] = s.try_into().unwrap();
+            let s = SecFq::from_bytes(&s_le).unwrap();
+
+            (r, s)
+        };
+
+        let msg_hash = {
+            let mut msg_hash = hex::decode(&gen_proof_req.msg_hash[4..]).unwrap();
+            msg_hash.reverse();
+            let msg_hash_le: [u8; 32] = msg_hash.try_into().unwrap();
+            SecFq::from_bytes(&msg_hash_le).unwrap()
+        };
+
+        let sign_data = SignData {
+            pk: public_key,
+            signature,
+            msg_hash,
+        };
+
+        let leaf_idx = gen_proof_req.leaf_idx;
+
+        let (leaf, root, path) = {
             let mut addr = address;
             addr.reverse();
 
@@ -156,8 +225,6 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
                 PastaFp::from(1),
             ];
 
-            let leaf_idx = 0;
-
             let pos_bits: [bool; 31] = i2lebsp(leaf_idx as u64);
             let mut root = leaf;
             for (idx, el) in path.iter().enumerate() {
@@ -177,11 +244,7 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
                 .hash(msg);
             }
 
-            println!("leaf: {:?}", leaf);
-            println!("leaf_idx: {:?}", leaf_idx);
-            println!("root: {:?}", root);
-
-            (leaf, root, leaf_idx, path)
+            (leaf, root, path)
         };
 
         asset_proof_1::gen_asset_proof::<Secp256k1Affine, PastaFp>(
