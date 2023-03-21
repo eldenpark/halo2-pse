@@ -93,12 +93,14 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
 
     let proof = {
         let address = {
-            let mut address_vec = hex::decode(&gen_proof_req.address[2..]).unwrap();
-            address_vec.reverse();
+            let address_vec = hex::decode(&gen_proof_req.address[2..]).unwrap();
+            // address_vec.reverse();
             let mut address = [0u8; 32];
             address[12..].clone_from_slice(&address_vec);
             address
         };
+        let addr_str = hex::encode(address);
+        println!("address_str: {}", addr_str);
 
         let pk_be = hex::decode(&gen_proof_req.public_key[4..]).unwrap();
         let pk_le = pk_bytes_swap_endianness(&pk_be);
