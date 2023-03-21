@@ -45,11 +45,10 @@ struct GenProofRequest<'a> {
     proof_type: &'a str,
     address: &'a str,
     signature: &'a str,
-    // leaf: &'a str,
     leaf_idx: u32,
     path: Vec<&'a str>,
     public_key: &'a str,
-    msg_hash: &'a str,
+    message_hash: &'a str,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -104,14 +103,40 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
 
         let pk_be = hex::decode(&gen_proof_req.public_key[4..]).unwrap();
         let pk_le = pk_bytes_swap_endianness(&pk_be);
+
         let pk_x_le: [u8; 32] = pk_le[..32].try_into().unwrap();
-        let pk_y_le: [u8; 32] = pk_le[32..].try_into().unwrap();
+        let pk_x_str = hex::encode(pk_x_le);
+        println!("pk_x_str: {}", pk_x_str);
+
         let pk_x = SecFp::from_bytes(&pk_x_le).unwrap();
+        println!("x fp: {:?}", pk_x);
+
+        let pk_y_le: [u8; 32] = pk_le[32..].try_into().unwrap();
         let pk_y = SecFp::from_bytes(&pk_y_le).unwrap();
-        println!("x: {:?}", pk_x);
-        println!("y: {:?}", pk_y);
+        println!("y fp: {:?}", pk_y);
 
         let public_key = Secp256k1Affine::from_xy(pk_x, pk_y).unwrap();
+        {
+            let pk_le = pk_bytes_le(&public_key);
+            let pk_be = pk_bytes_swap_endianness(&pk_le);
+            let pk_hash = {
+                let mut keccak = Keccak::default();
+                keccak.update(&pk_be);
+                let hash: [_; 32] = keccak.digest().try_into().expect("vec to array of size 32");
+                hash
+            };
+
+            let pk_hash_str = hex::encode(pk_hash);
+            println!("pk_hash_str: {:?}", pk_hash_str);
+
+            let address = {
+                let mut a = [0u8; 32];
+                a[12..].clone_from_slice(&pk_hash[12..]);
+                a
+            };
+            let address_str = hex::encode(&address);
+            println!("address_str calculated: {:?}", address_str);
+        }
 
         let signature = {
             let mut sig = hex::decode(&gen_proof_req.signature[4..]).unwrap();
@@ -130,7 +155,7 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
         println!("signature: {:?}", signature);
 
         let msg_hash = {
-            let mut msg_hash = hex::decode(&gen_proof_req.msg_hash[2..]).unwrap();
+            let mut msg_hash = hex::decode(&gen_proof_req.message_hash[2..]).unwrap();
             msg_hash.reverse();
             let msg_hash_le: [u8; 32] = msg_hash.try_into().unwrap();
             SecFq::from_bytes(&msg_hash_le).unwrap()
@@ -206,6 +231,10 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
 
             (leaf, root, path)
         };
+
+        println!("leaf: {:?}", leaf);
+        println!("leaf_idx: {:?}", leaf_idx);
+        println!("root: {:?}", root);
 
         asset_proof_1::gen_asset_proof::<Secp256k1Affine, PastaFp>(
             path, leaf, root, leaf_idx, sign_data,

@@ -177,9 +177,13 @@ impl<F: Field> SignVerifyChip<F> {
         };
 
         let pk_in_circuit = ecc_chip.assign_point(ctx, Value::known(*pk))?;
+        println!("pk_in_circuit: {:?}", pk_in_circuit);
+
         let pk_assigned = AssignedPublicKey {
             point: pk_in_circuit,
         };
+
+        println!("msg_hash: {:?}", msg_hash);
         let msg_hash = scalar_chip.assign_integer(ctx, msg_hash, Range::Remainder)?;
 
         // Convert (msg_hash, pk_x, pk_y) integers to little endian bytes
@@ -191,6 +195,7 @@ impl<F: Field> SignVerifyChip<F> {
 
         // Ref. spec SignVerifyChip 4. Verify the ECDSA signature
         ecdsa_chip.verify(ctx, &sig, &pk_assigned, &msg_hash)?;
+        println!("111");
 
         // TODO: Update once halo2wrong suports the following methods:
         // - `IntegerChip::assign_integer_from_bytes_le`

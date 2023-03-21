@@ -1,6 +1,7 @@
 import React from "react";
 import axios from "axios";
 import { ethers } from 'ethers';
+import Web3 from 'web3';
 
 import styles from "./Left.module.scss";
 
@@ -15,21 +16,31 @@ const Left = (props: any) => {
 
       if (accounts != null && Array.isArray(accounts)) {
         const account = accounts[0];
-        let signer = window.ethers.getSigner();
-        let msg_hash = ethers.utils.hashMessage('msg_hash');
-
-        const digest = ethers.utils.arrayify(msg_hash);
-        let signature = await signer.signMessage(digest);
-
-        let s = ethers.utils.arrayify(signature);
-        let public_key = ethers.utils.recoverPublicKey(digest, s);
-
         console.log('account', account);
-        console.log('public_key', public_key);
-        console.log('signature', signature);
-        console.log('msg_hash', msg_hash);
 
-        await axios.post("http://localhost:4000/gen_proof", {
+        let u = ethers.utils;
+        let signer = window.ethers.getSigner();
+
+        const ethAddress = await signer.getAddress();
+        console.log('ethAddress', ethAddress);
+
+        const message = 'Test message2';
+        const message_hash = u.hashMessage(message);
+        console.log('message hash', message_hash);
+
+        const signature = await signer.signMessage(message);
+        const digest = u.arrayify(message_hash);
+
+        const public_key = u.recoverPublicKey(digest, signature);
+        console.log('recovered publickey', public_key);
+
+        const computedAddress = u.computeAddress(public_key);
+        console.log('computed address', computedAddress);
+
+        const recoveredAddress = u.recoverAddress(digest, signature)
+        console.log('recovered address', recoveredAddress);
+
+        let { data } = await axios.post("http://localhost:4000/gen_proof", {
           address: account,
           public_key,
           proof_type: 'asset_proof_1',
@@ -37,11 +48,10 @@ const Left = (props: any) => {
           path: [],
           leaf_idx: 0,
           root: '',
-          msg_hash,
+          message_hash,
         });
 
-        // console.log(22, data);
-
+        console.log('axios response', data);
       }
     };
 

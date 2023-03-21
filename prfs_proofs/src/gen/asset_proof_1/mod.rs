@@ -167,7 +167,7 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
             self.leaf_idx,
             self.path,
         )?;
-        println!("in-circuit: calculated_root: {:?}", calculated_root);
+        println!("in-circuit: calculated_root: {:?}", calculated_root.value());
 
         layouter.constrain_instance(
             calculated_root.cell(),
@@ -198,6 +198,8 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 
 #[cfg(test)]
 mod sign_verify_tests {
+    use halo2_proofs::halo2curves::secp256k1::Fp as SecFp;
+
     use super::*;
 
     #[test]
@@ -210,6 +212,8 @@ mod sign_verify_tests {
         // )
         // pk_hash: d90e2e9d267cbcfd94de06fa7adbe6857c2c733025c0b8938a76beeefc85d6c7
         // addr: 0x7adbe6857c2c733025c0b8938a76beeefc85d6c7
+        //
+
         let mut rng = XorShiftRng::seed_from_u64(1);
 
         let (sign_data, address) = {
@@ -329,7 +333,7 @@ pub fn gen_asset_proof<C: CurveAffine, F: FieldExt>(
 ) -> Result<Vec<u8>, ProofError> {
     println!("\ngen_asset_proof()");
     println!(
-        "out-circuit: leaf: {:?}, root: {:?}, leaf_idx: {}, sign_data: {:?}",
+        "out-circuit: leaf: {:?}\nroot: {:?}\nleaf_idx: {}\nsign_data: {:?}",
         leaf, root, leaf_idx, sign_data
     );
 
@@ -363,11 +367,15 @@ pub fn gen_asset_proof<C: CurveAffine, F: FieldExt>(
 
     let instance = vec![vec![root], vec![]];
 
-    println!("Running mock prover, k: {}", k);
+    println!("\nRunning mock prover, k: {}", k);
     let prover = MockProver::run(k, &circuit, instance).unwrap();
 
-    // println!("verifying proof");
-    // prover.verify().unwrap();
+    println!("\nVerifying proof");
+    if let Err(err) = prover.verify() {
+        println!("proof verification failed, \nerr: {:?}", err);
+    } else {
+        println!("proof verification success");
+    }
 
     // let start = Instant::now();
     // let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
