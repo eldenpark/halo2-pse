@@ -198,7 +198,9 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 
 #[cfg(test)]
 mod sign_verify_tests {
+    use group::GroupEncoding;
     use halo2_proofs::halo2curves::secp256k1::Fp as SecFp;
+    use halo2_proofs::halo2curves::secp256k1::Fq as SecFq;
 
     use super::*;
 
@@ -213,6 +215,22 @@ mod sign_verify_tests {
         // pk_hash: d90e2e9d267cbcfd94de06fa7adbe6857c2c733025c0b8938a76beeefc85d6c7
         // addr: 0x7adbe6857c2c733025c0b8938a76beeefc85d6c7
         //
+        //
+        {
+            let sk = ""; //
+            let mut sk_arr = hex::decode(sk).unwrap();
+            sk_arr.reverse();
+            let sk_arr: [u8; 32] = sk_arr.try_into().unwrap();
+            let sk_fq = SecFq::from_bytes(&sk_arr).unwrap();
+            println!("sk_fq: {:?}", sk_fq);
+
+            let generator = Secp256k1Affine::generator();
+            let sk = generator * sk_fq;
+            let pk_affine = sk.to_affine();
+
+            pk_affine.to_bytes();
+            println!("pk affine: {:?}", pk_affine);
+        };
 
         let mut rng = XorShiftRng::seed_from_u64(1);
 
