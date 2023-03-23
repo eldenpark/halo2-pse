@@ -24,11 +24,13 @@ const Left = (props: any) => {
         const ethAddress = await signer.getAddress();
         console.log('ethAddress', ethAddress);
 
-        const message = 'Test message2';
-        const message_hash = u.hashMessage(message);
+        const message_raw = 'test';
+        const message_hash = u.hashMessage(message_raw);
         console.log('message hash', message_hash);
 
-        const signature = await signer.signMessage(message);
+        const signature = await signer.signMessage(message_raw);
+        console.log('signature', signature, signature.length);
+
         const digest = u.arrayify(message_hash);
 
         const public_key = u.recoverPublicKey(digest, signature);
@@ -48,6 +50,7 @@ const Left = (props: any) => {
           path: [],
           leaf_idx: 0,
           root: '',
+          message_raw,
           message_hash,
         });
 

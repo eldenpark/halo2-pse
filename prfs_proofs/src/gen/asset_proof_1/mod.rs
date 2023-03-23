@@ -202,6 +202,8 @@ mod sign_verify_tests {
     use halo2_proofs::halo2curves::secp256k1::Fp as SecFp;
     use halo2_proofs::halo2curves::secp256k1::Fq as SecFq;
 
+    use crate::gen_msg_hash2;
+
     use super::*;
 
     #[test]
@@ -216,7 +218,7 @@ mod sign_verify_tests {
         // addr: 0x7adbe6857c2c733025c0b8938a76beeefc85d6c7
         //
         //
-        {
+        let (sk, pk) = {
             let sk = ""; //
             let mut sk_arr = hex::decode(sk).unwrap();
             sk_arr.reverse();
@@ -230,12 +232,14 @@ mod sign_verify_tests {
 
             pk_affine.to_bytes();
             println!("pk affine: {:?}", pk_affine);
+
+            (sk_fq, pk_affine)
         };
 
         let mut rng = XorShiftRng::seed_from_u64(1);
 
         let (sign_data, address) = {
-            let (sk, pk) = gen_key_pair(&mut rng);
+            // let (sk, pk) = gen_key_pair(&mut rng);
             println!("pk: {:?}", pk);
 
             let pk_le = pk_bytes_le(&pk);
@@ -255,10 +259,13 @@ mod sign_verify_tests {
                 a[12..].clone_from_slice(&pk_hash[12..]);
                 a
             };
+
             let address_str = hex::encode(&address);
             println!("address_str: {:?}", address_str);
 
-            let msg_hash = gen_msg_hash(&mut rng);
+            let msg_hash = gen_msg_hash2("test".to_string()).unwrap();
+            println!("msg_hash: {:?}", msg_hash);
+
             let sig = sign_with_rng(&mut rng, sk, msg_hash);
 
             let sign_data = SignData {

@@ -48,6 +48,7 @@ struct GenProofRequest<'a> {
     leaf_idx: u32,
     path: Vec<&'a str>,
     public_key: &'a str,
+    message_raw: &'a str,
     message_hash: &'a str,
 }
 
@@ -134,19 +135,20 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
                 a[12..].clone_from_slice(&pk_hash[12..]);
                 a
             };
+
             let address_str = hex::encode(&address);
             println!("address_str calculated: {:?}", address_str);
         }
 
         let signature = {
-            let mut sig = hex::decode(&gen_proof_req.signature[4..]).unwrap();
+            let mut sig = hex::decode(&gen_proof_req.signature[2..]).unwrap();
             let r = &mut sig[..32];
-            r.reverse();
+            // r.reverse();
             let r_le: [u8; 32] = r.try_into().unwrap();
             let r = SecFq::from_bytes(&r_le).unwrap();
 
-            let s = &mut sig[32..];
-            s.reverse();
+            let s = &mut sig[32..64];
+            // s.reverse();
             let s_le: [u8; 32] = s.try_into().unwrap();
             let s = SecFq::from_bytes(&s_le).unwrap();
 
@@ -155,8 +157,7 @@ async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Infalli
         println!("signature: {:?}", signature);
 
         let msg_hash = {
-            let mut msg_hash = hex::decode(&gen_proof_req.message_hash[2..]).unwrap();
-            msg_hash.reverse();
+            let msg_hash = hex::decode(&gen_proof_req.message_hash[2..]).unwrap();
             let msg_hash_le: [u8; 32] = msg_hash.try_into().unwrap();
             SecFq::from_bytes(&msg_hash_le).unwrap()
         };
