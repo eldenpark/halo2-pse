@@ -19,10 +19,10 @@ members = [
     "external-tracer",
     "geth-utils",
 
-    "tree_maker",
     "prfs_proofs",
     "prfs_client",
     "prfs_backend",
+    "prfs_tree_maker",
 
     "web_demo",
 ]

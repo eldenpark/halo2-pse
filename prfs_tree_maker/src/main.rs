@@ -2,6 +2,7 @@ mod climb;
 mod grow;
 mod hexutils;
 mod leaves;
+mod ledger_query;
 
 use chrono::prelude::*;
 use halo2_gadgets::{
