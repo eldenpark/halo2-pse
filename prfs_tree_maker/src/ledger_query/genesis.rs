@@ -1,4 +1,4 @@
-use super::{dynamodb, geth, QueryError};
+use crate::{geth, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::model::AttributeValue;
 use aws_sdk_dynamodb::Client as DynamoClient;
@@ -19,7 +19,7 @@ struct GenesisEntry {
     wei: String,
 }
 
-pub async fn run() -> Result<(), QueryError> {
+pub async fn run() -> Result<(), TreeMakerError> {
     let https = HttpsConnector::new();
     let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
 
@@ -47,7 +47,7 @@ pub async fn run() -> Result<(), QueryError> {
 async fn get_genesis_block_addresses(
     hyper_client: &HyperClient<HttpsConnector<HttpConnector>>,
     pg_client: Arc<PGClient>,
-) -> Result<(), QueryError> {
+) -> Result<(), TreeMakerError> {
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let genesis_block_path = project_root.join("data/genesis_block.json");
 

@@ -1,14 +1,10 @@
-mod config;
 mod dynamodb;
 mod genesis;
-mod geth;
 mod ledger;
 mod migrate;
 
-use aws_config::meta::region::RegionProviderChain;
+use crate::config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK};
 use chrono::prelude::*;
-use config::GETH_ENDPOINT;
-use config::{END_BLOCK, START_BLOCK};
 use log::LevelFilter;
 use std::fs::File;
 use std::{
@@ -38,15 +34,6 @@ pub async fn run() -> Result<(), QueryError> {
     }
 
     simple_logging::log_to_file(log_files_path, LevelFilter::Error)?;
-
-    // {
-    //     let region_provider = RegionProviderChain::default_provider();
-    //     let config = aws_config::from_env().region(region_provider).load().await;
-
-    //     if let None = config.region() {
-    //         return Err("aws config is not properly loaded, region missing".into());
-    //     }
-    // }
 
     genesis::run().await?;
 

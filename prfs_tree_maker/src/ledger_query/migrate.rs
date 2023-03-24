@@ -1,6 +1,6 @@
-use super::config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK};
-use super::geth::GetBlockResponse;
-use super::{dynamodb, geth, QueryError};
+use crate::config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK};
+use crate::geth::GetBlockResponse;
+use crate::{geth, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::model::put_request::{self, Builder};
 use aws_sdk_dynamodb::model::{write_request, AttributeValue, PutRequest, WriteRequest};
@@ -48,7 +48,7 @@ struct Line<'a> {
     Item: Item<'a>,
 }
 
-pub async fn run(log_files_path: PathBuf) -> Result<(), QueryError> {
+pub async fn run(log_files_path: PathBuf) -> Result<(), TreeMakerError> {
     println!("migrate run");
 
     migrate_table(log_files_path).await?;
@@ -56,7 +56,7 @@ pub async fn run(log_files_path: PathBuf) -> Result<(), QueryError> {
     Ok(())
 }
 
-async fn migrate_table(log_files_path: PathBuf) -> Result<(), QueryError> {
+async fn migrate_table(log_files_path: PathBuf) -> Result<(), TreeMakerError> {
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let table_path = project_root.join("data/balances-1.json.gz");
     let file = File::open(table_path)?;

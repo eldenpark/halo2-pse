@@ -1,6 +1,7 @@
-use super::config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK};
-use super::geth::GetBlockResponse;
-use super::{dynamodb, geth, QueryError};
+use crate::config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK};
+use crate::geth;
+use crate::geth::GetBlockResponse;
+use crate::TreeMakerError;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::model::AttributeValue;
 use aws_sdk_dynamodb::Client as DynamoClient;
@@ -18,7 +19,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::time::Duration;
 
-pub async fn run(log_files_path: PathBuf) -> Result<(), QueryError> {
+pub async fn run(log_files_path: PathBuf) -> Result<(), TreeMakerError> {
     println!("ledger run");
 
     get_addresses(log_files_path).await?;
@@ -26,7 +27,7 @@ pub async fn run(log_files_path: PathBuf) -> Result<(), QueryError> {
     Ok(())
 }
 
-async fn get_addresses(log_files_path: PathBuf) -> Result<(), QueryError> {
+async fn get_addresses(log_files_path: PathBuf) -> Result<(), TreeMakerError> {
     let mut count = 0;
 
     let region_provider = RegionProviderChain::default_provider();
@@ -149,14 +150,14 @@ async fn get_balance_and_put_item(
     dynamo_client: &DynamoClient,
     addresses: &mut HashMap<String, bool>,
     addr: String,
-) -> Result<(), QueryError> {
+) -> Result<(), TreeMakerError> {
     if addresses.contains_key(&addr) {
         // println!("skip, {}", addr);
 
         return Ok(());
     } else {
         let wei = geth::get_balance(&client, &addr).await?;
-        dynamodb::put_item(&dynamo_client, addr.to_string(), wei).await;
+        // dynamodb::put_item(&dynamo_client, addr.to_string(), wei).await;
 
         addresses.insert(addr, true);
     }

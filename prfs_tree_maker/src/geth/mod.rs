@@ -1,10 +1,9 @@
-use super::config::GETH_ENDPOINT;
-use super::QueryError;
+use crate::config::GETH_ENDPOINT;
+use crate::TreeMakerError;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::model::AttributeValue;
-use aws_sdk_dynamodb::Client as DynamoClient;
 use hyper::client::HttpConnector;
-use hyper::{body::HttpBody as _, Client, Uri};
+use hyper::{body::HttpBody as _, Client as HyperClient, Uri};
 use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
 use serde::{Deserialize, Serialize};
@@ -105,7 +104,7 @@ pub struct GetTransactionReceiptResponse<'a> {
 
 pub async fn get_contract_addr<S: Into<String> + Serialize + Display>(
     tx_hash: S,
-) -> Result<Option<String>, QueryError> {
+) -> Result<Option<String>, TreeMakerError> {
     let body = json!(
         {
             "jsonrpc":"2.0",
@@ -123,7 +122,7 @@ pub async fn get_contract_addr<S: Into<String> + Serialize + Display>(
         .body(Body::from(body))?;
 
     let https = HttpsConnector::new();
-    let client = Client::builder().build::<_, hyper::Body>(https);
+    let client = HyperClient::builder().build::<_, hyper::Body>(https);
 
     let resp = client.request(req).await?;
 
@@ -148,9 +147,9 @@ pub async fn get_contract_addr<S: Into<String> + Serialize + Display>(
 }
 
 pub async fn get_balance<S: Into<String> + Serialize + Display>(
-    client: &Client<HttpsConnector<HttpConnector>>,
+    client: &HyperClient<HttpsConnector<HttpConnector>>,
     addr: &S,
-) -> Result<String, QueryError> {
+) -> Result<String, TreeMakerError> {
     let body = json!(
         {
             "jsonrpc":"2.0",
@@ -197,4 +196,67 @@ pub async fn get_balance<S: Into<String> + Serialize + Display>(
     }
 }
 
-pub async fn get_block_number() {}
+pub enum RequestType<'a> {
+    EthGetBalance {
+        response_type: GetBalanceResponse<'a>,
+    },
+}
+
+pub struct Geth {
+    client: HyperClient<HttpsConnector<HttpConnector>>,
+}
+
+impl Geth {
+    pub async fn make_request<'a>(
+        &self,
+        req_type: RequestType<'a>,
+        body: String,
+    ) -> Result<(), TreeMakerError> {
+        // let body = json!(
+        //     {
+        //         "jsonrpc":"2.0",
+        //         "method": "eth_getBalance",
+        //         "params":[addr, "latest"],
+        //         "id":1,
+        //     }
+        // )
+        // .to_string();
+
+        let req = Request::builder()
+            .method(Method::POST)
+            .uri(GETH_ENDPOINT)
+            .header("content-type", "application/json")
+            .body(Body::from(body))?;
+
+        let mut resp = self.client.request(req).await?;
+
+        // match resp.body_mut().data().await {
+        //     Some(r) => {
+        //         let body = r.unwrap();
+        //         let get_balance_resp: GetBalanceResponse = match serde_json::from_slice(&body) {
+        //             Ok(r) => r,
+        //             Err(err) => {
+        //                 println!(
+        //                 "Error deserializing get balance response, original body: {:?}, err: {}",
+        //                 body, err,
+        //             );
+
+        //                 return Err(err.into());
+        //             }
+        //         };
+
+        //         let wei = {
+        //             let w = get_balance_resp.result.strip_prefix("0x").unwrap();
+        //             u128::from_str_radix(w, 16)?
+        //         };
+
+        //         return Ok(wei.to_string());
+        //     }
+        //     None => {
+        //         return Err(format!("invalid addr, {}", addr).into());
+        //     }
+        // }
+
+        Ok(())
+    }
+}
