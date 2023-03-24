@@ -1,4 +1,4 @@
-use crate::{hexutils::convert_string_into_fp, TreeMakerError};
+use crate::{hexutils::convert_string_into_fp, ledger_query, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
 use ff::PrimeField;
@@ -7,74 +7,76 @@ use std::{collections::HashMap, sync::Arc};
 use tokio_postgres::{types::ToSql, Client as PgClient, Error, NoTls};
 
 pub async fn make_leaves() -> Result<(), TreeMakerError> {
-    let region_provider = RegionProviderChain::default_provider();
-    let config = aws_config::from_env().region(region_provider).load().await;
-    let dynamo_client = DynamoClient::new(&config);
+    ledger_query::run().await?;
 
-    let (pg_client, connection) = tokio_postgres::connect(
-        "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password=postgres",
-        NoTls,
-    )
-    .await?;
+    // let region_provider = RegionProviderChain::default_provider();
+    // let config = aws_config::from_env().region(region_provider).load().await;
+    // let dynamo_client = DynamoClient::new(&config);
 
-    let pg_client = Arc::new(pg_client);
+    // let (pg_client, connection) = tokio_postgres::connect(
+    //     "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password=postgres",
+    //     NoTls,
+    // )
+    // .await?;
 
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            println!("connection error: {}", e);
-        }
-    });
+    // let pg_client = Arc::new(pg_client);
 
-    let results = get_range_scan_query(&dynamo_client).send().await?;
+    // tokio::spawn(async move {
+    //     if let Err(e) = connection.await {
+    //         println!("connection error: {}", e);
+    //     }
+    // });
 
-    let mut is_remaining = true;
-    let mut last_key = results.last_evaluated_key().unwrap().clone();
-    let mut total_count: u64 = 0;
-    let mut attempt = 1;
+    // let results = get_range_scan_query(&dynamo_client).send().await?;
 
-    while is_remaining {
-        println!(
-            "last key: {:?}, total_count: {}, attempt: {}",
-            last_key, total_count, attempt
-        );
+    // let mut is_remaining = true;
+    // let mut last_key = results.last_evaluated_key().unwrap().clone();
+    // let mut total_count: u64 = 0;
+    // let mut attempt = 1;
 
-        let last_addr = last_key.get("addr");
-        let last_wei = last_key.get("wei");
+    // while is_remaining {
+    //     println!(
+    //         "last key: {:?}, total_count: {}, attempt: {}",
+    //         last_key, total_count, attempt
+    //     );
 
-        match (last_addr, last_wei) {
-            (Some(addr), Some(wei)) => {
-                let results = get_range_scan_query(&dynamo_client)
-                    .exclusive_start_key("addr", addr.clone())
-                    .exclusive_start_key("wei", wei.clone())
-                    .send()
-                    .await?;
+    //     let last_addr = last_key.get("addr");
+    //     let last_wei = last_key.get("wei");
 
-                println!("result: {:?}", results.count());
+    //     match (last_addr, last_wei) {
+    //         (Some(addr), Some(wei)) => {
+    //             let results = get_range_scan_query(&dynamo_client)
+    //                 .exclusive_start_key("addr", addr.clone())
+    //                 .exclusive_start_key("wei", wei.clone())
+    //                 .send()
+    //                 .await?;
 
-                last_key = match results.last_evaluated_key() {
-                    Some(lk) => lk.clone(),
-                    None => {
-                        println!("last evaluated key is missing. We've probably reached the end");
-                        break;
-                    }
-                };
+    //             println!("result: {:?}", results.count());
 
-                let result_count = results.count();
+    //             last_key = match results.last_evaluated_key() {
+    //                 Some(lk) => lk.clone(),
+    //                 None => {
+    //                     println!("last evaluated key is missing. We've probably reached the end");
+    //                     break;
+    //                 }
+    //             };
 
-                if result_count > 0 {
-                    put_in_rds(pg_client.clone(), results.items, total_count).await?;
-                    total_count += result_count as u64;
-                }
-            }
-            _ => {
-                println!("nothing found!!!");
+    //             let result_count = results.count();
 
-                is_remaining = false;
-            }
-        };
+    //             if result_count > 0 {
+    //                 put_in_rds(pg_client.clone(), results.items, total_count).await?;
+    //                 total_count += result_count as u64;
+    //             }
+    //         }
+    //         _ => {
+    //             println!("nothing found!!!");
 
-        attempt += 1;
-    }
+    //             is_remaining = false;
+    //         }
+    //     };
+
+    //     attempt += 1;
+    // }
 
     Ok(())
 }

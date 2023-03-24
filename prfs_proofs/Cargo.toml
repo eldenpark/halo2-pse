@@ -39,8 +39,12 @@ maingate = { path = "../maingate" }
 eth-types = { path = "../eth-types" }
 bus-mapping = { path = "../bus-mapping", features = ["test"] }
 
+[[bin]]
+name = "prfs_proofs_bin"
+path = "src/bin/main.rs"
 
 [lib]
-bench = false
+name = "prfs_proofs_lib"
+path = "src/lib.rs"
 
 [dev-dependencies]

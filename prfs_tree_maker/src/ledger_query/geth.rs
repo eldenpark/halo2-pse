@@ -172,7 +172,17 @@ pub async fn get_balance<S: Into<String> + Serialize + Display>(
     match resp.body_mut().data().await {
         Some(r) => {
             let body = r.unwrap();
-            let get_balance_resp: GetBalanceResponse = serde_json::from_slice(&body)?;
+            let get_balance_resp: GetBalanceResponse = match serde_json::from_slice(&body) {
+                Ok(r) => r,
+                Err(err) => {
+                    println!(
+                        "Error deserializing get balance response, original body: {:?}, err: {}",
+                        body, err,
+                    );
+
+                    return Err(err.into());
+                }
+            };
 
             let wei = {
                 let w = get_balance_resp.result.strip_prefix("0x").unwrap();
@@ -186,3 +196,5 @@ pub async fn get_balance<S: Into<String> + Serialize + Display>(
         }
     }
 }
+
+pub async fn get_block_number() {}

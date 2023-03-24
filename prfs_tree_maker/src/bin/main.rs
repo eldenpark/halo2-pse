@@ -1,13 +1,6 @@
-mod climb;
-mod grow;
-mod hexutils;
-mod leaves;
-mod ledger_query;
-
 use chrono::prelude::*;
 use halo2_gadgets::{
     poseidon::{
-        // merkle::merkle_path::MerklePath,
         primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
         Hash,
     },
@@ -18,13 +11,12 @@ use hyper::{body::HttpBody as _, Client, Uri};
 use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
 use log::LevelFilter;
+use prfs_tree_maker::{leaves, TreeMakerError};
 use std::fs::{File, OpenOptions};
 use std::{
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
 };
-
-pub type TreeMakerError = Box<dyn std::error::Error + Send + Sync>;
 
 #[tokio::main]
 async fn main() -> Result<(), TreeMakerError> {
@@ -55,11 +47,11 @@ async fn main() -> Result<(), TreeMakerError> {
     //     println!("parent: {:?}, parent val: {}", hash, parent_val);
     // }
 
-    // leaves::make_leaves().await?;
+    leaves::make_leaves().await?;
 
     // grow::grow_tree().await?;
     //
-    climb::climb_up().await?;
+    // climb::climb_up().await?;
 
     Ok(())
 }
