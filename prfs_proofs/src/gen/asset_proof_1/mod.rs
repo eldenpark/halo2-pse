@@ -198,6 +198,7 @@ impl<F: Field, S: Spec<F, WIDTH, RATE>, const WIDTH: usize, const RATE: usize> C
 
 #[cfg(test)]
 mod sign_verify_tests {
+    use ff::Field;
     use group::GroupEncoding;
     use halo2_proofs::halo2curves::secp256k1::Fp as SecFp;
     use halo2_proofs::halo2curves::secp256k1::Fq as SecFq;
@@ -219,7 +220,7 @@ mod sign_verify_tests {
         //
         //
         let (sk, pk) = {
-            let sk = ""; //
+            let sk = "";
             let mut sk_arr = hex::decode(sk).unwrap();
             sk_arr.reverse();
             let sk_arr: [u8; 32] = sk_arr.try_into().unwrap();
@@ -263,10 +264,83 @@ mod sign_verify_tests {
             let address_str = hex::encode(&address);
             println!("address_str: {:?}", address_str);
 
-            let msg_hash = gen_msg_hash2("test".to_string()).unwrap();
+            let k_vec: [u8; 32] = {
+                let k = "EC633BD56A5774A0940CB97E27A9E4E51DC94AF737596A0C5CBB3D30332D92A5";
+                let mut v = hex::decode(k).unwrap();
+                v.reverse();
+                v.try_into().unwrap()
+            };
+            println!("\nk_vec: {:?}", k_vec);
+
+            // let msg_hash = gen_msg_hash2("test".to_string()).unwrap();
+            // println!("msg_hash: {:?}", msg_hash);
+            // 106921163081766108504851361111784132394560360614702516671885466167202468958885
+            // let msg_hash = {
+            //     let m = "06EF2B193B83B3D701F765F1DB34672AB84897E1252343CC2197829AF3A30456";
+            //     let mut v = hex::decode(m).unwrap();
+            //     v.reverse();
+
+            //     let m: [u8; 32] = v.try_into().unwrap();
+            //     SecFq::from_bytes(&m).unwrap()
+            // };
+            // println!("msg_hash: {:?}", msg_hash);
+
+            let msg_hash = {
+                let m = "4a5c5d454721bbbb25540c3317521e71c373ae36458f960d2ad46ef088110e95";
+                let mut v = hex::decode(&m).unwrap();
+                v.reverse();
+                let m: [u8; 32] = v.try_into().unwrap();
+
+                SecFq::from_bytes(&m).unwrap()
+            };
             println!("msg_hash: {:?}", msg_hash);
 
-            let sig = sign_with_rng(&mut rng, sk, msg_hash);
+            let randomness = secp256k1::Fq::random(rng);
+            // let randomness = SecFq::from_bytes(&k_vec).unwrap();
+            println!("randomness: {:?}", randomness);
+
+            // let sig = sign_with_rng(&mut rng, sk, msg_hash);
+            // let sig = sign_with_rng(randomness, sk, msg_hash);
+            // let r: [u8; 32] = {
+            //     let r = "33A69CD2065432A30F3D1CE4EB0D59B8AB58C74F27C41A7FDB5696AD4E6108C9";
+            //     let mut v = hex::decode(r).unwrap();
+            //     v.reverse();
+            //     v.try_into().unwrap()
+            // };
+            // let r = SecFq::from_bytes(&r).unwrap();
+            // println!("r: {:?}", r);
+
+            // let s: [u8; 32] = {
+            //     let s = "6F807982866F785D3F6418D24163DDAE117B7DB4D5FDF0071DE069FA54342262";
+            //     let mut v = hex::decode(s).unwrap();
+            //     v.reverse();
+            //     v.try_into().unwrap()
+            // };
+            // let s = SecFq::from_bytes(&s).unwrap();
+            // println!("s: {:?}", s);
+            let sig = {
+                let sig = "8918975215107b43c9dabe0d0c293ac21a6aa24f785de2b1920badec0f8039fb70516ee590319425bef709f58f0208d37fb18f15ba077e70d21014bc731253af1c";
+
+                let r: [u8; 32] = {
+                    let r = sig[..64].to_string();
+                    let mut v = hex::decode(r).unwrap();
+                    v.reverse();
+                    v.try_into().unwrap()
+                };
+                let r = SecFq::from_bytes(&r).unwrap();
+                println!("r: {:?}", r);
+
+                let s: [u8; 32] = {
+                    let s = sig[64..128].to_string();
+                    let mut v = hex::decode(s).unwrap();
+                    v.reverse();
+                    v.try_into().unwrap()
+                };
+                let s = SecFq::from_bytes(&s).unwrap();
+                println!("s: {:?}", s);
+
+                (r, s)
+            };
 
             let sign_data = SignData {
                 signature: sig,

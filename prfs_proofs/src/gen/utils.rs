@@ -30,10 +30,11 @@ pub fn gen_msg_hash2(str: String) -> CtOption<secp256k1::Fq> {
 }
 
 pub fn sign_with_rng(
-    rng: impl RngCore,
+    // rng: impl RngCore,
+    randomness: secp256k1::Fq,
     sk: secp256k1::Fq,
     msg_hash: secp256k1::Fq,
 ) -> (secp256k1::Fq, secp256k1::Fq) {
-    let randomness = secp256k1::Fq::random(rng);
+    // let randomness = secp256k1::Fq::random(rng);
     sign(randomness, sk, msg_hash)
 }
