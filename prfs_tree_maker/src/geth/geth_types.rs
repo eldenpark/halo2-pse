@@ -21,6 +21,8 @@ pub struct Block {
     pub gasLimit: String,
     pub gasUsed: String,
     pub hash: String,
+
+    #[serde(skip_deserializing)]
     pub logsBloom: String,
     pub miner: String,
     pub mixHash: String,
@@ -63,22 +65,22 @@ pub struct Transaction {
 #[allow(non_snake_case)]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TransactionReceipt {
-    blockHash: String,
-    blockNumber: String,
-    contractAddress: Option<String>,
-    cumulativeGasUsed: String,
-    effectiveGasPrice: String,
-    from: String,
-    gasUsed: String,
-    logsBloom: String,
+    pub blockHash: String,
+    pub blockNumber: String,
+    pub contractAddress: Option<String>,
+    pub cumulativeGasUsed: String,
+    pub effectiveGasPrice: String,
+    pub from: String,
+    pub gasUsed: String,
+    pub logsBloom: String,
 
     #[serde(skip_deserializing)]
-    logs: Option<HashMap<String, String>>,
-    root: Option<String>,
-    to: Option<String>,
-    transactionHash: String,
-    transactionIndex: String,
+    pub logs: Option<HashMap<String, String>>,
+    pub root: Option<String>,
+    pub to: Option<String>,
+    pub transactionHash: String,
+    pub transactionIndex: String,
 
     #[serde(rename = "type")]
-    kind: String,
+    pub kind: String,
 }

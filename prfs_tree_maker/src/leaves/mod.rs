@@ -82,7 +82,9 @@ pub async fn make_leaves() -> Result<(), TreeMakerError> {
     // }
     //
     //
-    genesis::run().await?;
+
+    // genesis::run().await?;
+    scan::run().await?;
 
     Ok(())
 }

@@ -1,4 +1,5 @@
 use super::geth_types::Block;
+use super::TransactionReceipt;
 use crate::config::GETH_ENDPOINT;
 use crate::TreeMakerError;
 use aws_config::meta::region::RegionProviderChain;
@@ -29,6 +30,12 @@ pub struct GetBalanceRequest<'a>(
 );
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct GetTransactionReceiptRequest<'a>(
+    // tx_hash
+    pub &'a str,
+);
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct GetBalanceResponse {
     pub jsonrpc: String,
     pub id: usize,
@@ -40,4 +47,11 @@ pub struct GetBlockResponse {
     pub jsonrpc: String,
     pub id: usize,
     pub result: Option<Block>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetTransactionReceiptResponse {
+    pub jsonrpc: String,
+    pub id: usize,
+    pub result: Option<TransactionReceipt>,
 }

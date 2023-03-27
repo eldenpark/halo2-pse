@@ -42,7 +42,11 @@ async fn main() -> Result<(), TreeMakerError> {
         File::create(&log_files_path).unwrap();
     }
 
-    simple_logging::log_to_file(log_files_path, LevelFilter::Error)?;
+    {
+        simple_logging::log_to_file(log_files_path, LevelFilter::Info)?;
+        log::info!("Start tree maker - this is info");
+        log::error!("Start tree maker - this is error");
+    }
 
     leaves::make_leaves().await?;
 

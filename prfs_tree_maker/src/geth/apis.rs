@@ -1,3 +1,7 @@
+use super::{
+    GetBlockByNumberRequest, GetBlockResponse, GetTransactionReceiptRequest,
+    GetTransactionReceiptResponse,
+};
 use crate::geth::io_models::{GetBalanceRequest, GetBalanceResponse};
 use crate::make_request_type;
 use crate::{config::GETH_ENDPOINT, TreeMakerError};
@@ -5,8 +9,6 @@ use hyper::body::HttpBody;
 use hyper::{client::HttpConnector, Body, Client as HyperClient, Method, Request};
 use hyper_tls::HttpsConnector;
 use serde_json::json;
-
-use super::{GetBlockByNumberRequest, GetBlockResponse};
 
 pub struct GethClient {
     pub hyper_client: HyperClient<HttpsConnector<HttpConnector>>,
@@ -19,6 +21,11 @@ impl GethClient {
         eth_getBlockByNumber,
         GetBlockByNumberRequest,
         GetBlockResponse
+    );
+    make_request_type!(
+        eth_getTransactionReceipt,
+        GetTransactionReceiptRequest,
+        GetTransactionReceiptResponse
     );
 }
 
@@ -47,30 +54,44 @@ macro_rules! make_request_type {
                 .header("content-type", "application/json")
                 .body(Body::from(body))?;
 
-            let mut resp = self.hyper_client.request(req).await?;
+            let resp = self.hyper_client.request(req).await?;
+            let body = hyper::body::to_bytes(resp.into_body()).await?;
 
-            match resp.body_mut().data().await {
-                Some(r) => {
-                    let body = r.unwrap();
-                    let res: $resp_type = match serde_json::from_slice(&body) {
-                        Ok(r) => r,
-                        Err(err) => {
-                            println!(
-                                "Error deserializing {}, original body: {:?}, err: {}",
-                                stringify!($resp_type), body, err,
-                            );
+            let res: $resp_type = match serde_json::from_slice(&body) {
+                Ok(r) => r,
+                Err(err) => {
+                    println!(
+                        "Error deserializing {}, original body: {:?}, err: {}",
+                        stringify!($resp_type), body, err,
+                    );
 
-                            return Err(err.into());
-                        }
-                    };
-
-                    return Ok(res);
-                }
-                None => {
-                    return Err("no data in body".into());
+                    return Err(err.into());
                 }
             };
 
+            return Ok(res);
+
+            // match resp.body_mut().data().await {
+            //     Some(r) => {
+            //         let body = r.unwrap();
+            //         let res: $resp_type = match serde_json::from_slice(&body) {
+            //             Ok(r) => r,
+            //             Err(err) => {
+            //                 println!(
+            //                     "Error deserializing {}, original body: {:?}, err: {}",
+            //                     stringify!($resp_type), body, err,
+            //                 );
+
+            //                 return Err(err.into());
+            //             }
+            //         };
+
+            //         return Ok(res);
+            //     }
+            //     None => {
+            //         return Err("no data in body".into());
+            //     }
+            // };
         }
     };
 }

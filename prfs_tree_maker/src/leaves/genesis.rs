@@ -1,9 +1,9 @@
+use crate::config::GETH_ENDPOINT;
 use crate::geth::{GetBalanceRequest, GethClient};
 use crate::{geth, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::model::AttributeValue;
 use aws_sdk_dynamodb::Client as DynamoClient;
-use crypto_bigint::U256;
 use hyper::client::HttpConnector;
 use hyper::{body::HttpBody as _, Client as HyperClient, Uri};
 use hyper::{Body, Method, Request, Response};
@@ -64,11 +64,11 @@ async fn process_genesis_block_addresses(
     for (idx, (addr, _)) in genesis_block.iter().enumerate() {
         let addr = format!("0x{}", addr);
 
-        let result = geth_client
+        let resp = geth_client
             .eth_getBalance(GetBalanceRequest(&addr, "latest"))
             .await?;
 
-        if let Some(r) = result.result {
+        if let Some(r) = resp.result {
             let wei_str = r.strip_prefix("0x").unwrap();
             let wei = u128::from_str_radix(wei_str, 16).unwrap();
 

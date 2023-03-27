@@ -12,3 +12,5 @@ pub fn convert_string_into_fp(val: &str) -> Fp {
     let arr: [u8; 32] = v.try_into().unwrap();
     Fp::from_repr(arr).unwrap()
 }
+
+// pub fn pad_zero_if_necessary(hex_str: &str) -> String {}
