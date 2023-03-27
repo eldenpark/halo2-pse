@@ -1,83 +1,78 @@
-use crate::config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK};
-use crate::geth;
-use crate::geth::GetBlockResponse;
-use crate::TreeMakerError;
+use crate::config::GETH_ENDPOINT;
+use crate::geth::{GetBalanceRequest, GetBlockByNumberRequest, GetBlockResponse, GethClient};
+use crate::{geth, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::model::AttributeValue;
 use aws_sdk_dynamodb::Client as DynamoClient;
+use crypto_bigint::U256;
 use hyper::client::HttpConnector;
-use hyper::{body::HttpBody as _, Client, Uri};
+use hyper::{body::HttpBody as _, Client as HyperClient, Uri};
 use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, json};
-use std::borrow::Borrow;
 use std::collections::HashMap;
-use std::fmt::Display;
-use std::fs::{self, File, OpenOptions};
-use std::io::Write;
+use std::fs::{self, File};
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::fs::OpenOptions;
+use tokio_postgres::{Client as PGClient, NoTls};
 
-pub async fn run(log_files_path: PathBuf) -> Result<(), TreeMakerError> {
-    println!("ledger run");
+// #[derive(Serialize, Deserialize, Debug)]
+// struct GenesisEntry {
+//     wei: String,
+// }
 
-    get_addresses(log_files_path).await?;
+pub async fn run() -> Result<(), TreeMakerError> {
+    let postgres_pw = std::env::var("POSTGRES_PW")?;
+
+    let https = HttpsConnector::new();
+    let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
+
+    let pg_config = format!(
+        "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password={}",
+        postgres_pw,
+    );
+    let (pg_client, connection) = tokio_postgres::connect(&pg_config, NoTls).await?;
+
+    let geth_client = GethClient { hyper_client };
+
+    let pg_client = Arc::new(pg_client);
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            println!("connection error: {}", e);
+        }
+    });
+
+    scan_ledger_addresses(geth_client, pg_client).await?;
 
     Ok(())
 }
 
-async fn get_addresses(log_files_path: PathBuf) -> Result<(), TreeMakerError> {
+async fn scan_ledger_addresses(
+    geth_client: GethClient,
+    pg_client: Arc<PGClient>,
+) -> Result<(), TreeMakerError> {
+    let (start_block, end_block) = {
+        let sb: u64 = std::env::var("START_BLOCK").unwrap().parse().unwrap();
+        let eb: u64 = std::env::var("END_BLOCK").unwrap().parse().unwrap();
+
+        (sb, eb)
+    };
+
     let mut count = 0;
 
-    let region_provider = RegionProviderChain::default_provider();
-    let config = aws_config::from_env().region(region_provider).load().await;
-
-    if let None = config.region() {
-        return Err("aws config is not properly loaded, region missing".into());
-    }
-
-    let https = HttpsConnector::new();
-    let client = Client::builder().build::<_, hyper::Body>(https);
-    let dynamo_client = DynamoClient::new(&config);
     let mut addresses = HashMap::<String, bool>::new();
 
-    for no in START_BLOCK..END_BLOCK {
+    for no in start_block..end_block {
         let b_no = format!("0x{:x}", no);
 
         println!("processing block: {} ({})", b_no, no);
 
-        let body = json!(
-            {
-                "jsonrpc": "2.0",
-                "method": "eth_getBlockByNumber",
-                "params":[b_no, true],
-                "id":1,
-            }
-        )
-        .to_string();
-
-        let req = Request::builder()
-            .method(Method::POST)
-            .uri(GETH_ENDPOINT)
-            .header("content-type", "application/json")
-            .body(Body::from(body))?;
-
-        let resp = client.request(req).await?;
-
-        let buf = hyper::body::to_bytes(resp).await?;
-
-        let resp: GetBlockResponse = match serde_json::from_slice(&buf) {
-            Ok(r) => r,
-            Err(err) => {
-                println!(
-                    "Could not parse block response, buf: {:?}, err: {}",
-                    buf, err
-                );
-
-                return Err(err.into());
-            }
-        };
+        let resp = geth_client
+            .eth_getBlockByNumber(GetBlockByNumberRequest(&b_no, true))
+            .await?;
 
         let result = if let Some(r) = resp.result {
             r
@@ -88,31 +83,18 @@ async fn get_addresses(log_files_path: PathBuf) -> Result<(), TreeMakerError> {
         };
 
         // miner
-        get_balance_and_put_item(
-            &client,
-            &dynamo_client,
-            &mut addresses,
-            result.miner.to_string(),
-        )
-        .await?;
+        get_balance_and_put_item(&geth_client, &mut addresses, result.miner.to_string()).await?;
 
         for tx in result.transactions {
             // println!("processing tx: {}", tx.hash);
 
             // from
-            get_balance_and_put_item(&client, &dynamo_client, &mut addresses, tx.from.to_string())
-                .await?;
+            get_balance_and_put_item(&geth_client, &mut addresses, tx.from.to_string()).await?;
 
             match tx.to {
                 Some(to) => {
                     // to
-                    get_balance_and_put_item(
-                        &client,
-                        &dynamo_client,
-                        &mut addresses,
-                        to.to_string(),
-                    )
-                    .await?;
+                    get_balance_and_put_item(&geth_client, &mut addresses, to.to_string()).await?;
                 }
                 None => {
                     // let contract_addr = geth::get_contract_addr(tx.hash.to_string()).await?;
@@ -154,8 +136,7 @@ async fn get_addresses(log_files_path: PathBuf) -> Result<(), TreeMakerError> {
 }
 
 async fn get_balance_and_put_item(
-    client: &Client<HttpsConnector<HttpConnector>>,
-    dynamo_client: &DynamoClient,
+    geth_client: &GethClient,
     addresses: &mut HashMap<String, bool>,
     addr: String,
 ) -> Result<(), TreeMakerError> {

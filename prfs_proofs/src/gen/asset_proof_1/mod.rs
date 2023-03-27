@@ -295,9 +295,9 @@ mod sign_verify_tests {
             };
             println!("msg_hash: {:?}", msg_hash);
 
-            let randomness = secp256k1::Fq::random(rng);
-            // let randomness = SecFq::from_bytes(&k_vec).unwrap();
-            println!("randomness: {:?}", randomness);
+            // let randomness = secp256k1::Fq::random(rng);
+            // // let randomness = SecFq::from_bytes(&k_vec).unwrap();
+            // println!("randomness: {:?}", randomness);
 
             // let sig = sign_with_rng(&mut rng, sk, msg_hash);
             // let sig = sign_with_rng(randomness, sk, msg_hash);
@@ -318,6 +318,7 @@ mod sign_verify_tests {
             // };
             // let s = SecFq::from_bytes(&s).unwrap();
             // println!("s: {:?}", s);
+
             let sig = {
                 let sig = "8918975215107b43c9dabe0d0c293ac21a6aa24f785de2b1920badec0f8039fb70516ee590319425bef709f58f0208d37fb18f15ba077e70d21014bc731253af1c";
 

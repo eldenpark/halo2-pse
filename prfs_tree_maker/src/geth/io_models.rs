@@ -15,7 +15,18 @@ use std::fs::{self, File};
 use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct GetBalanceRequest<'a>(pub &'a str, pub &'a str);
+pub struct GetBlockByNumberRequest<'a>(
+    // block_no
+    pub &'a str,
+    pub bool,
+);
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetBalanceRequest<'a>(
+    // addr
+    pub &'a str,
+    pub &'a str,
+);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetBalanceResponse {
@@ -25,8 +36,8 @@ pub struct GetBalanceResponse {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct GetBlockResponse<'a> {
-    pub jsonrpc: &'a str,
+pub struct GetBlockResponse {
+    pub jsonrpc: String,
     pub id: usize,
-    pub result: Block<'a>,
+    pub result: Option<Block>,
 }

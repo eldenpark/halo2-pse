@@ -1,4 +1,5 @@
 mod genesis;
+mod scan;
 
 use crate::{hexutils::convert_string_into_fp, ledger_query, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;

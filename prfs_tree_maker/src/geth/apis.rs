@@ -6,6 +6,8 @@ use hyper::{client::HttpConnector, Body, Client as HyperClient, Method, Request}
 use hyper_tls::HttpsConnector;
 use serde_json::json;
 
+use super::{GetBlockByNumberRequest, GetBlockResponse};
+
 pub struct GethClient {
     pub hyper_client: HyperClient<HttpsConnector<HttpConnector>>,
 }
@@ -13,6 +15,11 @@ pub struct GethClient {
 #[allow(non_snake_case)]
 impl GethClient {
     make_request_type!(eth_getBalance, GetBalanceRequest, GetBalanceResponse);
+    make_request_type!(
+        eth_getBlockByNumber,
+        GetBlockByNumberRequest,
+        GetBlockResponse
+    );
 }
 
 #[macro_export]
