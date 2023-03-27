@@ -1,15 +1,18 @@
 mod apis;
-mod models;
-mod response;
+mod geth_types;
+mod io_models;
 
 use crate::config::GETH_ENDPOINT;
 use crate::TreeMakerError;
+pub use apis::*;
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::model::AttributeValue;
+pub use geth_types::*;
 use hyper::client::HttpConnector;
 use hyper::{body::HttpBody as _, Client as HyperClient, Uri};
 use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
+pub use io_models::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, json};
 use std::collections::HashMap;

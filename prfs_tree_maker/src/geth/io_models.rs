@@ -1,3 +1,4 @@
+use super::geth_types::Block;
 use crate::config::GETH_ENDPOINT;
 use crate::TreeMakerError;
 use aws_config::meta::region::RegionProviderChain;
@@ -13,7 +14,8 @@ use std::fmt::Display;
 use std::fs::{self, File};
 use std::path::PathBuf;
 
-use super::models::Block;
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GetBalanceRequest(pub String);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetBalanceResponse {

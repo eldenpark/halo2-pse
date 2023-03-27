@@ -1,3 +1,4 @@
+use crate::geth::GethClient;
 use crate::{geth, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::model::AttributeValue;
@@ -23,13 +24,13 @@ pub async fn run() -> Result<(), TreeMakerError> {
     let https = HttpsConnector::new();
     let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
 
-    {}
-
     let (pg_client, connection) = tokio_postgres::connect(
         "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password=postgres",
         NoTls,
     )
     .await?;
+
+    let geth_client = GethClient { hyper_client };
 
     let pg_client = Arc::new(pg_client);
     tokio::spawn(async move {
@@ -38,14 +39,14 @@ pub async fn run() -> Result<(), TreeMakerError> {
         }
     });
 
-    get_genesis_block_addresses(&hyper_client, pg_client).await?;
+    get_genesis_block_addresses(geth_client, pg_client).await?;
     // get_addresses().await?;
 
     Ok(())
 }
 
 async fn get_genesis_block_addresses(
-    hyper_client: &HyperClient<HttpsConnector<HttpConnector>>,
+    geth_client: GethClient,
     pg_client: Arc<PGClient>,
 ) -> Result<(), TreeMakerError> {
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -53,15 +54,18 @@ async fn get_genesis_block_addresses(
 
     println!("genesis_block_path: {:?}", genesis_block_path);
 
+    // Geth::eth_getBalance(&self, params)
+
     let data = fs::read_to_string(&genesis_block_path)?;
     let genesis_block: HashMap<String, GenesisEntry> =
         serde_json::from_str(&data).expect("JSON does not have correct format.");
 
     for (idx, (addr, _)) in genesis_block.iter().enumerate() {
         let addr = format!("0x{}", addr);
-        let wei = geth::get_balance(&hyper_client, &addr).await?;
+        // println!("addr: {}", addr);
+        // let wei = geth::get_balance(&hyper_client, &addr).await?;
 
-        println!("addr: {}, wei: {}", addr, wei);
+        // println!("addr: {}, wei: {}", addr, wei);
 
         // pg_client.batch_execute(query)
     }

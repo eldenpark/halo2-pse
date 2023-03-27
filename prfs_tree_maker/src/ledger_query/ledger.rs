@@ -107,19 +107,19 @@ async fn get_addresses(log_files_path: PathBuf) -> Result<(), TreeMakerError> {
                     .await?;
                 }
                 None => {
-                    let contract_addr = geth::get_contract_addr(tx.hash.to_string()).await?;
-                    // println!("contract_addr: {:?}", contract_addr);
+                    // let contract_addr = geth::get_contract_addr(tx.hash.to_string()).await?;
+                    // // println!("contract_addr: {:?}", contract_addr);
 
-                    if let Some(addr) = contract_addr {
-                        // contract
-                        get_balance_and_put_item(
-                            &client,
-                            &dynamo_client,
-                            &mut addresses,
-                            addr.to_string(),
-                        )
-                        .await?;
-                    }
+                    // if let Some(addr) = contract_addr {
+                    //     // contract
+                    //     get_balance_and_put_item(
+                    //         &client,
+                    //         &dynamo_client,
+                    //         &mut addresses,
+                    //         addr.to_string(),
+                    //     )
+                    //     .await?;
+                    // }
                 }
             };
         }
@@ -156,10 +156,10 @@ async fn get_balance_and_put_item(
 
         return Ok(());
     } else {
-        let wei = geth::get_balance(&client, &addr).await?;
+        // let wei = geth::get_balance(&client, &addr).await?;
         // dynamodb::put_item(&dynamo_client, addr.to_string(), wei).await;
 
-        addresses.insert(addr, true);
+        // addresses.insert(addr, true);
     }
 
     Ok(())
