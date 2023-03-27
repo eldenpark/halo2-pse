@@ -1,5 +1,5 @@
 pub mod climb;
-mod config;
+pub mod config;
 pub mod geth;
 pub mod grow;
 pub mod hexutils;

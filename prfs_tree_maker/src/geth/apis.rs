@@ -17,21 +17,24 @@ impl GethClient {
 
 #[macro_export]
 macro_rules! make_request_type {
-    ($fn_name:ident, $req_type:tt, $resp_type:ident) => {
-        pub async fn $fn_name(
+    ($fn_name:ident, $req_type:ident, $resp_type:ident) => {
+        pub async fn $fn_name<'a>(
             &self,
-            req_type: $req_type,
+            req_type: $req_type<'a>,
         ) -> Result<$resp_type, crate::TreeMakerError> {
-            let params = req_type.0;
+            let method = stringify!($fn_name);
+
             let body = serde_json::json!(
                 {
                     "jsonrpc":"2.0",
-                    "method": stringify!($method),
-                    "params": params,
+                    "method": method,
+                    "params": req_type,
                     "id":1,
                 }
             )
             .to_string();
+
+            println!("body: {:?}", body);
 
             let req = Request::builder()
                 .method(Method::POST)

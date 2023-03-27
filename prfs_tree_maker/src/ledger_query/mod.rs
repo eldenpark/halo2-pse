@@ -1,5 +1,5 @@
 mod dynamodb;
-mod genesis;
+// mod genesis;
 mod ledger;
 mod migrate;
 
@@ -35,7 +35,7 @@ pub async fn run() -> Result<(), QueryError> {
 
     simple_logging::log_to_file(log_files_path, LevelFilter::Error)?;
 
-    genesis::run().await?;
+    // genesis::run().await?;
 
     // ledger::run(log_files_path).await?;
 

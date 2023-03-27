@@ -15,13 +15,13 @@ use std::fs::{self, File};
 use std::path::PathBuf;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct GetBalanceRequest(pub String);
+pub struct GetBalanceRequest<'a>(pub &'a str, pub &'a str);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct GetBalanceResponse {
     pub jsonrpc: String,
     pub id: usize,
-    pub result: String,
+    pub result: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

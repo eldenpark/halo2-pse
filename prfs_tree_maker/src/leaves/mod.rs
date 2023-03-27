@@ -1,3 +1,5 @@
+mod genesis;
+
 use crate::{hexutils::convert_string_into_fp, ledger_query, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
@@ -7,7 +9,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio_postgres::{types::ToSql, Client as PgClient, Error, NoTls};
 
 pub async fn make_leaves() -> Result<(), TreeMakerError> {
-    ledger_query::run().await?;
+    // ledger_query::run().await?;
 
     // let region_provider = RegionProviderChain::default_provider();
     // let config = aws_config::from_env().region(region_provider).load().await;
@@ -77,6 +79,9 @@ pub async fn make_leaves() -> Result<(), TreeMakerError> {
 
     //     attempt += 1;
     // }
+    //
+    //
+    genesis::run().await?;
 
     Ok(())
 }
