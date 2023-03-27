@@ -264,13 +264,13 @@ mod sign_verify_tests {
             let address_str = hex::encode(&address);
             println!("address_str: {:?}", address_str);
 
-            let k_vec: [u8; 32] = {
-                let k = "EC633BD56A5774A0940CB97E27A9E4E51DC94AF737596A0C5CBB3D30332D92A5";
-                let mut v = hex::decode(k).unwrap();
-                v.reverse();
-                v.try_into().unwrap()
-            };
-            println!("\nk_vec: {:?}", k_vec);
+            // let k_vec: [u8; 32] = {
+            //     let k = "EC633BD56A5774A0940CB97E27A9E4E51DC94AF737596A0C5CBB3D30332D92A5";
+            //     let mut v = hex::decode(k).unwrap();
+            //     v.reverse();
+            //     v.try_into().unwrap()
+            // };
+            // println!("\nk_vec: {:?}", k_vec);
 
             // let msg_hash = gen_msg_hash2("test".to_string()).unwrap();
             // println!("msg_hash: {:?}", msg_hash);
@@ -320,7 +320,7 @@ mod sign_verify_tests {
             // println!("s: {:?}", s);
 
             let sig = {
-                let sig = "8918975215107b43c9dabe0d0c293ac21a6aa24f785de2b1920badec0f8039fb70516ee590319425bef709f58f0208d37fb18f15ba077e70d21014bc731253af1c";
+                let sig = "1cbc87e1f7d6bc39ae7571477d53deb151dd41f8f867e36e294072e33e3cb06908fec3b1fb11d21a8ccb1b390cd7e24bc26fb04c9316cbbfed39be222fd691131c";
 
                 let r: [u8; 32] = {
                     let r = sig[..64].to_string();

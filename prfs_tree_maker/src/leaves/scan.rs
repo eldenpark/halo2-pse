@@ -74,25 +74,6 @@ async fn scan_ledger_addresses(
 
         println!("processing block: {} ({})", b_no, no);
 
-        let body = serde_json::json!(
-            {
-                "jsonrpc":"2.0",
-                "method": "eth_getBlockByNumber",
-                "params": [],
-                "id":1,
-            }
-        )
-        .to_string();
-
-        let req = Request::builder()
-            .method(Method::POST)
-            .uri(GETH_ENDPOINT)
-            .header("content-type", "application/json")
-            .body(Body::from(body))?;
-
-        let resp = geth_client.hyper_client.request(req).await?;
-        let body = hyper::body::to_bytes(resp.into_body()).await?;
-
         let resp = geth_client
             .eth_getBlockByNumber(GetBlockByNumberRequest(&b_no, true))
             .await?;
@@ -104,13 +85,11 @@ async fn scan_ledger_addresses(
             return Err(format!("get block response failed").into());
         };
 
-        println!("result: {:?}", result);
-
         // miner
         get_balance_and_add_item(&geth_client, &mut addresses, result.miner.to_string()).await?;
 
         for tx in result.transactions {
-            // println!("processing tx: {}", tx.hash);
+            println!("processing tx: {}", tx.hash);
 
             // from
             get_balance_and_add_item(&geth_client, &mut addresses, tx.from.to_string()).await?;
@@ -140,6 +119,13 @@ async fn scan_ledger_addresses(
                     }
                 }
             };
+        }
+
+        for (key, _) in addresses.iter() {
+            println!("key: {}", key);
+            if key == &"0x33d10Ab178924ECb7aD52f4c0C8062C3066607ec".to_lowercase() {
+                println!("11 power");
+            }
         }
 
         if count % 1000 == 0 {
@@ -192,8 +178,6 @@ async fn get_balance_and_add_item(
                     }
                 }
             };
-
-            println!("addr: {}, wei: {:?}", addr, wei);
 
             addresses.insert(addr, wei.to_string());
         }
