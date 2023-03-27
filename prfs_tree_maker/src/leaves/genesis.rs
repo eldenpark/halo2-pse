@@ -22,14 +22,16 @@ struct GenesisEntry {
 }
 
 pub async fn run() -> Result<(), TreeMakerError> {
+    let postgres_pw = std::env::var("POSTGRES_PW")?;
+
     let https = HttpsConnector::new();
     let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
 
-    let (pg_client, connection) = tokio_postgres::connect(
-        "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password=postgres",
-        NoTls,
-    )
-    .await?;
+    let pg_config = format!(
+        "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password={}",
+        postgres_pw,
+    );
+    let (pg_client, connection) = tokio_postgres::connect(&pg_config, NoTls).await?;
 
     let geth_client = GethClient { hyper_client };
 

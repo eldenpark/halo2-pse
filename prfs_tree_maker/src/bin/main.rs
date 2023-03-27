@@ -1,4 +1,5 @@
 use chrono::prelude::*;
+use dotenv::dotenv;
 use halo2_gadgets::{
     poseidon::{
         primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
@@ -23,21 +24,19 @@ use std::{
 
 #[tokio::main]
 async fn main() -> Result<(), TreeMakerError> {
+    let now = Utc::now();
     println!("Tree maker starts");
+    println!("start time: {}", now);
+
+    {
+        let dotenv_path = dotenv()?;
+        println!(".env path: {:?}", dotenv_path);
+    }
 
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-
-    let now = Utc::now();
     let log_files_path = project_root.join(format!("log_files/log"));
-
-    println!("start time: {}", now);
     println!("log file path: {:?}", log_files_path);
     println!("geth endpoint: {}", GETH_ENDPOINT);
-
-    println!(
-        "start block no: {}, end block no: {}",
-        START_BLOCK, END_BLOCK
-    );
 
     if log_files_path.exists() == false {
         File::create(&log_files_path).unwrap();
