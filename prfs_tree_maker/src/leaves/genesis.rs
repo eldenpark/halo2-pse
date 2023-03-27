@@ -3,6 +3,7 @@ use crate::{geth, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::model::AttributeValue;
 use aws_sdk_dynamodb::Client as DynamoClient;
+use crypto_bigint::U256;
 use hyper::client::HttpConnector;
 use hyper::{body::HttpBody as _, Client as HyperClient, Uri};
 use hyper::{Body, Method, Request, Response};
@@ -58,37 +59,34 @@ async fn process_genesis_block_addresses(
         serde_json::from_str(&data).expect("JSON does not have correct format.");
 
     let mut values = vec![];
-    for (idx, (addr, entry)) in genesis_block.iter().enumerate() {
+    for (idx, (addr, _)) in genesis_block.iter().enumerate() {
         let addr = format!("0x{}", addr);
-        println!("addr: {}", addr);
 
         let result = geth_client
             .eth_getBalance(GetBalanceRequest(&addr, "latest"))
             .await?;
 
-        println!("result: {:?}", result);
+        if let Some(r) = result.result {
+            let wei_str = r.strip_prefix("0x").unwrap();
+            let wei = u128::from_str_radix(wei_str, 16).unwrap();
 
-        // let wei = geth::get_balance(&hyper_client, &addr).await?;
+            // println!("addr: {}, wei: {}", addr, wei);
 
-        // println!("addr: {}, wei: {}", addr, wei);
+            let val = format!("('{}', {})", addr, wei);
 
-        // pg_client.batch_execute(query)
-        //
-        let val = format!("('{}', {})", addr, entry.wei);
-        values.push(val);
+            values.push(val);
 
-        if idx % 10 == 0 {
-            let stmt = format!(
-                "INSERT INTO balances_20230327 (addr, wei) VALUES {}",
-                values.join(",")
-            );
-            println!("stmt: {}", stmt);
+            if idx % 100 == 0 {
+                let stmt = format!(
+                    "INSERT INTO balances_20230327 (addr, wei) VALUES {}",
+                    values.join(",")
+                );
+                println!("stmt: {}", stmt);
 
-            pg_client.execute(&stmt, &[]).await?;
+                pg_client.execute(&stmt, &[]).await?;
 
-            values = vec![];
-
-            return Ok(());
+                values = vec![];
+            }
         }
     }
 

@@ -34,8 +34,6 @@ macro_rules! make_request_type {
             )
             .to_string();
 
-            println!("body: {:?}", body);
-
             let req = Request::builder()
                 .method(Method::POST)
                 .uri($crate::config::GETH_ENDPOINT)
