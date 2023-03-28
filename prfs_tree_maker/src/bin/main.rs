@@ -11,7 +11,6 @@ use halo2_proofs::halo2curves::pasta::Fp;
 use hyper::{body::HttpBody as _, Client, Uri};
 use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
-use log::LevelFilter;
 use prfs_tree_maker::{
     config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK},
     leaves, TreeMakerError,
@@ -21,6 +20,8 @@ use std::{
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
 };
+use tracing::{instrument::WithSubscriber, metadata::LevelFilter};
+use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, EnvFilter, Layer};
 
 #[tokio::main]
 async fn main() -> Result<(), TreeMakerError> {
@@ -43,9 +44,53 @@ async fn main() -> Result<(), TreeMakerError> {
     }
 
     {
-        simple_logging::log_to_file(log_files_path, LevelFilter::Info)?;
-        log::info!("Start tree maker - this is info");
-        log::error!("Start tree maker - this is error");
+        // env_logger::init();
+        // log::info!("Start tree maker - this is info");
+        // log::error!("Start tree maker - this is error");
+        // simple_logging::log_to_file(log_files_path, LevelFilter::Info)?;
+
+        let mut layers = Vec::new();
+
+        let console_log_layer = tracing_subscriber::fmt::layer()
+            .with_filter(EnvFilter::from_default_env())
+            .with_filter(LevelFilter::INFO)
+            .boxed();
+
+        layers.push(console_log_layer);
+
+        let _guard = {
+            let log_dir = project_root.join("log_files");
+            std::fs::create_dir_all(&log_dir)?;
+
+            let file_appender = tracing_appender::rolling::daily(&log_dir, "tree_maker.log");
+
+            let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+
+            let file_log_layer = tracing_subscriber::fmt::layer()
+                .with_writer(non_blocking)
+                .with_filter(EnvFilter::from_default_env())
+                .boxed();
+
+            layers.push(file_log_layer);
+
+            println!(
+                "File logger is attached. Log files will be periodically rotated. log dir: {}",
+                log_dir.to_string_lossy(),
+            );
+
+            _guard
+        };
+
+        println!("Following log invocation will be handled by global logger");
+
+        let subscriber = tracing_subscriber::registry().with(layers);
+
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("Unable to set a global collector");
+
+        tracing::info!("log info");
+        tracing::warn!("log warn");
+        tracing::error!("log error");
     }
 
     leaves::make_leaves().await?;

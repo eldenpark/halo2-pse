@@ -37,14 +37,18 @@ async fn scan_ledger_addresses(
         (sb, eb)
     };
 
-    let mut count = 0;
-
+    let mut block_iter = 0;
     let mut balances = BTreeMap::<String, u128>::new();
 
     for no in start_block..end_block {
         let b_no = format!("0x{:x}", no);
 
-        // println!("processing block: {} ({})", b_no, no);
+        println!(
+            "processing block: {} ({}), #balance in bucket: {}",
+            b_no,
+            no,
+            balances.len()
+        );
 
         let resp = geth_client
             .eth_getBlockByNumber(GetBlockByNumberRequest(&b_no, true))
@@ -76,7 +80,7 @@ async fn scan_ledger_addresses(
                         .eth_getTransactionReceipt(GetTransactionReceiptRequest(&tx.hash))
                         .await?;
 
-                    println!("get transaction receipt resp: {:?}", resp);
+                    // println!("get transaction receipt resp: {:?}", resp);
 
                     if let Some(r) = &resp.result {
                         if let Some(contract_addr) = &r.contractAddress {
@@ -93,14 +97,27 @@ async fn scan_ledger_addresses(
             };
         }
 
-        if count % 500 == 0 {
-            log::info!("block_no: {}", no);
+        let balances_count = balances.len();
+        if balances.len() >= 500 {
+            log::info!(
+                "Writing balances, balances_count: {}, block_no: {}",
+                balances_count,
+                no
+            );
 
             db.insert_balances(balances, false).await?;
             balances = BTreeMap::new();
         }
+    }
 
-        count += 1;
+    if balances.len() > 0 {
+        log::info!(
+            "Writing (last) remaining balances, balances_count: {}, end block_no (excl): {}",
+            balances.len(),
+            end_block
+        );
+
+        db.insert_balances(balances, false).await?;
     }
 
     Ok(())
