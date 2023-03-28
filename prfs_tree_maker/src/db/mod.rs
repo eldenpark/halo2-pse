@@ -36,6 +36,7 @@ impl Database {
     pub async fn insert_balances(
         &self,
         balances: BTreeMap<String, u128>,
+        update_on_conflict: bool,
     ) -> Result<u64, TreeMakerError> {
         let mut values = Vec::with_capacity(balances.len());
         for (addr, wei) in balances {
@@ -43,15 +44,21 @@ impl Database {
             values.push(val);
         }
 
-        let stmt = format!(
-            "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT DO NOTHING",
-            values.join(",")
-        );
-        println!("stmt: {}", stmt);
+        let stmt = if update_on_conflict {
+            format!(
+                "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT(addr) {}",
+                values.join(","),
+                "DO UPDATE SET wei = excluded.wei, updated_at = now()",
+            )
+        } else {
+            format!(
+                "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT DO NOTHING",
+                values.join(",")
+            )
+        };
+        // println!("stmt: {}", stmt);
 
         let rows_updated = self.pg_client.execute(&stmt, &[]).await?;
-        println!("rows_updated: {}", rows_updated);
-
         Ok(rows_updated)
     }
 }

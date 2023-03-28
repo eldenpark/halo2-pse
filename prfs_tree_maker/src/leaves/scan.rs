@@ -1,27 +1,12 @@
-use crate::config::GETH_ENDPOINT;
 use crate::db::Database;
 use crate::geth::{
     GetBalanceRequest, GetBlockByNumberRequest, GetBlockResponse, GetTransactionReceiptRequest,
     GethClient,
 };
-use crate::{geth, TreeMakerError};
-use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_dynamodb::model::AttributeValue;
-use aws_sdk_dynamodb::Client as DynamoClient;
-use hyper::client::HttpConnector;
-use hyper::{body::HttpBody as _, Client as HyperClient, Uri};
-use hyper::{Body, Method, Request, Response};
+use crate::TreeMakerError;
+use hyper::Client as HyperClient;
 use hyper_tls::HttpsConnector;
-use primitive_types::U256;
-use serde::{Deserialize, Serialize};
-use serde_json::{from_slice, json};
-use std::collections::{BTreeMap, HashMap};
-use std::fs::{self, File};
-use std::path::PathBuf;
-use std::sync::Arc;
-use std::time::Duration;
-use tokio::fs::OpenOptions;
-use tokio_postgres::{Client as PGClient, NoTls};
+use std::collections::BTreeMap;
 
 pub async fn run() -> Result<(), TreeMakerError> {
     let https = HttpsConnector::new();
@@ -38,7 +23,6 @@ pub async fn run() -> Result<(), TreeMakerError> {
 async fn scan_ledger_addresses(
     geth_client: GethClient,
     db: Database,
-    // pg_client: Arc<PGClient>,
 ) -> Result<(), TreeMakerError> {
     let (start_block, end_block) = {
         let sb: u64 = std::env::var("START_BLOCK")
@@ -60,7 +44,7 @@ async fn scan_ledger_addresses(
     for no in start_block..end_block {
         let b_no = format!("0x{:x}", no);
 
-        println!("processing block: {} ({})", b_no, no);
+        // println!("processing block: {} ({})", b_no, no);
 
         let resp = geth_client
             .eth_getBlockByNumber(GetBlockByNumberRequest(&b_no, true))
@@ -69,16 +53,16 @@ async fn scan_ledger_addresses(
         let result = if let Some(r) = resp.result {
             r
         } else {
-            log::error!("Get block response failed, block_no: {}", no);
-            return Err(format!("get block response failed").into());
+            let msg = format!("Get block response failed, block_no: {}", no);
+            log::error!("{}", msg);
+
+            return Err(msg.into());
         };
 
         // miner
         get_balance_and_add_item(&geth_client, &mut balances, result.miner.to_string()).await?;
 
         for tx in result.transactions {
-            println!("processing tx: {}", tx.hash);
-
             // from
             get_balance_and_add_item(&geth_client, &mut balances, tx.from.to_string()).await?;
 
@@ -109,18 +93,10 @@ async fn scan_ledger_addresses(
             };
         }
 
-        for (key, _) in balances.iter() {
-            println!("key: {}", key);
-
-            if key == &"0x33d10Ab178924ECb7aD52f4c0C8062C3066607ec".to_lowercase() {
-                println!("11 power");
-            }
-        }
-
         if count % 500 == 0 {
             log::info!("block_no: {}", no);
 
-            db.insert_balances(balances).await?;
+            db.insert_balances(balances, false).await?;
             balances = BTreeMap::new();
         }
 
@@ -139,9 +115,18 @@ async fn get_balance_and_add_item(
         // println!("skip, {}", addr);
         return Ok(());
     } else {
-        let resp = geth_client
+        let resp = match geth_client
             .eth_getBalance(GetBalanceRequest(&addr, "latest"))
-            .await?;
+            .await
+        {
+            Ok(r) => r,
+            Err(err) => {
+                let msg = format!("Geth get balance failed, err: {}, addr: {}", err, addr);
+                log::error!("{}", msg);
+
+                return Err(msg.into());
+            }
+        };
 
         if let Some(r) = resp.result {
             let wei = {
@@ -153,14 +138,14 @@ async fn get_balance_and_add_item(
                 match u128::from_str_radix(&wei_str, 16) {
                     Ok(u) => u,
                     Err(err) => {
-                        log::error!(
+                        let msg = format!(
                             "u128 conversion failed, err: {}, wei_str: {}, addr: {}",
-                            err,
-                            wei_str,
-                            addr
+                            err, wei_str, addr
                         );
 
-                        return Err(err.into());
+                        log::error!("{}", msg);
+
+                        return Err(msg.into());
                     }
                 }
             };

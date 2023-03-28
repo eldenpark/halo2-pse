@@ -60,38 +60,18 @@ macro_rules! make_request_type {
             let res: $resp_type = match serde_json::from_slice(&body) {
                 Ok(r) => r,
                 Err(err) => {
-                    println!(
+                    let msg = format!(
                         "Error deserializing {}, original body: {:?}, err: {}",
                         stringify!($resp_type), body, err,
                     );
 
-                    return Err(err.into());
+                    log::error!("{}", msg);
+
+                    return Err(msg.into());
                 }
             };
 
             return Ok(res);
-
-            // match resp.body_mut().data().await {
-            //     Some(r) => {
-            //         let body = r.unwrap();
-            //         let res: $resp_type = match serde_json::from_slice(&body) {
-            //             Ok(r) => r,
-            //             Err(err) => {
-            //                 println!(
-            //                     "Error deserializing {}, original body: {:?}, err: {}",
-            //                     stringify!($resp_type), body, err,
-            //                 );
-
-            //                 return Err(err.into());
-            //             }
-            //         };
-
-            //         return Ok(res);
-            //     }
-            //     None => {
-            //         return Err("no data in body".into());
-            //     }
-            // };
         }
     };
 }
