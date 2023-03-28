@@ -1,4 +1,5 @@
 use crate::config::GETH_ENDPOINT;
+use crate::db::Database;
 use crate::geth::{GetBalanceRequest, GethClient};
 use crate::{geth, TreeMakerError};
 use aws_config::meta::region::RegionProviderChain;
@@ -10,7 +11,7 @@ use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, json};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::{self, File};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -22,34 +23,20 @@ struct GenesisEntry {
 }
 
 pub async fn run() -> Result<(), TreeMakerError> {
-    let postgres_pw = std::env::var("POSTGRES_PW")?;
-
     let https = HttpsConnector::new();
     let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
 
-    let pg_config = format!(
-        "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password={}",
-        postgres_pw,
-    );
-    let (pg_client, connection) = tokio_postgres::connect(&pg_config, NoTls).await?;
-
     let geth_client = GethClient { hyper_client };
+    let db = Database::connect().await?;
 
-    let pg_client = Arc::new(pg_client);
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            println!("connection error: {}", e);
-        }
-    });
-
-    process_genesis_block_addresses(geth_client, pg_client).await?;
+    process_genesis_block_addresses(geth_client, db).await?;
 
     Ok(())
 }
 
 async fn process_genesis_block_addresses(
     geth_client: GethClient,
-    pg_client: Arc<PGClient>,
+    db: Database,
 ) -> Result<(), TreeMakerError> {
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let genesis_block_path = project_root.join("data/genesis_block.json");
@@ -60,7 +47,7 @@ async fn process_genesis_block_addresses(
     let genesis_block: HashMap<String, GenesisEntry> =
         serde_json::from_str(&data).expect("JSON does not have correct format.");
 
-    let mut values = vec![];
+    let mut balances = BTreeMap::new();
     for (idx, (addr, _)) in genesis_block.iter().enumerate() {
         let addr = format!("0x{}", addr);
 
@@ -72,22 +59,13 @@ async fn process_genesis_block_addresses(
             let wei_str = r.strip_prefix("0x").unwrap();
             let wei = u128::from_str_radix(wei_str, 16).unwrap();
 
-            // println!("addr: {}, wei: {}", addr, wei);
+            balances.insert(addr, wei);
 
-            let val = format!("('{}', {})", addr, wei);
+            if idx % 200 == 0 {
+                let rows_updated = db.insert_balances(balances).await?;
+                println!("rows_updated: {}", rows_updated);
 
-            values.push(val);
-
-            if idx % 100 == 0 {
-                let stmt = format!(
-                    "INSERT INTO balances_20230327 (addr, wei) VALUES {}",
-                    values.join(",")
-                );
-                println!("stmt: {}", stmt);
-
-                pg_client.execute(&stmt, &[]).await?;
-
-                values = vec![];
+                balances = BTreeMap::new();
             }
         }
     }

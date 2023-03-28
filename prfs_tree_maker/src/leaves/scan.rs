@@ -1,4 +1,5 @@
 use crate::config::GETH_ENDPOINT;
+use crate::db::Database;
 use crate::geth::{
     GetBalanceRequest, GetBlockByNumberRequest, GetBlockResponse, GetTransactionReceiptRequest,
     GethClient,
@@ -14,7 +15,7 @@ use hyper_tls::HttpsConnector;
 use primitive_types::U256;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, json};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fs::{self, File};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -23,34 +24,21 @@ use tokio::fs::OpenOptions;
 use tokio_postgres::{Client as PGClient, NoTls};
 
 pub async fn run() -> Result<(), TreeMakerError> {
-    let postgres_pw = std::env::var("POSTGRES_PW")?;
-
     let https = HttpsConnector::new();
     let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
 
-    let pg_config = format!(
-        "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password={}",
-        postgres_pw,
-    );
-    let (pg_client, connection) = tokio_postgres::connect(&pg_config, NoTls).await?;
-
     let geth_client = GethClient { hyper_client };
+    let db = Database::connect().await?;
 
-    let pg_client = Arc::new(pg_client);
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            println!("connection error: {}", e);
-        }
-    });
-
-    scan_ledger_addresses(geth_client, pg_client).await?;
+    scan_ledger_addresses(geth_client, db).await?;
 
     Ok(())
 }
 
 async fn scan_ledger_addresses(
     geth_client: GethClient,
-    pg_client: Arc<PGClient>,
+    db: Database,
+    // pg_client: Arc<PGClient>,
 ) -> Result<(), TreeMakerError> {
     let (start_block, end_block) = {
         let sb: u64 = std::env::var("START_BLOCK")
@@ -67,7 +55,7 @@ async fn scan_ledger_addresses(
 
     let mut count = 0;
 
-    let mut addresses = HashMap::<String, String>::new();
+    let mut balances = BTreeMap::<String, u128>::new();
 
     for no in start_block..end_block {
         let b_no = format!("0x{:x}", no);
@@ -86,18 +74,18 @@ async fn scan_ledger_addresses(
         };
 
         // miner
-        get_balance_and_add_item(&geth_client, &mut addresses, result.miner.to_string()).await?;
+        get_balance_and_add_item(&geth_client, &mut balances, result.miner.to_string()).await?;
 
         for tx in result.transactions {
             println!("processing tx: {}", tx.hash);
 
             // from
-            get_balance_and_add_item(&geth_client, &mut addresses, tx.from.to_string()).await?;
+            get_balance_and_add_item(&geth_client, &mut balances, tx.from.to_string()).await?;
 
             match tx.to {
                 Some(to) => {
                     // to
-                    get_balance_and_add_item(&geth_client, &mut addresses, to.to_string()).await?;
+                    get_balance_and_add_item(&geth_client, &mut balances, to.to_string()).await?;
                 }
                 None => {
                     let resp = &geth_client
@@ -111,7 +99,7 @@ async fn scan_ledger_addresses(
                             // contract
                             get_balance_and_add_item(
                                 &geth_client,
-                                &mut addresses,
+                                &mut balances,
                                 contract_addr.to_string(),
                             )
                             .await?;
@@ -121,24 +109,22 @@ async fn scan_ledger_addresses(
             };
         }
 
-        for (key, _) in addresses.iter() {
+        for (key, _) in balances.iter() {
             println!("key: {}", key);
+
             if key == &"0x33d10Ab178924ECb7aD52f4c0C8062C3066607ec".to_lowercase() {
                 println!("11 power");
             }
         }
 
-        if count % 1000 == 0 {
+        if count % 500 == 0 {
             log::info!("block_no: {}", no);
+
+            db.insert_balances(balances).await?;
+            balances = BTreeMap::new();
         }
 
         count += 1;
-
-        // if count % 100000 == 0 {
-        //     println!("Sleep a little while every 100000");
-
-        //     tokio::time::sleep(Duration::from_millis(5000)).await;
-        // }
     }
 
     Ok(())
@@ -146,7 +132,7 @@ async fn scan_ledger_addresses(
 
 async fn get_balance_and_add_item(
     geth_client: &GethClient,
-    addresses: &mut HashMap<String, String>,
+    addresses: &mut BTreeMap<String, u128>,
     addr: String,
 ) -> Result<(), TreeMakerError> {
     if addresses.contains_key(&addr) {
@@ -164,11 +150,11 @@ async fn get_balance_and_add_item(
                     .expect("wei str should contain 0x")
                     .to_string();
 
-                match U256::from_str_radix(&wei_str, 16) {
+                match u128::from_str_radix(&wei_str, 16) {
                     Ok(u) => u,
                     Err(err) => {
                         log::error!(
-                            "u256 conversion failed, err: {}, wei_str: {}, addr: {}",
+                            "u128 conversion failed, err: {}, wei_str: {}, addr: {}",
                             err,
                             wei_str,
                             addr
@@ -178,8 +164,7 @@ async fn get_balance_and_add_item(
                     }
                 }
             };
-
-            addresses.insert(addr, wei.to_string());
+            addresses.insert(addr, wei);
         }
     }
 
