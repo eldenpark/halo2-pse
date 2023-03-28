@@ -5,7 +5,6 @@ mod migrate;
 
 use crate::config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK};
 use chrono::prelude::*;
-use log::LevelFilter;
 use std::fs::File;
 use std::{
     path::PathBuf,
@@ -33,7 +32,7 @@ pub async fn run() -> Result<(), QueryError> {
         File::create(&log_files_path).unwrap();
     }
 
-    simple_logging::log_to_file(log_files_path, LevelFilter::Error)?;
+    // simple_logging::log_to_file(log_files_path, LevelFilter::Error)?;
 
     // genesis::run().await?;
 

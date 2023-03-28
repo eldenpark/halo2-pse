@@ -37,13 +37,12 @@ async fn scan_ledger_addresses(
         (sb, eb)
     };
 
-    let mut block_iter = 0;
     let mut balances = BTreeMap::<String, u128>::new();
 
     for no in start_block..end_block {
         let b_no = format!("0x{:x}", no);
 
-        println!(
+        tracing::info!(
             "processing block: {} ({}), #balance in bucket: {}",
             b_no,
             no,
@@ -58,7 +57,7 @@ async fn scan_ledger_addresses(
             r
         } else {
             let msg = format!("Get block response failed, block_no: {}", no);
-            log::error!("{}", msg);
+            tracing::error!("{}", msg);
 
             return Err(msg.into());
         };
@@ -99,7 +98,7 @@ async fn scan_ledger_addresses(
 
         let balances_count = balances.len();
         if balances.len() >= 500 {
-            log::info!(
+            tracing::info!(
                 "Writing balances, balances_count: {}, block_no: {}",
                 balances_count,
                 no
@@ -111,13 +110,19 @@ async fn scan_ledger_addresses(
     }
 
     if balances.len() > 0 {
-        log::info!(
+        tracing::info!(
             "Writing (last) remaining balances, balances_count: {}, end block_no (excl): {}",
             balances.len(),
             end_block
         );
 
         db.insert_balances(balances, false).await?;
+    } else {
+        tracing::info!(
+            "Balances are empty. Closing 'scan', balances_count: {}, end block_no (excl): {}",
+            balances.len(),
+            end_block
+        );
     }
 
     Ok(())
@@ -139,7 +144,7 @@ async fn get_balance_and_add_item(
             Ok(r) => r,
             Err(err) => {
                 let msg = format!("Geth get balance failed, err: {}, addr: {}", err, addr);
-                log::error!("{}", msg);
+                tracing::error!("{}", msg);
 
                 return Err(msg.into());
             }
@@ -160,7 +165,7 @@ async fn get_balance_and_add_item(
                             err, wei_str, addr
                         );
 
-                        log::error!("{}", msg);
+                        tracing::error!("{}", msg);
 
                         return Err(msg.into());
                     }

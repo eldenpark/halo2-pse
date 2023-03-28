@@ -65,7 +65,7 @@ macro_rules! make_request_type {
                         stringify!($resp_type), body, err,
                     );
 
-                    log::error!("{}", msg);
+                    tracing::error!("{}", msg);
 
                     return Err(msg.into());
                 }

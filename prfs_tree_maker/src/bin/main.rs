@@ -20,11 +20,25 @@ use std::{
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
 };
-use tracing::{instrument::WithSubscriber, metadata::LevelFilter};
-use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, EnvFilter, Layer};
+use tracing::{info, instrument::WithSubscriber, metadata::LevelFilter};
+use tracing_subscriber::{
+    fmt::{format::Writer, time::FormatTime},
+    prelude::__tracing_subscriber_SubscriberExt,
+    EnvFilter, Layer,
+};
+
+pub(crate) struct MockTime;
+impl FormatTime for MockTime {
+    fn format_time(&self, w: &mut Writer<'_>) -> std::fmt::Result {
+        let time = Utc::now().format("%y-%m-%d %H:%M:%S");
+        write!(w, "{}", time)
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), TreeMakerError> {
+    std::env::set_var("RUST_LOG", "info");
+
     let now = Utc::now();
     println!("Tree maker starts");
     println!("start time: {}", now);
@@ -35,7 +49,7 @@ async fn main() -> Result<(), TreeMakerError> {
     }
 
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let log_files_path = project_root.join(format!("log_files/log"));
+    let log_files_path = project_root.join(format!("log_files"));
     println!("log file path: {:?}", log_files_path);
     println!("geth endpoint: {}", GETH_ENDPOINT);
 
@@ -43,43 +57,39 @@ async fn main() -> Result<(), TreeMakerError> {
         File::create(&log_files_path).unwrap();
     }
 
-    {
-        // env_logger::init();
-        // log::info!("Start tree maker - this is info");
-        // log::error!("Start tree maker - this is error");
-        // simple_logging::log_to_file(log_files_path, LevelFilter::Info)?;
-
+    let _guard = {
         let mut layers = Vec::new();
 
         let console_log_layer = tracing_subscriber::fmt::layer()
+            .with_target(false)
+            .with_timer(MockTime)
             .with_filter(EnvFilter::from_default_env())
             .with_filter(LevelFilter::INFO)
             .boxed();
 
         layers.push(console_log_layer);
 
-        let _guard = {
-            let log_dir = project_root.join("log_files");
-            std::fs::create_dir_all(&log_dir)?;
+        let log_dir = project_root.join("log_files");
+        std::fs::create_dir_all(&log_dir)?;
 
-            let file_appender = tracing_appender::rolling::daily(&log_dir, "tree_maker.log");
+        let file_appender = tracing_appender::rolling::daily(&log_dir, "tree_maker.log");
 
-            let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+        let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
-            let file_log_layer = tracing_subscriber::fmt::layer()
-                .with_writer(non_blocking)
-                .with_filter(EnvFilter::from_default_env())
-                .boxed();
+        let file_log_layer = tracing_subscriber::fmt::layer()
+            .with_writer(non_blocking)
+            .with_target(false)
+            .with_timer(MockTime)
+            .with_ansi(false)
+            .with_filter(EnvFilter::from_default_env())
+            .boxed();
 
-            layers.push(file_log_layer);
+        layers.push(file_log_layer);
 
-            println!(
-                "File logger is attached. Log files will be periodically rotated. log dir: {}",
-                log_dir.to_string_lossy(),
-            );
-
-            _guard
-        };
+        println!(
+            "File logger is attached. Log files will be periodically rotated. log dir: {}",
+            log_dir.to_string_lossy(),
+        );
 
         println!("Following log invocation will be handled by global logger");
 
@@ -91,7 +101,11 @@ async fn main() -> Result<(), TreeMakerError> {
         tracing::info!("log info");
         tracing::warn!("log warn");
         tracing::error!("log error");
-    }
+
+        tracing::info!("logging starts");
+
+        _guard
+    };
 
     leaves::make_leaves().await?;
 
