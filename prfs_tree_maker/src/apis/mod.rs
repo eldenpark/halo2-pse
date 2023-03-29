@@ -1,4 +1,4 @@
-pub mod addresses;
+pub mod accounts;
 pub mod climb;
 pub mod grow;
 pub mod set;

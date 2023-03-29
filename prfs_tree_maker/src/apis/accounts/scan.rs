@@ -1,23 +1,19 @@
-use crate::db::Database;
+use crate::db::{Account, Database};
 use crate::geth::{
     GetBalanceRequest, GetBlockByNumberRequest, GetBlockResponse, GetTransactionReceiptRequest,
     GethClient,
 };
 use crate::TreeMakerError;
-use hyper::Client as HyperClient;
-use hyper_tls::HttpsConnector;
+use rust_decimal::Decimal;
 use std::collections::BTreeMap;
 
 pub async fn run(geth_client: GethClient, db: Database) -> Result<(), TreeMakerError> {
-    scan_ledger_addresses(geth_client, db).await?;
+    scan_ledger_accounts(geth_client, db).await?;
 
     Ok(())
 }
 
-async fn scan_ledger_addresses(
-    geth_client: GethClient,
-    db: Database,
-) -> Result<(), TreeMakerError> {
+async fn scan_ledger_accounts(geth_client: GethClient, db: Database) -> Result<(), TreeMakerError> {
     let (start_block, end_block) = {
         let sb: u64 = std::env::var("START_BLOCK")
             .expect("env var START_BLOCK missing")
@@ -31,7 +27,7 @@ async fn scan_ledger_addresses(
         (sb, eb)
     };
 
-    let mut balances = BTreeMap::<String, u128>::new();
+    let mut balances = BTreeMap::<String, Account>::new();
 
     for no in start_block..end_block {
         let b_no = format!("0x{:x}", no);
@@ -131,7 +127,7 @@ async fn scan_ledger_addresses(
 
 async fn get_balance_and_add_item(
     geth_client: &GethClient,
-    addresses: &mut BTreeMap<String, u128>,
+    addresses: &mut BTreeMap<String, Account>,
     addr: String,
 ) -> Result<(), TreeMakerError> {
     if addresses.contains_key(&addr) {
@@ -158,7 +154,7 @@ async fn get_balance_and_add_item(
                     .expect("wei str should contain 0x")
                     .to_string();
 
-                match u128::from_str_radix(&wei_str, 16) {
+                match Decimal::from_str_radix(&wei_str, 16) {
                     Ok(u) => u,
                     Err(err) => {
                         let msg = format!(
@@ -172,7 +168,13 @@ async fn get_balance_and_add_item(
                     }
                 }
             };
-            addresses.insert(addr, wei);
+
+            let acc = Account {
+                addr: addr.to_string(),
+                wei,
+            };
+
+            addresses.insert(addr, acc);
         }
     }
 

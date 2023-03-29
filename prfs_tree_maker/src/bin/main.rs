@@ -1,29 +1,16 @@
 use chrono::prelude::*;
 use dotenv::dotenv;
-use halo2_gadgets::{
-    poseidon::{
-        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
-        Hash,
-    },
-    utilities::UtilitiesInstructions,
-};
-use halo2_proofs::halo2curves::pasta::Fp;
 use hyper::Client as HyperClient;
-use hyper::{body::HttpBody as _, Client, Uri};
-use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
 use prfs_tree_maker::{
-    apis::{addresses, set},
+    apis::{accounts, set},
     db::Database,
     geth::GethClient,
     TreeMakerError,
 };
-use std::fs::{File, OpenOptions};
-use std::{
-    path::PathBuf,
-    time::{SystemTime, UNIX_EPOCH},
-};
-use tracing::{info, instrument::WithSubscriber, metadata::LevelFilter};
+use std::fs::File;
+use std::path::PathBuf;
+use tracing::metadata::LevelFilter;
 use tracing_subscriber::{
     fmt::{format::Writer, time::FormatTime},
     prelude::__tracing_subscriber_SubscriberExt,
@@ -123,7 +110,7 @@ async fn main() -> Result<(), TreeMakerError> {
     };
     let db = Database::connect().await?;
 
-    addresses::get_addresses(geth_client, db).await?;
+    accounts::get_accounts(geth_client, db).await?;
     // set::run(db).await?;
     // grow::grow_tree().await?;
     // climb::climb_up().await?;

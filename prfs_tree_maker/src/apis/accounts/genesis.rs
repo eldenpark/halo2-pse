@@ -1,10 +1,11 @@
 use crate::config::GETH_ENDPOINT;
-use crate::db::Database;
+use crate::db::{Account, Database};
 use crate::geth::{GetBalanceRequest, GethClient};
 use crate::{geth, TreeMakerError};
 use hyper::client::HttpConnector;
 use hyper::{body::HttpBody as _, Client as HyperClient, Uri};
 use hyper_tls::HttpsConnector;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, json};
 use std::collections::{BTreeMap, HashMap};
@@ -17,12 +18,12 @@ struct GenesisEntry {
 }
 
 pub async fn run(geth_client: GethClient, db: Database) -> Result<(), TreeMakerError> {
-    process_genesis_block_addresses(geth_client, db).await?;
+    process_genesis_block_accounts(geth_client, db).await?;
 
     Ok(())
 }
 
-async fn process_genesis_block_addresses(
+async fn process_genesis_block_accounts(
     geth_client: GethClient,
     db: Database,
 ) -> Result<(), TreeMakerError> {
@@ -44,10 +45,14 @@ async fn process_genesis_block_addresses(
             .await?;
 
         if let Some(r) = resp.result {
-            let wei_str = r.strip_prefix("0x").unwrap();
-            let wei = u128::from_str_radix(wei_str, 16).unwrap();
+            let wei_str = r.strip_prefix("0x").expect("wei should contain 0x");
+            let wei = Decimal::from_str_radix(wei_str, 16).unwrap();
+            let acc = Account {
+                addr: addr.to_string(),
+                wei,
+            };
 
-            balances.insert(addr, wei);
+            balances.insert(addr, acc);
 
             if idx % 200 == 0 {
                 let rows_updated = db.insert_balances(balances, false).await?;
