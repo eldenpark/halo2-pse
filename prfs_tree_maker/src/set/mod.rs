@@ -13,11 +13,11 @@ lazy_static::lazy_static! {
 }
 
 pub async fn run(db: Database) -> Result<(), TreeMakerError> {
-    make_set(db, WEI_200).await?;
+    make_set(db, &*WEI_200).await?;
 
     Ok(())
 }
 
-pub async fn make_set(db: Database, set_type: SetType) -> Result<(), TreeMakerError> {
+pub async fn make_set(db: Database, set_type: &SetType) -> Result<(), TreeMakerError> {
     Ok(())
 }
