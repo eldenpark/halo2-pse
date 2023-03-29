@@ -1,11 +1,11 @@
 mod genesis;
 mod scan;
 
-use crate::TreeMakerError;
+use crate::{db::Database, geth::GethClient, TreeMakerError};
 
-pub async fn get_addresses() -> Result<(), TreeMakerError> {
+pub async fn get_addresses(geth_client: GethClient, db: Database) -> Result<(), TreeMakerError> {
     // genesis::run().await?;
-    scan::run().await?;
+    scan::run(geth_client, db).await?;
 
     Ok(())
 }

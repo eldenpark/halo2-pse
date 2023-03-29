@@ -8,13 +8,16 @@ use halo2_gadgets::{
     utilities::UtilitiesInstructions,
 };
 use halo2_proofs::halo2curves::pasta::Fp;
+use hyper::Client as HyperClient;
 use hyper::{body::HttpBody as _, Client, Uri};
 use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
 use prfs_tree_maker::{
     addresses,
     config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK},
-    TreeMakerError,
+    db::Database,
+    geth::GethClient,
+    set, TreeMakerError,
 };
 use std::fs::{File, OpenOptions};
 use std::{
@@ -108,8 +111,14 @@ async fn main() -> Result<(), TreeMakerError> {
         _guard
     };
 
-    addresses::get_addresses().await?;
+    let https = HttpsConnector::new();
+    let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
 
+    let geth_client = GethClient { hyper_client };
+    let db = Database::connect().await?;
+
+    // addresses::get_addresses(geth_client, db).await?;
+    set::make_set(db).await?;
     // grow::grow_tree().await?;
     // climb::climb_up().await?;
 

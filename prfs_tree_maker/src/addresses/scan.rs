@@ -8,12 +8,12 @@ use hyper::Client as HyperClient;
 use hyper_tls::HttpsConnector;
 use std::collections::BTreeMap;
 
-pub async fn run() -> Result<(), TreeMakerError> {
-    let https = HttpsConnector::new();
-    let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
+pub async fn run(geth_client: GethClient, db: Database) -> Result<(), TreeMakerError> {
+    // let https = HttpsConnector::new();
+    // let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
 
-    let geth_client = GethClient { hyper_client };
-    let db = Database::connect().await?;
+    // let geth_client = GethClient { hyper_client };
+    // let db = Database::connect().await?;
 
     scan_ledger_addresses(geth_client, db).await?;
 
