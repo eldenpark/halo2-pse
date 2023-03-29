@@ -12,6 +12,7 @@ use serde_json::json;
 
 pub struct GethClient {
     pub hyper_client: HyperClient<HttpsConnector<HttpConnector>>,
+    pub geth_endpoint: String,
 }
 
 #[allow(non_snake_case)]
@@ -50,7 +51,7 @@ macro_rules! make_request_type {
 
             let req = Request::builder()
                 .method(Method::POST)
-                .uri($crate::config::GETH_ENDPOINT)
+                .uri(&self.geth_endpoint)
                 .header("content-type", "application/json")
                 .body(Body::from(body))?;
 

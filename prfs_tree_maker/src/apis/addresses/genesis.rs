@@ -16,13 +16,7 @@ struct GenesisEntry {
     wei: String,
 }
 
-pub async fn run() -> Result<(), TreeMakerError> {
-    let https = HttpsConnector::new();
-    let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
-
-    let geth_client = GethClient { hyper_client };
-    let db = Database::connect().await?;
-
+pub async fn run(geth_client: GethClient, db: Database) -> Result<(), TreeMakerError> {
     process_genesis_block_addresses(geth_client, db).await?;
 
     Ok(())

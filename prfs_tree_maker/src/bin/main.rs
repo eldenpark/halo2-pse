@@ -13,11 +13,10 @@ use hyper::{body::HttpBody as _, Client, Uri};
 use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
 use prfs_tree_maker::{
-    addresses,
-    config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK},
+    apis::{addresses, set},
     db::Database,
     geth::GethClient,
-    set, TreeMakerError,
+    TreeMakerError,
 };
 use std::fs::{File, OpenOptions};
 use std::{
@@ -55,7 +54,6 @@ async fn main() -> Result<(), TreeMakerError> {
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let log_files_path = project_root.join(format!("log_files"));
     println!("log file path: {:?}", log_files_path);
-    println!("geth endpoint: {}", GETH_ENDPOINT);
 
     if log_files_path.exists() == false {
         File::create(&log_files_path).unwrap();
@@ -111,14 +109,22 @@ async fn main() -> Result<(), TreeMakerError> {
         _guard
     };
 
+    let geth_endpoint: String = std::env::var("GETH_ENDPOINT")
+        .expect("env var GETH_ENDPOINT missing")
+        .parse()
+        .unwrap();
+
     let https = HttpsConnector::new();
     let hyper_client = HyperClient::builder().build::<_, hyper::Body>(https);
 
-    let geth_client = GethClient { hyper_client };
+    let geth_client = GethClient {
+        hyper_client,
+        geth_endpoint,
+    };
     let db = Database::connect().await?;
 
-    // addresses::get_addresses(geth_client, db).await?;
-    set::run(db).await?;
+    addresses::get_addresses(geth_client, db).await?;
+    // set::run(db).await?;
     // grow::grow_tree().await?;
     // climb::climb_up().await?;
 
