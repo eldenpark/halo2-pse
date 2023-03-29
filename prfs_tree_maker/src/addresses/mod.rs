@@ -3,7 +3,7 @@ mod scan;
 
 use crate::TreeMakerError;
 
-pub async fn make_leaves() -> Result<(), TreeMakerError> {
+pub async fn get_addresses() -> Result<(), TreeMakerError> {
     // genesis::run().await?;
     scan::run().await?;
 

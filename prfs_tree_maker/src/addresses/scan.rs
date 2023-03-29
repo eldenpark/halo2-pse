@@ -98,13 +98,20 @@ async fn scan_ledger_addresses(
 
         let balances_count = balances.len();
         if balances.len() >= 500 {
-            tracing::info!(
-                "Writing balances, balances_count: {}, block_no: {}",
-                balances_count,
-                no
-            );
+            match db.insert_balances(balances, false).await {
+                Ok(r) => {
+                    tracing::info!(
+                        "Writing balances, balances_count: {}, block_no: {}, rows_affected: {}",
+                        balances_count,
+                        no,
+                        r
+                    );
+                }
+                Err(err) => {
+                    tracing::info!("Balance insertion failed, err: {}, block_no: {}", err, no);
+                }
+            }
 
-            db.insert_balances(balances, false).await?;
             balances = BTreeMap::new();
         }
     }

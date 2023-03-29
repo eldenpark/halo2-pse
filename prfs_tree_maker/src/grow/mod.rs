@@ -2,8 +2,6 @@ use crate::{
     hexutils::{convert_fp_to_string, convert_string_into_fp},
     TreeMakerError,
 };
-use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
 use ff::PrimeField;
 use futures_util::pin_mut;
 use halo2_proofs::halo2curves::{pasta::Fp, serde::SerdeObject};
@@ -19,6 +17,10 @@ use halo2_gadgets::{
     utilities::UtilitiesInstructions,
 };
 use tokio_postgres::{Client as PgClient, Error, GenericClient, NoTls};
+
+pub async fn run() -> Result<(), TreeMakerError> {
+    Ok(())
+}
 
 pub async fn grow_tree() -> Result<(), TreeMakerError> {
     let (pg_client, connection) = tokio_postgres::connect(

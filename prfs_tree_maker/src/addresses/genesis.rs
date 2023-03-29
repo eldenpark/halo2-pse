@@ -2,20 +2,14 @@ use crate::config::GETH_ENDPOINT;
 use crate::db::Database;
 use crate::geth::{GetBalanceRequest, GethClient};
 use crate::{geth, TreeMakerError};
-use aws_config::meta::region::RegionProviderChain;
-use aws_sdk_dynamodb::model::AttributeValue;
-use aws_sdk_dynamodb::Client as DynamoClient;
 use hyper::client::HttpConnector;
 use hyper::{body::HttpBody as _, Client as HyperClient, Uri};
-use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, json};
 use std::collections::{BTreeMap, HashMap};
 use std::fs::{self, File};
 use std::path::PathBuf;
-use std::sync::Arc;
-use tokio_postgres::{Client as PGClient, NoTls};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct GenesisEntry {

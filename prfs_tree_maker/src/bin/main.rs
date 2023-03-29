@@ -12,8 +12,9 @@ use hyper::{body::HttpBody as _, Client, Uri};
 use hyper::{Body, Method, Request, Response};
 use hyper_tls::HttpsConnector;
 use prfs_tree_maker::{
+    addresses,
     config::{END_BLOCK, GETH_ENDPOINT, START_BLOCK},
-    leaves, TreeMakerError,
+    TreeMakerError,
 };
 use std::fs::{File, OpenOptions};
 use std::{
@@ -107,7 +108,7 @@ async fn main() -> Result<(), TreeMakerError> {
         _guard
     };
 
-    leaves::make_leaves().await?;
+    addresses::get_addresses().await?;
 
     // grow::grow_tree().await?;
     // climb::climb_up().await?;
