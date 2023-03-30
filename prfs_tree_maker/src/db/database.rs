@@ -1,8 +1,7 @@
-use super::models::Account;
+use super::{models::Account, Node};
 use crate::TreeMakerError;
-use rust_decimal::Decimal;
 use std::collections::BTreeMap;
-use tokio_postgres::{Client as PGClient, NoTls};
+use tokio_postgres::{Client as PGClient, NoTls, Row};
 
 pub struct Database {
     pub pg_client: PGClient,
@@ -32,25 +31,20 @@ impl Database {
 }
 
 impl Database {
-    pub async fn get_accounts(&self, where_clause: &str) -> Result<Vec<Account>, TreeMakerError> {
+    pub async fn get_accounts(&self, where_clause: &str) -> Result<Vec<Row>, TreeMakerError> {
         let stmt = format!("SELECT * from balances_20230327 where {}", where_clause);
         println!("stmt: {}", stmt);
 
-        let rows = self.pg_client.query(&stmt, &[]).await?;
-        // let mut v = Vec::with_capacity(rows.len());
+        let rows = match self.pg_client.query(&stmt, &[]).await {
+            Ok(r) => r,
+            Err(err) => {
+                tracing::error!("account retrieval failed, err: {}, stmt: {}", err, stmt);
 
-        let v: Vec<Account> = rows
-            .iter()
-            .map(|r| {
-                let addr: String = r.try_get("addr").expect("addr should be present");
-                let wei: Decimal = r.try_get("wei").expect("wei should be present");
+                return Err(err.into());
+            }
+        };
 
-                let acc = Account { addr, wei };
-                acc
-            })
-            .collect();
-
-        Ok(v)
+        Ok(rows)
     }
 
     pub async fn insert_accounts(
@@ -92,28 +86,31 @@ impl Database {
 
     pub async fn insert_nodes(
         &self,
-        accounts: Vec<Account>,
+        set_id: String,
+        nodes: Vec<Node>,
         update_on_conflict: bool,
     ) -> Result<u64, TreeMakerError> {
-        let mut values = Vec::with_capacity(accounts.len());
-        for acc in accounts {
-            let val = format!("('{}', {})", acc.addr, acc.wei);
+        let mut values = Vec::with_capacity(nodes.len());
+
+        for n in nodes {
+            let val = format!("('{}', '{}', '{}')", n.pos, n.val, set_id);
             values.push(val);
         }
 
         let stmt = if update_on_conflict {
             format!(
-                "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT(addr) {}",
+                "INSERT INTO nodes (pos, val, set_id) VALUES {} ON CONFLICT ON CONSTRAINT \
+                    nodes_unique_1 {}",
                 values.join(","),
-                "DO UPDATE SET wei = excluded.wei, updated_at = now()",
+                "DO UPDATE SET val = excluded.val, updated_at = now()",
             )
         } else {
             format!(
-                "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT DO NOTHING",
-                values.join(",")
+                "INSERT INTO nodes (pos, val, set_id) VALUES {} ON CONFLICT DO NOTHING",
+                values.join(","),
             )
         };
-        // println!("stmt: {}", stmt);
+        println!("stmt: {}", stmt);
 
         let rows_updated = match self.pg_client.execute(&stmt, &[]).await {
             Ok(r) => r,
