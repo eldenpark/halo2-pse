@@ -1,9 +1,9 @@
-use crate::db::{Account, Database};
 use crate::geth::{
     GetBalanceRequest, GetBlockByNumberRequest, GetBlockResponse, GetTransactionReceiptRequest,
     GethClient,
 };
 use crate::TreeMakerError;
+use prfs_db_interface::db::{Account, Database};
 use rust_decimal::Decimal;
 use std::collections::BTreeMap;
 

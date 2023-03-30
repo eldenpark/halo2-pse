@@ -1,26 +1,22 @@
+use dotenv::dotenv;
 use hyper::Server;
-use prfs_backend::router;
+use prfs_backend::{build_router, BackendError};
+use prfs_db_interface::Database;
 use routerify::RouterService;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio_postgres::NoTls;
 
 #[tokio::main]
-async fn main() {
-    let (pg_client, connection) = tokio_postgres::connect(
-        "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password=postgres",
-        NoTls,
-    )
-    .await.unwrap();
+async fn main() -> Result<(), BackendError> {
+    {
+        let dotenv_path = dotenv()?;
+        println!(".env path: {:?}", dotenv_path);
+    }
 
-    let pg_client = Arc::new(pg_client);
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            println!("connection error: {}", e);
-        }
-    });
+    let db = Database::connect().await?;
 
-    let router = router(pg_client);
+    let router = build_router(db);
 
     // Create a Service from the router above to handle incoming requests.
     let service = RouterService::new(router).unwrap();
@@ -35,4 +31,6 @@ async fn main() {
     if let Err(err) = server.await {
         eprintln!("Server error: {}", err);
     }
+
+    Ok(())
 }

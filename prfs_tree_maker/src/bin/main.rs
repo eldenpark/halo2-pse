@@ -2,9 +2,9 @@ use chrono::prelude::*;
 use dotenv::dotenv;
 use hyper::Client as HyperClient;
 use hyper_tls::HttpsConnector;
+use prfs_db_interface::db::Database;
 use prfs_tree_maker::{
     apis::{accounts, set},
-    db::Database,
     geth::GethClient,
     TreeMakerError,
 };

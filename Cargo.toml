@@ -23,6 +23,7 @@ members = [
     "prfs_client",
     "prfs_backend",
     "prfs_tree_maker",
+    "prfs_db_interface",
 
     "web_demo",
 ]

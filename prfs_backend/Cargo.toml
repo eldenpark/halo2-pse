@@ -27,9 +27,11 @@ rand_core = { version = "0.6", default-features = false }
 group = "0.12"
 rand = "0.8"
 ff = "0.12"
+dotenv = "0.15.0"
 
 halo2_proofs = { path = "../halo2_proofs" }
 halo2_gadgets = { path = "../halo2_gadgets" }
 prfs_proofs = { path = "../prfs_proofs" }
 keccak256 = { path = "../keccak256" }
 eth-types = { path = "../eth-types" }
+prfs_db_interface = { path = "../prfs_db_interface" }

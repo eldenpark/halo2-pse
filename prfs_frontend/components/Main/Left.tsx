@@ -55,6 +55,7 @@ const Left = (props: any) => {
         });
 
         console.log('axios response', data);
+        setProof(data.proof.join(","));
       }
     };
 

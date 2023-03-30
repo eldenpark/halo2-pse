@@ -2,14 +2,15 @@ mod proofs;
 
 use crate::{middleware, State};
 use hyper::Body;
+use prfs_db_interface::db::Database;
 use routerify::{Middleware, Router};
 use routerify_cors::enable_cors_all;
 use std::convert::Infallible;
 use std::sync::Arc;
 use tokio_postgres::Client;
 
-pub fn router(pg_client: Arc<Client>) -> Router<Body, Infallible> {
-    let state = State { pg_client };
+pub fn build_router(db: Database) -> Router<Body, Infallible> {
+    let state = State {};
 
     Router::builder()
         .data(state)

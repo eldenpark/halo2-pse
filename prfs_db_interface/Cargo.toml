@@ -1,5 +1,5 @@
 [package]
-name = "prfs_tree_maker"
+name = "prfs_db_interface"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,7 +11,6 @@ tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 aws-config = "0.54.1"
-aws-sdk-dynamodb = "0.24.0"
 log = "0.4"
 chrono = "0.4.23"
 hyper-tls = "0.5.0"
@@ -33,7 +32,6 @@ rust_decimal_macros = "1.29"
 
 halo2_proofs = { path = "../halo2_proofs" }
 halo2_gadgets = { path = "../halo2_gadgets" }
-prfs_db_interface = { path = "../prfs_db_interface" }
 group = "0.12"
 rand = "0.8"
 ff = "0.12"

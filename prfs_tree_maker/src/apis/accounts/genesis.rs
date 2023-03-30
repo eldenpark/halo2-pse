@@ -1,10 +1,10 @@
 use crate::config::GETH_ENDPOINT;
-use crate::db::{Account, Database};
 use crate::geth::{GetBalanceRequest, GethClient};
 use crate::{geth, TreeMakerError};
 use hyper::client::HttpConnector;
 use hyper::{body::HttpBody as _, Client as HyperClient, Uri};
 use hyper_tls::HttpsConnector;
+use prfs_db_interface::db::{Account, Database};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use serde_json::{from_slice, json};
