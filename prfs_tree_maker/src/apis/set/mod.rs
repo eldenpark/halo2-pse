@@ -20,9 +20,12 @@ pub async fn run(db: Database) -> Result<(), TreeMakerError> {
 
 pub async fn make_set(db: Database, set_type: &SetType) -> Result<(), TreeMakerError> {
     let accounts = db.get_accounts(&set_type.query).await?;
-    for acc in accounts {
-        println!("acc: {:?}", acc);
-    }
+
+    // for acc in accounts {
+    //     println!("acc: {:?}", acc);
+    // }
+
+    db.insert_nodes(accounts, false).await?;
 
     Ok(())
 }

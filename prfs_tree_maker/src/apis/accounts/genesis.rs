@@ -55,7 +55,7 @@ async fn process_genesis_block_accounts(
             balances.insert(addr, acc);
 
             if idx % 200 == 0 {
-                let rows_updated = db.insert_balances(balances, false).await?;
+                let rows_updated = db.insert_accounts(balances, false).await?;
                 println!("idx: {}, rows_updated: {}", idx, rows_updated);
 
                 balances = BTreeMap::new();

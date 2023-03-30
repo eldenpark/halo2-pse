@@ -88,7 +88,7 @@ async fn scan_ledger_accounts(geth_client: GethClient, db: Database) -> Result<(
 
         let balances_count = balances.len();
         if balances.len() >= 500 {
-            match db.insert_balances(balances, false).await {
+            match db.insert_accounts(balances, false).await {
                 Ok(r) => {
                     tracing::info!(
                         "Writing balances, balances_count: {}, block_no: {}, rows_affected: {}",
@@ -113,7 +113,7 @@ async fn scan_ledger_accounts(geth_client: GethClient, db: Database) -> Result<(
             end_block
         );
 
-        db.insert_balances(balances, false).await?;
+        db.insert_accounts(balances, false).await?;
     } else {
         tracing::info!(
             "Balances are empty. Closing 'scan', balances_count: {}, end block_no (excl): {}",

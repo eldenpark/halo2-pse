@@ -1,9 +1,8 @@
+use super::models::Account;
 use crate::TreeMakerError;
 use rust_decimal::Decimal;
 use std::collections::BTreeMap;
 use tokio_postgres::{Client as PGClient, NoTls};
-
-use super::models::Account;
 
 pub struct Database {
     pub pg_client: PGClient,
@@ -38,41 +37,66 @@ impl Database {
         println!("stmt: {}", stmt);
 
         let rows = self.pg_client.query(&stmt, &[]).await?;
-        let mut v = Vec::with_capacity(rows.len());
+        // let mut v = Vec::with_capacity(rows.len());
 
-        for row in rows {
-            let addr: String = row.try_get("addr")?;
-            let wei: Decimal = row.try_get("wei")?;
+        let v: Vec<Account> = rows
+            .iter()
+            .map(|r| {
+                let addr: String = r.try_get("addr").expect("addr should be present");
+                let wei: Decimal = r.try_get("wei").expect("wei should be present");
 
-            println!("wei: {}", wei);
+                let acc = Account { addr, wei };
+                acc
+            })
+            .collect();
 
-            let acc = Account { addr, wei };
-            v.push(acc);
-        }
-
-        // let stmt = if update_on_conflict {
-        //     format!(
-        //         "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT(addr) {}",
-        //         values.join(","),
-        //         "DO UPDATE SET wei = excluded.wei, updated_at = now()",
-        //     )
-        // } else {
-        //     format!(
-        //         "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT DO NOTHING",
-        //         values.join(",")
-        //     )
-        // };
-        //
         Ok(v)
     }
 
-    pub async fn insert_balances(
+    pub async fn insert_accounts(
         &self,
         balances: BTreeMap<String, Account>,
         update_on_conflict: bool,
     ) -> Result<u64, TreeMakerError> {
         let mut values = Vec::with_capacity(balances.len());
         for (_, acc) in balances {
+            let val = format!("('{}', {})", acc.addr, acc.wei);
+            values.push(val);
+        }
+
+        let stmt = if update_on_conflict {
+            format!(
+                "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT(addr) {}",
+                values.join(","),
+                "DO UPDATE SET wei = excluded.wei, updated_at = now()",
+            )
+        } else {
+            format!(
+                "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT DO NOTHING",
+                values.join(",")
+            )
+        };
+        // println!("stmt: {}", stmt);
+
+        let rows_updated = match self.pg_client.execute(&stmt, &[]).await {
+            Ok(r) => r,
+            Err(err) => {
+                tracing::error!("Error executing stmt, err: {}, stmt: {}", err, stmt);
+
+                return Err(err.into());
+            }
+        };
+
+        Ok(rows_updated)
+    }
+
+    pub async fn insert_nodes(
+        &self,
+        accounts: Vec<Account>,
+        update_on_conflict: bool,
+    ) -> Result<u64, TreeMakerError> {
+        let mut values = Vec::with_capacity(accounts.len());
+        for acc in accounts {
             let val = format!("('{}', {})", acc.addr, acc.wei);
             values.push(val);
         }
