@@ -1,5 +1,6 @@
 use super::{models::Account, Node};
 use crate::TreeMakerError;
+use rust_decimal::Decimal;
 use std::collections::BTreeMap;
 use tokio_postgres::{Client as PGClient, NoTls, Row};
 
@@ -31,8 +32,34 @@ impl Database {
 }
 
 impl Database {
-    pub async fn get_accounts(&self, where_clause: &str) -> Result<Vec<Row>, TreeMakerError> {
+    pub async fn get_accounts(&self, where_clause: &str) -> Result<Vec<Account>, TreeMakerError> {
         let stmt = format!("SELECT * from balances_20230327 where {}", where_clause);
+        println!("stmt: {}", stmt);
+
+        let rows = match self.pg_client.query(&stmt, &[]).await {
+            Ok(r) => r,
+            Err(err) => {
+                tracing::error!("account retrieval failed, err: {}, stmt: {}", err, stmt);
+
+                return Err(err.into());
+            }
+        };
+
+        let accounts: Vec<Account> = rows
+            .iter()
+            .map(|r| {
+                let addr: String = r.try_get("addr").expect("addr should be present");
+                let wei: Decimal = r.try_get("wei").expect("wei should be present");
+
+                Account { addr, wei }
+            })
+            .collect();
+
+        Ok(accounts)
+    }
+
+    pub async fn get_nodes(&self, where_clause: &str) -> Result<Vec<Row>, TreeMakerError> {
+        let stmt = format!("SELECT * from nodes where {}", where_clause);
         println!("stmt: {}", stmt);
 
         let rows = match self.pg_client.query(&stmt, &[]).await {
@@ -110,7 +137,7 @@ impl Database {
                 values.join(","),
             )
         };
-        // println!("stmt: {}", stmt);
+        println!("stmt: {}", stmt);
 
         let rows_updated = match self.pg_client.execute(&stmt, &[]).await {
             Ok(r) => r,

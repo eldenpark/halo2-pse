@@ -1,4 +1,5 @@
 use crate::{
+    db::Database,
     hexutils::{convert_fp_to_string, convert_string_into_fp},
     TreeMakerError,
 };
@@ -17,8 +18,9 @@ use halo2_gadgets::{
 };
 use tokio_postgres::{Client as PgClient, Error, GenericClient, NoTls};
 
-pub async fn grow_tree() -> Result<(), TreeMakerError> {
+pub async fn grow_tree(db: Database) -> Result<(), TreeMakerError> {
     println!("grow tree()");
+
     let addrs = [
         "0x33d10ab178924ecb7ad52f4c0c8062c3066607ec",
         "0xf3e28453c74609cd275de994bc5bbae3ccbcfa56",
@@ -68,9 +70,7 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
     ];
 
     for addr in addrs {
-        let mut addr_vec = hex::decode(&addr[2..]).unwrap();
-        // addr_vec.reverse();
-        // let addr_v: [u8; 20] = addr_vec.try_into().unwrap();
+        let addr_vec = hex::decode(&addr[2..]).unwrap();
         let mut addr_v = [0; 32];
         addr_v[12..].clone_from_slice(&addr_vec);
 
@@ -81,6 +81,8 @@ pub async fn grow_tree() -> Result<(), TreeMakerError> {
 
         println!("fp: {:?}", fp);
     }
+
+    // db.get_nodes().await?;
 
     // let (pg_client, connection) = tokio_postgres::connect(
     //     "host=database-1.cstgyxdzqynn.ap-northeast-2.rds.amazonaws.com user=postgres password=postgres",

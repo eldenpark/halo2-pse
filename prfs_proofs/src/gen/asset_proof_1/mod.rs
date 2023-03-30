@@ -220,7 +220,7 @@ mod sign_verify_tests {
         //
         //
         let (sk, pk) = {
-            let sk = "";
+            let sk = "693b89aa8ad1b65dae736e2dca9ef80c28cd253e8ed06ba046d21f2cd1325066";
             let mut sk_arr = hex::decode(sk).unwrap();
             sk_arr.reverse();
             let sk_arr: [u8; 32] = sk_arr.try_into().unwrap();
