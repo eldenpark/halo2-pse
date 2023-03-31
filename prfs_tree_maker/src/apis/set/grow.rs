@@ -1,11 +1,6 @@
 use super::SetType;
-use crate::{
-    constants::TREE_DEPTH,
-    hexutils::{convert_fp_to_string, convert_string_into_fp},
-    TreeMakerError,
-};
+use crate::{constants::TREE_DEPTH, TreeMakerError};
 use ff::PrimeField;
-use futures_util::TryStreamExt;
 use halo2_gadgets::{
     poseidon::{
         primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
@@ -16,65 +11,53 @@ use halo2_gadgets::{
 use halo2_proofs::halo2curves::{pasta::Fp as PastaFp, serde::SerdeObject};
 use prfs_db_interface::{Database, Node};
 use rust_decimal::{prelude::ToPrimitive, Decimal};
-use std::{collections::HashMap, sync::Arc};
-use tokio_postgres::{Client as PgClient, Error, GenericClient, NoTls};
-
-#[derive(Debug)]
-pub enum MaybeNode<'a> {
-    Node(&'a Node),
-
-    Empty,
-}
 
 pub async fn grow_tree(db: &Database, set_type: &SetType) -> Result<(), TreeMakerError> {
     println!("grow tree()");
 
-    for h in 0..TREE_DEPTH - 1 {
-        let mut curr = 0;
-        let mut has_reached_end = false;
+    let where_clause = format!(
+        "set_id = '{}' AND pos_h = {} ORDER BY pos_h",
+        set_type.set_id, 0,
+    );
+    let rows = db.get_nodes(&where_clause).await?;
 
-        let where_clause = format!(
-            "set_id = '{}' AND pos_h = {} ORDER BY pos_h",
-            set_type.set_id, h,
-        );
-        let rows = db.get_nodes(&where_clause).await?;
+    let nodes: Vec<Node> = rows
+        .iter()
+        .map(|r| {
+            let pos_w: Decimal = r.try_get("pos_w").unwrap();
+            let pos_h: i32 = r.try_get("pos_h").unwrap();
+            let val: String = r.try_get("val").unwrap();
+            let set_id: String = r.try_get("set_id").unwrap();
 
-        let nodes: Vec<Node> = rows
-            .iter()
-            .map(|r| {
-                let pos_w: Decimal = r.try_get("pos_w").unwrap();
-                let pos_h: i32 = r.try_get("pos_h").unwrap();
-                let val: String = r.try_get("val").unwrap();
-                let set_id: String = r.try_get("set_id").unwrap();
+            Node {
+                pos_w,
+                pos_h,
+                val,
+                set_id,
+            }
+        })
+        .collect();
 
-                Node {
-                    pos_w,
-                    pos_h,
-                    val,
-                    set_id,
-                }
-            })
-            .collect();
+    let node = &nodes[rows.len() - 1];
 
-        let node = &nodes[rows.len() - 1];
+    let last_pos_w = node
+        .pos_w
+        .to_u64()
+        .expect("pos_w should be converted to u64");
 
-        let last_pos_w = node
-            .pos_w
-            .to_u64()
-            .expect("pos_w should be converted to u64");
+    let nodes_len: u64 = nodes
+        .len()
+        .try_into()
+        .expect("Node len should be converted to u64");
 
-        let nodes_len: u64 = nodes
-            .len()
-            .try_into()
-            .expect("Node len should be converted to u64");
+    if last_pos_w != nodes_len - 1 {
+        return Err("last pos w is different from nodes.len - 1".into());
+    }
 
-        if last_pos_w != nodes_len - 1 {
-            return Err("last pos w is different from nodes.len - 1".into());
-        }
+    println!("nodes_len: {}", nodes_len);
 
-        println!("nodes_len: {}", nodes_len);
-
-        for idx in (0..nodes_len - 1).step_by(2) {
+    for h in 1..TREE_DEPTH - 1 {
+        for idx in (0..nodes_len).step_by(2) {
             let left = match nodes.get(idx as usize) {
                 Some(n) => {
                     let mut node_vec = hex::decode(&n.val[2..]).unwrap();
