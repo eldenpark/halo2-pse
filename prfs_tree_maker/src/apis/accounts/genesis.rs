@@ -1,4 +1,3 @@
-use crate::config::GETH_ENDPOINT;
 use crate::geth::{GetBalanceRequest, GethClient};
 use crate::{geth, TreeMakerError};
 use hyper::client::HttpConnector;

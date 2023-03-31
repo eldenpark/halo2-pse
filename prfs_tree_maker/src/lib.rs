@@ -1,5 +1,5 @@
 pub mod apis;
-pub mod config;
+pub mod constants;
 pub mod geth;
 pub mod hexutils;
 

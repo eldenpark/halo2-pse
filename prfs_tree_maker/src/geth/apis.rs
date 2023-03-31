@@ -4,7 +4,7 @@ use super::{
 };
 use crate::geth::io_models::{GetBalanceRequest, GetBalanceResponse};
 use crate::make_request_type;
-use crate::{config::GETH_ENDPOINT, TreeMakerError};
+use crate::TreeMakerError;
 use hyper::body::HttpBody;
 use hyper::{client::HttpConnector, Body, Client as HyperClient, Method, Request};
 use hyper_tls::HttpsConnector;
