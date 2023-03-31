@@ -110,8 +110,8 @@ async fn main() -> Result<(), TreeMakerError> {
     };
     let db = Database::connect().await?;
 
-    // accounts::get_accounts(geth_client, db).await?;
-    set::run(db).await?;
+    accounts::get_accounts(geth_client, db).await?;
+    // set::run(db).await?;
     // grow::grow_tree().await?;
     // climb::climb_up().await?;
 

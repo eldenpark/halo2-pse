@@ -113,7 +113,7 @@ async fn scan_ledger_accounts(geth_client: GethClient, db: Database) -> Result<(
             end_block
         );
 
-        db.insert_accounts(balances, false).await?;
+        db.insert_accounts(balances, true).await?;
     } else {
         tracing::info!(
             "Balances are empty. Closing 'scan', balances_count: {}, end block_no (excl): {}",

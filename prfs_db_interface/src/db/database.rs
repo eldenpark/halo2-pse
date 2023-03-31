@@ -33,7 +33,11 @@ impl Database {
 
 impl Database {
     pub async fn get_accounts(&self, where_clause: &str) -> Result<Vec<Account>, TreeMakerError> {
-        let stmt = format!("SELECT * from balances_20230327 where {}", where_clause);
+        let stmt = format!(
+            "SELECT * from {} where {}",
+            Account::table_name(),
+            where_clause
+        );
         println!("stmt: {}", stmt);
 
         let rows = match self.pg_client.query(&stmt, &[]).await {
@@ -59,7 +63,11 @@ impl Database {
     }
 
     pub async fn get_nodes(&self, where_clause: &str) -> Result<Vec<Row>, TreeMakerError> {
-        let stmt = format!("SELECT * from nodes where {}", where_clause);
+        let stmt = format!(
+            "SELECT * from {} where {}",
+            Node::table_name(),
+            where_clause
+        );
         println!("stmt: {}", stmt);
 
         let rows = match self.pg_client.query(&stmt, &[]).await {
@@ -87,13 +95,15 @@ impl Database {
 
         let stmt = if update_on_conflict {
             format!(
-                "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT(addr) {}",
+                "INSERT INTO {} (addr, wei) VALUES {} ON CONFLICT(addr) {}",
+                Account::table_name(),
                 values.join(","),
                 "DO UPDATE SET wei = excluded.wei, updated_at = now()",
             )
         } else {
             format!(
-                "INSERT INTO balances_20230327 (addr, wei) VALUES {} ON CONFLICT DO NOTHING",
+                "INSERT INTO {} (addr, wei) VALUES {} ON CONFLICT DO NOTHING",
+                Account::table_name(),
                 values.join(",")
             )
         };
@@ -126,14 +136,16 @@ impl Database {
 
         let stmt = if update_on_conflict {
             format!(
-                "INSERT INTO nodes (pos_w, pos_h, val, set_id) VALUES {} ON CONFLICT ON CONSTRAINT \
-                    nodes_unique_1 {}",
+                "INSERT INTO {} (pos_w, pos_h, val, set_id) VALUES {} ON CONFLICT \
+                    (pos_w, pos_h, set_id) {}",
+                Node::table_name(),
                 values.join(","),
                 "DO UPDATE SET val = excluded.val, updated_at = now()",
             )
         } else {
             format!(
-                "INSERT INTO nodes (pos_w, pos_h, val, set_id) VALUES {} ON CONFLICT DO NOTHING",
+                "INSERT INTO {} (pos_w, pos_h, val, set_id) VALUES {} ON CONFLICT DO NOTHING",
+                Node::table_name(),
                 values.join(","),
             )
         };

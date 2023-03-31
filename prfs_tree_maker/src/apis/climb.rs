@@ -6,18 +6,16 @@ use aws_config::meta::region::RegionProviderChain;
 use aws_sdk_dynamodb::{client::fluent_builders, model::AttributeValue, Client as DynamoClient};
 use ff::PrimeField;
 use futures_util::pin_mut;
-use halo2_proofs::halo2curves::{pasta::Fp, serde::SerdeObject};
-use std::{collections::HashMap, sync::Arc};
-// use tokio_postgres::types::ToSql;
 use futures_util::TryStreamExt;
 use halo2_gadgets::{
     poseidon::{
-        // merkle::merkle_path::MerklePath,
         primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
         Hash,
     },
     utilities::UtilitiesInstructions,
 };
+use halo2_proofs::halo2curves::{pasta::Fp, serde::SerdeObject};
+use std::{collections::HashMap, sync::Arc};
 use tokio_postgres::{Client as PgClient, Error, GenericClient, NoTls};
 
 pub async fn climb_up() -> Result<(), TreeMakerError> {
