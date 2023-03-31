@@ -1,12 +1,10 @@
 mod grow;
-
-use crate::{
-    db::{Account, Database, Node},
-    TreeMakerError,
-};
-use rust_decimal::Decimal;
+mod leaves;
 
 use self::grow::grow_tree;
+use crate::TreeMakerError;
+use prfs_db_interface::{Account, Database, Node};
+use rust_decimal::Decimal;
 
 pub struct SetType {
     pub table_label: String,
@@ -21,32 +19,7 @@ lazy_static::lazy_static! {
 }
 
 pub async fn run(db: Database) -> Result<(), TreeMakerError> {
-    make_set(db, &*WEI_200).await?;
-
-    Ok(())
-}
-
-pub async fn make_set(db: Database, set_type: &SetType) -> Result<(), TreeMakerError> {
-    let accounts = db.get_accounts(&set_type.query).await?;
-
-    let nodes: Vec<Node> = accounts
-        .iter()
-        .enumerate()
-        .map(|(idx, acc)| {
-            let pos = format!("{}_0", idx);
-
-            Node {
-                pos,
-                val: acc.addr.to_string(),
-                set_id: "1".to_string(),
-            }
-        })
-        .collect();
-
-    let rows_affected = db.insert_nodes("1".to_string(), nodes, true).await?;
-    println!("rows affected: {}", rows_affected);
-
-    // grow_tree(db).await?;
+    leaves::make_leaves(db, &*WEI_200).await?;
 
     Ok(())
 }

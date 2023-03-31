@@ -8,7 +8,8 @@ pub struct Account {
 
 #[derive(Debug)]
 pub struct Node {
-    pub pos: String,
+    pub pos_w: Decimal,
+    pub pos_h: Decimal,
     pub val: String,
     pub set_id: String,
 }

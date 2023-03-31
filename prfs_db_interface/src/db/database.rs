@@ -120,20 +120,20 @@ impl Database {
         let mut values = Vec::with_capacity(nodes.len());
 
         for n in nodes {
-            let val = format!("('{}', '{}', '{}')", n.pos, n.val, set_id);
+            let val = format!("({}, {}, '{}', '{}')", n.pos_w, n.pos_h, n.val, set_id);
             values.push(val);
         }
 
         let stmt = if update_on_conflict {
             format!(
-                "INSERT INTO nodes (pos, val, set_id) VALUES {} ON CONFLICT ON CONSTRAINT \
+                "INSERT INTO nodes (pos_w, pos_h, val, set_id) VALUES {} ON CONFLICT ON CONSTRAINT \
                     nodes_unique_1 {}",
                 values.join(","),
                 "DO UPDATE SET val = excluded.val, updated_at = now()",
             )
         } else {
             format!(
-                "INSERT INTO nodes (pos, val, set_id) VALUES {} ON CONFLICT DO NOTHING",
+                "INSERT INTO nodes (pos_w, pos_h, val, set_id) VALUES {} ON CONFLICT DO NOTHING",
                 values.join(","),
             )
         };

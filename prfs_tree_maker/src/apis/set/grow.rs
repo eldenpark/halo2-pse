@@ -1,10 +1,10 @@
 use crate::{
-    db::Database,
     hexutils::{convert_fp_to_string, convert_string_into_fp},
     TreeMakerError,
 };
 use ff::PrimeField;
 use halo2_proofs::halo2curves::{pasta::Fp as PastaFp, serde::SerdeObject};
+use prfs_db_interface::Database;
 use std::{collections::HashMap, sync::Arc};
 // use tokio_postgres::types::ToSql;
 use futures_util::TryStreamExt;
