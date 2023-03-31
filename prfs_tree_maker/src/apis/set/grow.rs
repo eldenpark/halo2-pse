@@ -14,25 +14,110 @@ use halo2_gadgets::{
     utilities::UtilitiesInstructions,
 };
 use halo2_proofs::halo2curves::{pasta::Fp as PastaFp, serde::SerdeObject};
-use prfs_db_interface::Database;
+use prfs_db_interface::{Database, Node};
+use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::{collections::HashMap, sync::Arc};
 use tokio_postgres::{Client as PgClient, Error, GenericClient, NoTls};
 
-pub async fn grow_tree(db: Database, set_type: &SetType) -> Result<(), TreeMakerError> {
+#[derive(Debug)]
+pub enum MaybeNode<'a> {
+    Node(&'a Node),
+
+    Empty,
+}
+
+pub async fn grow_tree(db: &Database, set_type: &SetType) -> Result<(), TreeMakerError> {
     println!("grow tree()");
 
     for h in 0..TREE_DEPTH - 1 {
         let mut curr = 0;
         let mut has_reached_end = false;
 
-        while !has_reached_end {
-            let where_clause = format!("pos_w = {} AND pos_h = {}", curr, h);
-            let rows = db.get_nodes(&where_clause).await?;
+        let where_clause = format!(
+            "set_id = '{}' AND pos_h = {} ORDER BY pos_h",
+            set_type.set_id, h,
+        );
+        let rows = db.get_nodes(&where_clause).await?;
 
-            println!("rows: {:?}", rows);
+        let nodes: Vec<Node> = rows
+            .iter()
+            .map(|r| {
+                let pos_w: Decimal = r.try_get("pos_w").unwrap();
+                let pos_h: i32 = r.try_get("pos_h").unwrap();
+                let val: String = r.try_get("val").unwrap();
+                let set_id: String = r.try_get("set_id").unwrap();
 
-            curr += 2;
+                Node {
+                    pos_w,
+                    pos_h,
+                    val,
+                    set_id,
+                }
+            })
+            .collect();
+
+        let node = &nodes[rows.len() - 1];
+
+        let last_pos_w = node
+            .pos_w
+            .to_u64()
+            .expect("pos_w should be converted to u64");
+
+        let nodes_len: u64 = nodes
+            .len()
+            .try_into()
+            .expect("Node len should be converted to u64");
+
+        if last_pos_w != nodes_len - 1 {
+            return Err("last pos w is different from nodes.len - 1".into());
         }
+
+        println!("nodes_len: {}", nodes_len);
+
+        for idx in (0..nodes_len - 1).step_by(2) {
+            let left = match nodes.get(idx as usize) {
+                Some(n) => {
+                    let mut node_vec = hex::decode(&n.val[2..]).unwrap();
+                    node_vec.reverse();
+
+                    let node_arr: [u8; 32] = node_vec.try_into().unwrap();
+                    PastaFp::from_repr(node_arr).unwrap()
+                }
+                None => {
+                    return Err("Left node should always exist".into());
+                }
+            };
+
+            let right = match nodes.get(idx as usize + 1) {
+                Some(n) => {
+                    let mut node_vec = hex::decode(&n.val[2..]).unwrap();
+                    node_vec.reverse();
+
+                    let node_arr: [u8; 32] = node_vec.try_into().unwrap();
+                    PastaFp::from_repr(node_arr).unwrap()
+                }
+                None => {
+                    if idx < nodes_len - 1 {
+                        return Err("Right node should exist because idx is low".into());
+                    } else {
+                        PastaFp::zero()
+                    }
+                }
+            };
+
+            println!("left: {:?}, right: {:?}", left, right);
+        }
+
+        return Ok(());
+
+        // while !has_reached_end {
+        //     let where_clause = format!("pos_w = {} AND pos_h = {}", curr, h);
+        //     let rows = db.get_nodes(&where_clause).await?;
+
+        //     println!("rows: {:?}", rows);
+
+        //     curr += 2;
+        // }
     }
 
     // let addrs = [
