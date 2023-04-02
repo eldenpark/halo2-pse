@@ -23,7 +23,7 @@ lazy_static::lazy_static! {
 pub async fn run(db: Database) -> Result<(), TreeMakerError> {
     // leaves::make_leaves(&db, &*WEI_200).await?;
 
-    grow::grow_tree(&db, &*WEI_200).await?;
+    // grow::grow_tree(&db, &*WEI_200).await?;
 
     Ok(())
 }
