@@ -3,7 +3,8 @@ use crate::{constants::TREE_DEPTH, TreeMakerError};
 use ff::PrimeField;
 use halo2_gadgets::{
     poseidon::{
-        primitives::{self as poseidon, ConstantLength, P128Pow5T3 as OrchardNullifier, Spec},
+        self,
+        primitives::{ConstantLength, P128Pow5T3, Spec},
         Hash,
     },
     utilities::UtilitiesInstructions,
@@ -21,44 +22,42 @@ pub async fn grow_tree(db: &Database, set_type: &SetType) -> Result<(), TreeMake
     );
     let rows = db.get_nodes(&where_clause).await?;
 
-    let nodes: Vec<Node> = rows
+    let mut nodes: Vec<Vec<Node>> = vec![vec![]];
+
+    let leaf_nodes: Result<Vec<Node>, TreeMakerError> = rows
         .iter()
-        .map(|r| {
+        .enumerate()
+        .map(|(idx, r)| {
             let pos_w: Decimal = r.try_get("pos_w").unwrap();
+
+            let idx = Decimal::from(idx);
+            if idx != pos_w {
+                return Err(format!(
+                    "idx does not match pos_w, pos_w: {}, set_id: {}",
+                    pos_w, set_type.set_id
+                )
+                .into());
+            }
+
             let pos_h: i32 = r.try_get("pos_h").unwrap();
             let val: String = r.try_get("val").unwrap();
             let set_id: String = r.try_get("set_id").unwrap();
 
-            Node {
+            Ok(Node {
                 pos_w,
                 pos_h,
                 val,
                 set_id,
-            }
+            })
         })
         .collect();
 
-    let node = &nodes[rows.len() - 1];
-
-    let last_pos_w = node
-        .pos_w
-        .to_u64()
-        .expect("pos_w should be converted to u64");
-
-    let nodes_len: u64 = nodes
-        .len()
-        .try_into()
-        .expect("Node len should be converted to u64");
-
-    if last_pos_w != nodes_len - 1 {
-        return Err("last pos w is different from nodes.len - 1".into());
-    }
-
-    println!("nodes_len: {}", nodes_len);
+    let mut curr_nodes = leaf_nodes?;
 
     for h in 1..TREE_DEPTH - 1 {
-        for idx in (0..nodes_len).step_by(2) {
-            let left = match nodes.get(idx as usize) {
+        let mut next_nodes = vec![];
+        for idx in (0..curr_nodes.len()).step_by(2) {
+            let left = match curr_nodes.get(idx as usize) {
                 Some(n) => {
                     let mut node_vec = hex::decode(&n.val[2..]).unwrap();
                     node_vec.reverse();
@@ -71,7 +70,7 @@ pub async fn grow_tree(db: &Database, set_type: &SetType) -> Result<(), TreeMake
                 }
             };
 
-            let right = match nodes.get(idx as usize + 1) {
+            let right = match curr_nodes.get(idx as usize + 1) {
                 Some(n) => {
                     let mut node_vec = hex::decode(&n.val[2..]).unwrap();
                     node_vec.reverse();
@@ -79,28 +78,28 @@ pub async fn grow_tree(db: &Database, set_type: &SetType) -> Result<(), TreeMake
                     let node_arr: [u8; 32] = node_vec.try_into().unwrap();
                     PastaFp::from_repr(node_arr).unwrap()
                 }
-                None => {
-                    if idx < nodes_len - 1 {
-                        return Err("Right node should exist because idx is low".into());
-                    } else {
-                        PastaFp::zero()
-                    }
-                }
+                None => PastaFp::zero(),
             };
 
-            println!("left: {:?}, right: {:?}", left, right);
+            let msg = [left, right];
+            let parent_val =
+                poseidon::primitives::Hash::<PastaFp, P128Pow5T3, ConstantLength<2>, 3, 2>::init()
+                    .hash(msg);
+            let parent_arr = parent_val.to_repr();
+            let parent_hex = hex::encode(parent_arr);
+            let h: i32 = h.try_into().unwrap();
+
+            let parent_node = Node {
+                pos_w: Decimal::from(idx / 2),
+                pos_h: h,
+                val: parent_hex,
+                set_id: set_type.set_id.to_string(),
+            };
+
+            next_nodes.push(parent_node);
         }
 
-        return Ok(());
-
-        // while !has_reached_end {
-        //     let where_clause = format!("pos_w = {} AND pos_h = {}", curr, h);
-        //     let rows = db.get_nodes(&where_clause).await?;
-
-        //     println!("rows: {:?}", rows);
-
-        //     curr += 2;
-        // }
+        nodes.push(next_nodes);
     }
 
     // let addrs = [

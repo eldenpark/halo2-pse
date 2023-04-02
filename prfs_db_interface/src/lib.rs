@@ -4,4 +4,4 @@ pub mod hexutils;
 
 pub use db::*;
 
-pub type TreeMakerError = Box<dyn std::error::Error + Send + Sync>;
+pub type DbInterfaceError = Box<dyn std::error::Error + Send + Sync>;

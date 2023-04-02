@@ -1,5 +1,5 @@
 use super::{models::Account, Node};
-use crate::TreeMakerError;
+use crate::DbInterfaceError;
 use rust_decimal::Decimal;
 use std::collections::BTreeMap;
 use tokio_postgres::{Client as PGClient, NoTls, Row};
@@ -9,7 +9,7 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn connect() -> Result<Database, TreeMakerError> {
+    pub async fn connect() -> Result<Database, DbInterfaceError> {
         let postgres_pw = std::env::var("POSTGRES_PW")?;
 
         let pg_config = format!(
@@ -32,7 +32,7 @@ impl Database {
 }
 
 impl Database {
-    pub async fn get_accounts(&self, where_clause: &str) -> Result<Vec<Account>, TreeMakerError> {
+    pub async fn get_accounts(&self, where_clause: &str) -> Result<Vec<Account>, DbInterfaceError> {
         let stmt = format!(
             "SELECT * from {} where {}",
             Account::table_name(),
@@ -62,7 +62,7 @@ impl Database {
         Ok(accounts)
     }
 
-    pub async fn get_nodes(&self, where_clause: &str) -> Result<Vec<Row>, TreeMakerError> {
+    pub async fn get_nodes(&self, where_clause: &str) -> Result<Vec<Row>, DbInterfaceError> {
         let stmt = format!(
             "SELECT * from {} where {}",
             Node::table_name(),
@@ -86,7 +86,7 @@ impl Database {
         &self,
         balances: BTreeMap<String, Account>,
         update_on_conflict: bool,
-    ) -> Result<u64, TreeMakerError> {
+    ) -> Result<u64, DbInterfaceError> {
         let mut values = Vec::with_capacity(balances.len());
         for (_, acc) in balances {
             let val = format!("('{}', {})", acc.addr, acc.wei);
@@ -126,7 +126,7 @@ impl Database {
         set_id: String,
         nodes: Vec<Node>,
         update_on_conflict: bool,
-    ) -> Result<u64, TreeMakerError> {
+    ) -> Result<u64, DbInterfaceError> {
         let mut values = Vec::with_capacity(nodes.len());
 
         for n in nodes {

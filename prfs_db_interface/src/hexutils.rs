@@ -1,4 +1,3 @@
-use crate::TreeMakerError;
 use ff::PrimeField;
 use halo2_proofs::halo2curves::{pasta::Fp, serde::SerdeObject};
 
