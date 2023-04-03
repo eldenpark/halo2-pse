@@ -1,3 +1,4 @@
+mod nodes;
 mod proofs;
 
 use crate::{middleware, State};
@@ -16,6 +17,7 @@ pub fn build_router(db: Database) -> Router<Body, Infallible> {
         .data(state)
         .middleware(Middleware::pre(middleware::logger))
         .middleware(enable_cors_all())
+        .post("/get_nodes", nodes::get_nodes_handler)
         .post("/gen_proof", proofs::gen_proof_handler)
         .err_handler_with_info(middleware::error_handler)
         .build()

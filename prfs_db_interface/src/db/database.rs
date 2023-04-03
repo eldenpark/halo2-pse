@@ -149,7 +149,7 @@ impl Database {
                 values.join(","),
             )
         };
-        println!("stmt: {}", stmt);
+        // println!("stmt: {}", stmt);
 
         let rows_updated = match self.pg_client.execute(&stmt, &[]).await {
             Ok(r) => r,

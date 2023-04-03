@@ -17,7 +17,7 @@ pub async fn grow_tree(db: &Database, set_type: &SetType) -> Result<(), TreeMake
     println!("grow tree()");
 
     let where_clause = format!(
-        "set_id = '{}' AND pos_h = {} ORDER BY pos_h",
+        "set_id = '{}' AND pos_h = {} ORDER BY pos_w",
         set_type.set_id, 0,
     );
     let rows = db.get_nodes(&where_clause).await?;
@@ -54,14 +54,20 @@ pub async fn grow_tree(db: &Database, set_type: &SetType) -> Result<(), TreeMake
 
     let nodes = populate_tree(leaf_nodes, set_type)?;
 
-    for h in 1..nodes.len() {
-        // println!("h: {}", h);
+    // for h in 1..nodes.len() {
+    //     let nodes_at_h = &nodes[h];
+    //     for (w, node) in nodes_at_h.iter().enumerate() {
+    //         println!("h: {}, w: {}, val: {}", h, w, node.val);
+    //     }
+    // }
 
-        let nodes_at_h = &nodes[h];
-        for (w, node) in nodes_at_h.iter().enumerate() {
-            println!("h: {}, w: {}, val: {}", h, w, node.val);
-        }
-    }
+    let nodes_flattened: Vec<Node> = nodes.into_iter().flatten().collect();
+
+    let rows_affected = db
+        .insert_nodes(set_type.set_id.to_string(), nodes_flattened, true)
+        .await?;
+
+    println!("rows affected: {}", rows_affected);
 
     Ok(())
 }
