@@ -45,36 +45,56 @@ const Left = (props: any) => {
         console.log('recovered address', recoveredAddress);
 
         let leafIdx = 0;
-        let merklePath = getMerklePath(leafIdx, TREE_DEPTH);
+        let merkleNodePos = getMerklePath(leafIdx, TREE_DEPTH);
         let setId = "1";
 
-        let result = await axios.post("http://localhost:4000/get_nodes", {
+        let merkleNodes = await axios.post("http://localhost:4000/get_nodes", {
           setId,
-          merklePath,
+          pos: merkleNodePos,
         }).then(r => r.data).catch(err => {
-          console.log("Error fetching get_nodes, err: %s", err);
+          console.log("Error fetching get merkle nodes, err: %s", err);
+          return;
         });
 
-        console.log(11, result);
+        let rootNodePos: NodePos = {
+          posW: 0,
+          posH: 31,
+        };
 
-        await axios.post("http://localhost:4000/gen_proof", {
+        let rootNode = await axios.post("http://localhost:4000/get_nodes", {
+          setId,
+          pos: [rootNodePos],
+        }).then(r => {
+          if (r.data.nodes.length === 1) {
+            return r.data.nodes[0];
+          } else {
+            throw new Error("root node has to be a single node");
+          }
+        }).catch(err => {
+          console.log("Error fetching get root node, err: %s", err);
+          return;
+        });
+
+        let proof = await axios.post("http://localhost:4000/gen_proof", {
           address: account,
           publicKey,
           proofType: 'asset_proof_1',
           signature,
-          merklePath: result.nodes,
+          merklePath: merkleNodes.nodes,
           leafIdx: 0,
-          root: '',
+          root: rootNode,
           messageRaw,
           messageHash,
-        }).then(r => r.data).catch(err => {
+        }).then(r => r.data.proof).catch(err => {
           console.log("Error fetching get_proof, err: %s", err);
+          return;
         });
 
+        setProof(proof.join(", "));
       }
     };
 
-    fetchData().then((_res) => { });
+    fetchData().then(_ => { });
   }, [setProof]);
 
   return (
@@ -91,12 +111,13 @@ const Left = (props: any) => {
 
 export default Left;
 
-function getMerklePath(leafIdx: number, treeDepth: number): MerklePath[] {
+function getMerklePath(leafIdx: number, treeDepth: number): NodePos[] {
   let currIdx = leafIdx;
-  let merklePath: MerklePath[] = [];
+  let merklePath: NodePos[] = [];
   for (let h = 0; h < treeDepth - 1; h += 1) {
     let parentIdx = getParentIdx(currIdx);
     let parentSiblingIdx = getSiblingIdx(parentIdx);
+
     merklePath.push({
       posW: parentSiblingIdx,
       posH: h,
@@ -119,7 +140,7 @@ function getParentIdx(idx: number): number {
   return idx / 2;
 }
 
-export interface MerklePath {
+export interface NodePos {
   posW: number;
   posH: number;
 }

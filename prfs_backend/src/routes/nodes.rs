@@ -8,7 +8,7 @@ use std::convert::Infallible;
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct MerklePath {
+struct NodePos {
     pub pos_w: Decimal,
     pub pos_h: i32,
 }
@@ -17,7 +17,7 @@ struct MerklePath {
 #[serde(rename_all = "camelCase")]
 struct GetNodesRequest<'a> {
     set_id: &'a str,
-    merkle_path: Vec<MerklePath>,
+    pos: Vec<NodePos>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -41,7 +41,7 @@ pub async fn get_nodes_handler(req: Request<Body>) -> Result<Response<Body>, Inf
     let set_id = get_nodes_req.set_id.to_string();
 
     let whre: Vec<String> = get_nodes_req
-        .merkle_path
+        .pos
         .iter()
         .map(|mp| format!("(pos_w = {} and pos_h = {})", mp.pos_w, mp.pos_h))
         .collect();
@@ -59,7 +59,7 @@ pub async fn get_nodes_handler(req: Request<Body>) -> Result<Response<Body>, Inf
     let rows = db.get_nodes(&where_clause).await.expect("get nodes fail");
 
     let nodes: Vec<Node> = get_nodes_req
-        .merkle_path
+        .pos
         .iter()
         .enumerate()
         .map(|(idx, mp)| match rows.get(idx) {

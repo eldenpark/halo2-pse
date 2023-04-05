@@ -38,7 +38,7 @@ impl Database {
             Account::table_name(),
             where_clause
         );
-        println!("stmt: {}", stmt);
+        // println!("stmt: {}", stmt);
 
         let rows = match self.pg_client.query(&stmt, &[]).await {
             Ok(r) => r,
@@ -68,7 +68,7 @@ impl Database {
             Node::table_name(),
             where_clause
         );
-        println!("stmt: {}", stmt);
+        // println!("stmt: {}", stmt);
 
         let rows = match self.pg_client.query(&stmt, &[]).await {
             Ok(r) => r,
