@@ -51,7 +51,6 @@ pub async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Inf
     let proof = {
         let address = {
             let address_vec = hex::decode(&gen_proof_req.address[2..]).unwrap();
-            // address_vec.reverse();
             let mut address = [0u8; 32];
             address[12..].clone_from_slice(&address_vec);
             address
@@ -147,40 +146,6 @@ pub async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Inf
                     PastaFp::from_repr(node_arr).unwrap()
                 })
                 .collect();
-
-            // let path = [
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            //     PastaFp::from(1),
-            // ];
 
             let pos_bits: [bool; 31] = i2lebsp(leaf_idx as u64);
             let mut root = leaf;

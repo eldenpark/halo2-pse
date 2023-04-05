@@ -8,7 +8,6 @@ use routerify::{Middleware, Router};
 use routerify_cors::enable_cors_all;
 use std::convert::Infallible;
 use std::sync::Arc;
-use tokio_postgres::Client;
 
 pub fn build_router(db: Database) -> Router<Body, Infallible> {
     let db = Arc::new(db);

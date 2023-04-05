@@ -1,20 +1,6 @@
-use crate::{BackendError, State};
-use eth_types::sign_types::SignData;
-use ff::PrimeField;
-use halo2_gadgets::poseidon::{
-    self,
-    primitives::{ConstantLength, P128Pow5T3},
-};
-use halo2_gadgets::utilities::i2lebsp;
-use halo2_proofs::halo2curves::pasta::{Fp as PastaFp, Fq as PastaFq};
-use halo2_proofs::halo2curves::secp256k1::{Fp as SecFp, Fq as SecFq, Secp256k1Affine};
-use halo2_proofs::halo2curves::CurveAffine;
+use crate::State;
 use hyper::{body, header, Body, Request, Response};
-use keccak256::plain::Keccak;
 use prfs_db_interface::Node;
-use prfs_proofs::asset_proof_1;
-use prfs_proofs::asset_proof_1::constants::{POS_RATE, POS_WIDTH};
-use prfs_proofs::{pk_bytes_le, pk_bytes_swap_endianness};
 use routerify::prelude::*;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
