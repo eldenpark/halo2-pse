@@ -1,6 +1,7 @@
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Account {
     pub addr: String,
     pub wei: Decimal,
@@ -12,7 +13,7 @@ impl Account {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Node {
     pub pos_w: Decimal,
     pub pos_h: i32,

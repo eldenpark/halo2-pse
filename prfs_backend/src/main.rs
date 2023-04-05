@@ -10,7 +10,7 @@ use tokio_postgres::NoTls;
 #[tokio::main]
 async fn main() -> Result<(), BackendError> {
     {
-        let dotenv_path = dotenv()?;
+        let dotenv_path = dotenv().expect("dotenv should exist");
         println!(".env path: {:?}", dotenv_path);
     }
 

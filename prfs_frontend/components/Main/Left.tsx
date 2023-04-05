@@ -5,6 +5,8 @@ import Web3 from 'web3';
 
 import styles from "./Left.module.scss";
 
+const TREE_DEPTH: number = 32;
+
 const Left = (props: any) => {
   const [proof, setProof] = React.useState("");
 
@@ -24,38 +26,41 @@ const Left = (props: any) => {
         const ethAddress = await signer.getAddress();
         console.log('ethAddress', ethAddress);
 
-        const message_raw = 'test';
-        const message_hash = u.hashMessage(message_raw);
-        console.log('message hash', message_hash);
+        const messageRaw = 'test';
+        const messageHash = u.hashMessage(messageRaw);
+        console.log('message hash', messageHash);
 
-        const signature = await signer.signMessage(message_raw);
+        const signature = await signer.signMessage(messageRaw);
         console.log('signature', signature, signature.length);
 
-        const digest = u.arrayify(message_hash);
+        const digest = u.arrayify(messageHash);
 
-        const public_key = u.recoverPublicKey(digest, signature);
-        console.log('recovered publickey', public_key);
+        const publicKey = u.recoverPublicKey(digest, signature);
+        console.log('recovered publickey', publicKey);
 
-        const computedAddress = u.computeAddress(public_key);
+        const computedAddress = u.computeAddress(publicKey);
         console.log('computed address', computedAddress);
 
         const recoveredAddress = u.recoverAddress(digest, signature)
         console.log('recovered address', recoveredAddress);
 
+        let leafIdx = 0;
+        let paths = getMerklePath(leafIdx, TREE_DEPTH);
+
         let { data } = await axios.post("http://localhost:4000/gen_proof", {
           address: account,
-          public_key,
-          proof_type: 'asset_proof_1',
+          publicKey,
+          proofType: 'asset_proof_1',
           signature,
           path: [],
-          leaf_idx: 0,
+          leafIdx: 0,
           root: '',
-          message_raw,
-          message_hash,
+          messageRaw,
+          messageHash,
         });
 
         console.log('axios response', data);
-        setProof(data.proof.join(","));
+        setProof(data.proof.join(", "));
       }
     };
 
@@ -75,3 +80,28 @@ const Left = (props: any) => {
 };
 
 export default Left;
+
+function getMerklePath(leafIdx: number, treeDepth: number): number[] {
+  let currIdx = leafIdx;
+  let merklePath = [];
+  for (let idx = 0; idx < treeDepth - 1; idx += 1) {
+    let parentIdx = getParentIdx(currIdx);
+    let parentSiblingIdx = getSiblingIdx(parentIdx);
+    merklePath.push(parentSiblingIdx);
+    currIdx = parentIdx;
+  }
+
+  return merklePath;
+}
+
+function getSiblingIdx(idx: number): number {
+  if (idx % 2 == 0) {
+    return idx + 1;
+  } else {
+    return idx - 1;
+  }
+}
+
+function getParentIdx(idx: number): number {
+  return idx / 2;
+}

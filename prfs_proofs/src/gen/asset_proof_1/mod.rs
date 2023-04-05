@@ -477,6 +477,7 @@ pub fn gen_asset_proof<C: CurveAffine, F: FieldExt>(
         println!("proof verification success");
     }
 
+    println!("Start creating proof in bytes");
     let start = Instant::now();
     let project_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
 

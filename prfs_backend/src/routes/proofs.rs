@@ -19,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct GenProofRequest<'a> {
     proof_type: &'a str,
     address: &'a str,
