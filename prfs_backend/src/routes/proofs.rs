@@ -11,6 +11,7 @@ use halo2_proofs::halo2curves::secp256k1::{Fp as SecFp, Fq as SecFq, Secp256k1Af
 use halo2_proofs::halo2curves::CurveAffine;
 use hyper::{body, header, Body, Request, Response};
 use keccak256::plain::Keccak;
+use prfs_db_interface::Node;
 use prfs_proofs::asset_proof_1;
 use prfs_proofs::asset_proof_1::constants::{POS_RATE, POS_WIDTH};
 use prfs_proofs::{pk_bytes_le, pk_bytes_swap_endianness};
@@ -25,7 +26,7 @@ struct GenProofRequest<'a> {
     address: &'a str,
     signature: &'a str,
     leaf_idx: u32,
-    path: Vec<&'a str>,
+    merkle_path: Vec<Node>,
     public_key: &'a str,
     message_raw: &'a str,
     message_hash: &'a str,
@@ -46,10 +47,6 @@ pub async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Inf
     let gen_proof_req = serde_json::from_str::<GenProofRequest>(&body_str).unwrap();
 
     println!("gen_proof_req: {:?}", gen_proof_req);
-
-    // let region_provider = RegionProviderChain::default_provider();
-    // let config = aws_config::from_env().region(region_provider).load().await;
-    // aws rds call
 
     let proof = {
         let address = {
@@ -132,49 +129,62 @@ pub async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Inf
 
         let leaf_idx = gen_proof_req.leaf_idx;
 
-        let (leaf, root, path) = {
+        let (leaf, root, merkle_path) = {
             let mut addr = address;
             addr.reverse();
 
             let leaf = PastaFp::from_repr(addr).unwrap();
 
-            let path = [
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-                PastaFp::from(1),
-            ];
+            let merkle_path: Vec<PastaFp> = gen_proof_req
+                .merkle_path
+                .iter()
+                .map(|mp| {
+                    let mut node_vec = hex::decode(&mp.val[2..]).unwrap();
+                    node_vec.reverse();
+
+                    let node_arr: [u8; 32] = node_vec.try_into().unwrap();
+
+                    PastaFp::from_repr(node_arr).unwrap()
+                })
+                .collect();
+
+            // let path = [
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            //     PastaFp::from(1),
+            // ];
 
             let pos_bits: [bool; 31] = i2lebsp(leaf_idx as u64);
             let mut root = leaf;
-            for (idx, el) in path.iter().enumerate() {
+            for (idx, el) in merkle_path.iter().enumerate() {
                 let msg = if pos_bits[idx] {
                     [*el, root]
                 } else {
@@ -191,15 +201,21 @@ pub async fn gen_proof_handler(req: Request<Body>) -> Result<Response<Body>, Inf
                 .hash(msg);
             }
 
-            (leaf, root, path)
+            (leaf, root, merkle_path)
         };
 
         println!("leaf: {:?}", leaf);
         println!("leaf_idx: {:?}", leaf_idx);
         println!("root: {:?}", root);
 
+        let merkle_path: [PastaFp; 31] = merkle_path.try_into().unwrap();
+
         asset_proof_1::gen_asset_proof::<Secp256k1Affine, PastaFp>(
-            path, leaf, root, leaf_idx, sign_data,
+            merkle_path,
+            leaf,
+            root,
+            leaf_idx,
+            sign_data,
         )
         .unwrap()
     };

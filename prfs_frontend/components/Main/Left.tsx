@@ -48,32 +48,28 @@ const Left = (props: any) => {
         let merklePath = getMerklePath(leafIdx, TREE_DEPTH);
         let setId = "1";
 
-        try {
-          let result = await axios.post("http://localhost:4000/get_nodes", {
-            setId,
-            merklePath,
-          });
+        let result = await axios.post("http://localhost:4000/get_nodes", {
+          setId,
+          merklePath,
+        }).then(r => r.data).catch(err => {
+          console.log("Error fetching get_nodes, err: %s", err);
+        });
 
-          // let { data } = await axios.post("http://localhost:4000/gen_proof", {
-          //   address: account,
-          //   publicKey,
-          //   proofType: 'asset_proof_1',
-          //   signature,
-          //   path: [],
-          //   leafIdx: 0,
-          //   root: '',
-          //   messageRaw,
-          //   messageHash,
-          // });
+        console.log(11, result);
 
-          let { data } = result;
-
-          console.log('axios response', data);
-          setProof(data.proof.join(", "));
-
-        } catch (err) {
-          console.log("Error fetching data, err: %s", err);
-        }
+        await axios.post("http://localhost:4000/gen_proof", {
+          address: account,
+          publicKey,
+          proofType: 'asset_proof_1',
+          signature,
+          merklePath: result.nodes,
+          leafIdx: 0,
+          root: '',
+          messageRaw,
+          messageHash,
+        }).then(r => r.data).catch(err => {
+          console.log("Error fetching get_proof, err: %s", err);
+        });
 
       }
     };

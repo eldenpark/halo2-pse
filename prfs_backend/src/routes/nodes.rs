@@ -36,7 +36,7 @@ struct GetNodesRequest<'a> {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct GetNodesResponse {
-    merkle_path: Vec<Node>,
+    nodes: Vec<Node>,
 }
 
 pub async fn get_nodes_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
@@ -72,7 +72,7 @@ pub async fn get_nodes_handler(req: Request<Body>) -> Result<Response<Body>, Inf
 
     let rows = db.get_nodes(&where_clause).await.expect("get nodes fail");
 
-    let merkle_path: Vec<Node> = get_nodes_req
+    let nodes: Vec<Node> = get_nodes_req
         .merkle_path
         .iter()
         .enumerate()
@@ -102,7 +102,7 @@ pub async fn get_nodes_handler(req: Request<Body>) -> Result<Response<Body>, Inf
 
     // println!("merkle_path: {:?}", merkle_path);
 
-    let get_nodes_resp = GetNodesResponse { merkle_path };
+    let get_nodes_resp = GetNodesResponse { nodes };
 
     let data = serde_json::to_string(&get_nodes_resp).unwrap();
 
