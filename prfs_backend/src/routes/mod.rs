@@ -11,7 +11,8 @@ use std::sync::Arc;
 use tokio_postgres::Client;
 
 pub fn build_router(db: Database) -> Router<Body, Infallible> {
-    let state = State {};
+    let db = Arc::new(db);
+    let state = State { db };
 
     Router::builder()
         .data(state)

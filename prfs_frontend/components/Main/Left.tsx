@@ -45,22 +45,36 @@ const Left = (props: any) => {
         console.log('recovered address', recoveredAddress);
 
         let leafIdx = 0;
-        let paths = getMerklePath(leafIdx, TREE_DEPTH);
+        let merklePath = getMerklePath(leafIdx, TREE_DEPTH);
+        let setId = "1";
 
-        let { data } = await axios.post("http://localhost:4000/gen_proof", {
-          address: account,
-          publicKey,
-          proofType: 'asset_proof_1',
-          signature,
-          path: [],
-          leafIdx: 0,
-          root: '',
-          messageRaw,
-          messageHash,
-        });
+        try {
+          let result = await axios.post("http://localhost:4000/get_nodes", {
+            setId,
+            merklePath,
+          });
 
-        console.log('axios response', data);
-        setProof(data.proof.join(", "));
+          // let { data } = await axios.post("http://localhost:4000/gen_proof", {
+          //   address: account,
+          //   publicKey,
+          //   proofType: 'asset_proof_1',
+          //   signature,
+          //   path: [],
+          //   leafIdx: 0,
+          //   root: '',
+          //   messageRaw,
+          //   messageHash,
+          // });
+
+          let { data } = result;
+
+          console.log('axios response', data);
+          setProof(data.proof.join(", "));
+
+        } catch (err) {
+          console.log("Error fetching data, err: %s", err);
+        }
+
       }
     };
 
@@ -81,13 +95,16 @@ const Left = (props: any) => {
 
 export default Left;
 
-function getMerklePath(leafIdx: number, treeDepth: number): number[] {
+function getMerklePath(leafIdx: number, treeDepth: number): MerklePath[] {
   let currIdx = leafIdx;
-  let merklePath = [];
-  for (let idx = 0; idx < treeDepth - 1; idx += 1) {
+  let merklePath: MerklePath[] = [];
+  for (let h = 0; h < treeDepth - 1; h += 1) {
     let parentIdx = getParentIdx(currIdx);
     let parentSiblingIdx = getSiblingIdx(parentIdx);
-    merklePath.push(parentSiblingIdx);
+    merklePath.push({
+      posW: parentSiblingIdx,
+      posH: h,
+    });
     currIdx = parentIdx;
   }
 
@@ -104,4 +121,9 @@ function getSiblingIdx(idx: number): number {
 
 function getParentIdx(idx: number): number {
   return idx / 2;
+}
+
+export interface MerklePath {
+  posW: number;
+  posH: number;
 }
