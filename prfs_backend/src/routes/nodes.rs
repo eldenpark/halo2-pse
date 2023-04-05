@@ -36,7 +36,7 @@ struct GetNodesRequest<'a> {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct GetNodesResponse {
-    merkle_path: Vec<MerklePath>,
+    merkle_path: Vec<Node>,
 }
 
 pub async fn get_nodes_handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
@@ -72,25 +72,35 @@ pub async fn get_nodes_handler(req: Request<Body>) -> Result<Response<Body>, Inf
 
     let rows = db.get_nodes(&where_clause).await.expect("get nodes fail");
 
-    let merkle_path: Result<Vec<Node>, BackendError> = rows
+    let merkle_path: Vec<Node> = get_nodes_req
+        .merkle_path
         .iter()
-        .map(|r| {
-            let pos_w: Decimal = r.try_get("pos_w").unwrap();
-            let pos_h: i32 = r.try_get("pos_h").unwrap();
-            let val: String = r.try_get("val").unwrap();
-            let set_id: String = r.try_get("set_id").unwrap();
+        .enumerate()
+        .map(|(idx, mp)| match rows.get(idx) {
+            Some(r) => {
+                let pos_w: Decimal = r.try_get("pos_w").unwrap();
+                let pos_h: i32 = r.try_get("pos_h").unwrap();
+                let val: String = r.try_get("val").unwrap();
+                let set_id: String = r.try_get("set_id").unwrap();
 
-            Ok(Node {
-                pos_w,
-                pos_h,
-                val,
-                set_id,
-            })
+                Node {
+                    pos_w,
+                    pos_h,
+                    val,
+                    set_id,
+                }
+            }
+            None => Node {
+                pos_w: mp.pos_w,
+                pos_h: mp.pos_h,
+                val: "0x0000000000000000000000000000000000000000000000000000000000000000"
+                    .to_string(),
+                set_id: set_id.to_string(),
+            },
         })
         .collect();
-    println!("merkle_path: {:?}", merkle_path);
 
-    let merkle_path = merkle_path.unwrap();
+    // println!("merkle_path: {:?}", merkle_path);
 
     let get_nodes_resp = GetNodesResponse { merkle_path };
 
