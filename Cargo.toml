@@ -19,11 +19,5 @@ members = [
     "external-tracer",
     "geth-utils",
 
-    "prfs_proofs",
-    "prfs_client",
-    "prfs_backend",
-    "prfs_tree_maker",
-    "prfs_db_interface",
-
     "web_demo",
 ]
